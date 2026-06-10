@@ -1,272 +1,244 @@
-# VERDANT SIEGE — Game Rework Plan
+# BRAINROT RUMBLE — Game Rework Plan
+### *(rebrand of "Brainrot Survivors" — the Italian Invasion)*
 
-A full design plan to rework the current game (*Brainrot Survivors*) into a new
-theme with a deeper enemy roster, real bosses, new abilities, and a Survivor.io-style
-**card leveling + evolution** system.
+A full design plan to **rebrand and upgrade the existing brainrot game**: keep the
+survivor / bullet-hell loop and the **grassy daylight cartoon world**, but give the whole
+cast **better, accurate art**, add the full **Italian Brainrot** roster (30 characters),
+new **cards + evolutions**, and planned **abilities**.
 
-> Status: **design only** — nothing here is implemented yet. Built to drop into the
-> existing engine (`index.html` + `styles.css` + `js/{core,audio,sprites,input,game}.js`).
+> Status: **design only** — nothing here is implemented yet. Drops into the existing engine
+> (`index.html` + `styles.css` + `js/{core,audio,sprites,input,game}.js`).
 
----
-
-## 1. Theme: **Verdant Siege — Hold the Greenfields**
-
-A bright **fantasy survivor bullet hell**: a lone champion defends a sunlit kingdom's
-green fields as waves of monsters — slimes, goblins, undead, beasts, and demons — pour
-across the meadow. **Keeps the game's existing grassy daylight cartoon world** (the exact
-look you already have) and layers the new monster roster, bosses, and abilities on top.
-No dungeon, no dark palette — just the green field you've got, with better stuff in it.
-
-### World & vibe — keep the grassy landscape
-- **Ground:** **unchanged — the existing grass checkerboard field stays.** Optionally
-  sprinkle in flat props (flowers, mushrooms, small rocks, a banner/signpost) for flavor.
-- **Border:** keep the **wooden fence** as-is (corners can get hedges or a little stone
-  gate) — still a sunny field boundary, never a dungeon wall.
-- **Palette:** the current daylight greens + earthy browns, with **one warm accent**
-  (banner-red / gold) per faction. Flat cel-shading, dark outlines, **no glow**.
-- **Atmosphere:** drifting pollen/leaf/petal particles instead of ash — sunny, not moody.
-- **Player:** the current hero works as-is (or a light fantasy adventurer — cap & cloak, no dark armor).
-- **Audio:** upbeat synth hits, a sword *clang* on impact, a horn-call on boss spawn.
-
-> The monsters and bosses below are all classic-fantasy creatures that read perfectly fine
-> on a sunny grass field (think a green RPG overworld), so the new content drops in without
-> touching the map you like.
-
-### Enemy design = roles, not just skins
-Every enemy fills one **bullet-hell role** so fights stay readable:
-**Swarm** (pressure) · **Chaser** (force movement) · **Shooter** (bullets) ·
-**Heavy** (telegraphed big hits) · **Elite** (one special rule). Tiers unlock as waves climb.
+> ⚖️ **Legal note:** the Italian Brainrot / AI-Brainrot-Animals characters are **AI-generated**,
+> so they lack human authorship and are effectively **public domain** — free to recreate.
+> **Do NOT copy specific human creators' assets/models** (e.g. a particular Roblox dev's mesh).
+> We recreate each character **from the concept** as our own original vector sprite.
 
 ---
 
-## 2. Enemy roster (25)
+## 1. Rebrand & world
+
+- **Working title:** **BRAINROT RUMBLE** (subtitle: *Italian Invasion*). Keeps the brainrot
+  identity but signals a fresh, bigger version. (Name is swappable.)
+- **World stays the same:** the existing **grass checkerboard field + wooden fence + daylight
+  palette**, flat cel-shading, **no glow**. We are *not* changing the map — only what fights on it.
+- **Tone:** the meme energy stays (sigma/rizz/Ohio/fanum-tax flavor in the UI & card names),
+  just polished.
+
+## 2. Art direction — "better art"
+This is the headline upgrade. The current sprites are simple; the rebrand makes each character
+**recognizable at a glance**.
+
+- **One detailed vector sprite per character**, pre-rendered to an offscreen canvas (as now),
+  but with more shapes, shading planes, and signature props (Nike sneakers, bomber wings,
+  cappuccino foam, Saturn rings, etc.).
+- 🔎 **Reference-check each character with an image search BEFORE drawing it** — match the
+  silhouette, colors, and iconic details people expect, then stylize to our flat cartoon look.
+- Consistent rules: dark outline, 1–2 flat shade tones, readable silhouette, idle wobble +
+  squash-on-hit + white hit-flash (already supported).
+- Bosses get **larger, multi-part sprites** + a name banner.
+
+---
+
+## 3. Enemy roster (24) — tiered, with attack examples
+All 24 are drawn from the 30-character cast (the other 6 are bosses, §4).
 
 ### Tier I — Fodder *(fast, weak, swarm)*
-1. **Cave Rat** — tiny, jittery zig-zag chaser. *Attack:* none, pure swarm pressure.
-2. **Carrion Bat** — fast sine-wave flight, dive-bombs in a straight lunge. *Attack:* contact only, unpredictable arcs.
-3. **Green Slime** — slow blob; **splits into 2 mini-slimes on death**. *Attack:* none — the split is the threat.
-4. **Goblin Sapper** — sprints at you and **detonates** on contact/death. *Attack:* dies into a **6-bullet ring**.
+1. **Spijuniro Golubiro** *(spy pigeon, shades + earpiece)* — fast erratic flyer; swarms. *Attack:* occasional single "recon" bolt.
+2. **Quacodillo Bombardiro** *(rubber-duck bomber jet)* — dive-bombs; **drops a small bomb that bursts into 4** (kamikaze).
+3. **Chimpanzini Bananini** *(chimp-banana)* — fast straight-line charger; peels off and re-charges.
+4. **Penguino Cocosino** *(coconut-shell penguin)* — waddles, then **belly-slide dash** at you.
+5. **Flamingulli-gulli-gulli** *(loopy-neck flamingo)* — weaves unpredictably; **neck-whip** melee.
 
-### Tier II — Infantry *(steady chasers, light ranged)*
-5. **Skeleton Warrior** — standard chaser; occasionally **lobs a single aimed bone**.
-6. **Goblin Archer** — kites; fires an **aimed 3-arrow fan**, flees when you close.
-7. **Rotting Zombie** — slow, tanky; **spits a glob that leaves a poison puddle** (lingering AoE zone).
-8. **Giant Spider** — scuttles sideways; **sticky web-bolt that slows your move speed** ~1.5s on hit.
-9. **Kobold Slinger** — fast; **arcing rock** that lands and **shatters into 4 shards**.
+### Tier II — Infantry *(chasers, light ranged)*
+6. **Cappuccino Assassino** *(coffee-mug ninja, knife limbs)* — quick; **throws an aimed knife**, dashes through.
+7. **Ballerina Cappuccina** *(cappuccino-head ballerina)* — pirouettes; **spin release = radial ring of 6**.
+8. **Lirili Larila** *(cactus elephant in slippers)* — slow, tanky; **trunk-sprays a 3-needle spread**.
+9. **Brr Brr Patapim** *(proboscis-monkey tree)* — medium; **ground-stomp lobs 2 arcing acorns**.
+10. **Svinino Bombondino** *(hard-candy pig)* — bounces; **lobs a candy that shatters into 4 shards**.
+11. **Castori Gangsteri** *(fedora mobster beaver)* — keeps distance; **tommy-gun burst (aimed 4-round stream)**.
 
 ### Tier III — Casters *(the bullet-hell core)*
-10. **Dark Acolyte** — hovers; fires a **slow homing soul-bolt** (one at a time).
-11. **Hex Witch** — **short-range teleports**; fires a **spiral stream of 3-round bursts**.
-12. **Will-o'-Wisp** — weaves erratically; periodically **emits a radial ring of 8 sparks**.
-13. **Gargoyle** — **perches as invulnerable stone**, then swoops; airborne fires a **tight 5-bolt fan**.
-14. **Bone Conjurer** — **summoner**: raises 2 Skeletons every few seconds + a **bone-fan**.
-15. **Plague Doctor** — drops **expanding poison-gas clouds** that grow then fade (move-or-die zones).
+12. **Crocodillo Ananasinno** *(pineapple croc)* — **spits a 3-chunk pineapple spread**.
+13. **Blueberrinni Octopussini** *(blueberry octopus)* — **radial ring of 8 blueberries** on a timer.
+14. **Graipussi Medussi** *(grapefruit jellyfish)* — drifts; **drops slow descending bullet "curtains"**.
+15. **Bombombini Gusini** *(bomber-goose)* — flies overhead; **drops a line of 3 delayed bombs**.
+16. **Espressona Signora** *(tall espresso-cup ballerina)* — **continuous spiral of espresso shots**.
+17. **Orangutini Ananasini** *(pineapple orangutan)* — **hurls arcing pineapples that burst into a small ring**.
 
 ### Tier IV — Heavies *(tanky, telegraphed)*
-16. **Armored Footman** — **front shield blocks your bullets from the front** — you must **flank** it.
-17. **Ogre Brute** — winds up (telegraph) and **hurls a giant slow boulder** that **bursts into a 12-shard ring**.
-18. **Stone Sentinel** — very slow tank; **ground-stomp = one expanding shockwave ring** you dash/gap through.
-19. **Cursed Treant** — roots in place and **rains falling-acorn AoE markers around you** (targeted drops).
+18. **Rhino Toasterino** *(rhino w/ chrome toaster torso)* — charges, then **"pops toast"**: 2 toast projectiles launch up and fall as AoE markers.
+19. **Il Cacto Hipopotamo** *(cactus-needle hippo)* — slow tank; **body-slam shockwave ring + outward needle burst**.
+20. **Frigo Camelo** *(camel w/ fridge humps)* — tanky; **opens the fridge = a cold cone that slows you**, then a 5-ice-shard spread.
+21. **Torrtuginni Dragonfrutinni** *(dragonfruit-shell turtle)* — very slow tank; **retracts into shell (invulnerable) and spin-charges in a line**.
 
-### Tier V — Elites *(one special rule each, rarer)*
-20. **Necromancer** — **reanimates corpses of enemies you've killed** + fires a slow ring. Kill-this-NOW target.
-21. **Banshee** — telegraphed **scream**: expanding ring **+ brief screen-shake/disorient**.
-22. **Wraith** — **phases between intangible (invuln) and solid**; when solid fires a **4-way cross of bolts**.
-23. **Templar Zealot** — **telegraphed charge-dash** along a line, **leaving a fire trail**.
-24. **Flame Imp** — darts around **dropping fireball mines** that detonate into a small **+ pattern**.
-25. **Frost Revenant** — **aura that slows you and your bullets** nearby; fires a **slow wide ice-wall**.
+### Tier V — Elites *(one special rule, rarer)*
+22. **Pandaccini Bananini** *(panda w/ banana-peel limbs)* — **drops banana peels that make you slip** (brief control-loss patch).
+23. **Tigrrullini Watermellini** *(watermelon-skin tiger)* — **telegraphed pounce-dash along a line + watermelon-seed spit (5-spread)**.
+24. **Capybarelli Bananalelli** *(chill capybara w/ back-bananas)* — **support: heals & hastes nearby enemies → priority kill**; lazily lobs bananas.
 
 ---
 
-## 3. Bosses (5) — unique gimmick + attack phases
+## 4. Bosses (6) — each with a unique gimmick + phases
 
-### B1 · **Mortenn, the Lich King** — *wave 5* (caster)
-- **Gimmick:** raises **Blighted Ground** — patches of withered/cursed grass (DoT zones) bloom on random tiles you must avoid.
-- **P1:** continuous **rotating bone-spiral** + aimed 3-fan.
-- **P2 (<60%):** **teleports** around the arena, drops a **ring-of-12** on each arrival.
-- **P3 (<30%):** summons 4 skeletons + a **counter-rotating double spiral**; blighted patches multiply.
+### B1 · **Tralalero Tralala** — *wave 5* (speed bruiser)
+*Three-legged blue shark in Nike sneakers.*
+- **Gimmick:** the **fastest** boss — sprints constantly, forcing you to keep moving.
+- **Attacks:** telegraphed **charge-dash** across the arena (leaves a sand-spray bullet trail), **shoe-stomp shockwave ring** on stop, spits a **5-fan of bites**.
+- **Enrage:** chains **two dashes** back-to-back.
 
-### B2 · **Cinderwing, the Ash Dragon** — *wave 10* (aerial)
-- **Gimmick:** alternates **flying** (hard to hit, raining attacks) and **grounded** (vulnerable, melee-dangerous).
-- **Attacks:** sweeping **flame-breath laser** (telegraphed line), **falling-ember circles** that bloom, **16-fireball radial** on landing.
-- **Enrage:** breath sweeps faster and **leaves lingering fire walls**.
+### B2 · **Bombardiro Crocodilo** — *wave 10* (aerial bomber)
+*Half-crocodile, half-B-29 bomber.*
+- **Gimmick:** alternates **strafing flight** (hard to hit) and **bombing passes**.
+- **Attacks:** **carpet-bomb lines** (telegraphed AoE circles), **radial 16-bomb burst** on a pass, summons a **Quacodillo escort**.
+- **Enrage:** bombs get denser; calls a **Bombombini Gusini** wingman.
 
-### B3 · **Gravewarden, the Stone Titan** — *wave 15* (tank/puzzle)
-- **Gimmick:** armored core is **invulnerable** — destroy **3 glowing weak-runes** to open a damage window.
-- **Attacks:** **ground-pound shockwave rings** (dash the gaps), **boulders that shatter into shrapnel cones**, floor-crack **radial line-bullets**.
+### B3 · **Tung Tung Tung Sahur** — *wave 15* (rhythm titan)
+*Ominous wooden mallet / bat creature.*
+- **Gimmick:** attacks on a readable **"tung… tung… tung" beat** (the sound telegraphs the timing).
+- **Attacks:** overhead **mallet SLAM → expanding shockwave ring**, sweeping **bat-swing arc of bullets**, ground-pound **radial cracks** (line bullets).
+- **Enrage:** the **rhythm speeds up**.
 
-### B4 · **Mephistros, the Demon Lord** — *wave 20* (pure bullet hell)
-- **Gimmick:** **burning walls divide the arena**, steadily shrinking your safe space.
-- **Attacks:** **two rotating laser beams**, **concentric expanding hex rings**, **3 homing soul-orbs**, **aimed bolt rain**.
-- **Enrage:** adds a **second beam set spinning the opposite way** (weaving curtains).
+### B4 · **La Vaca Saturno Saturnita** — *wave 20* (pure bullet hell)
+*Cosmic cow in a space helmet, orbiting Saturn's rings.*
+- **Gimmick:** the arena-defining bullet-hell boss — spins **Saturn-ring** patterns.
+- **Attacks:** **concentric expanding rings** (weave the gaps), **two counter-rotating spirals**, **homing "milky-way" orbs**, and **gravity pulses** that tug you toward it.
+- **Enrage:** adds a **second ring set spinning the opposite way** (weaving curtains).
 
-### B5 · **The Coven — Three Witch Sisters** — *wave 25, true final* (multi-target)
-- **Gimmick:** 3 sisters; **each alive buffs the others** → **kill order matters**.
-  - **Ember** → fire spirals · **Hex** → curse fields that **briefly reverse your movement** · **Brew** → cauldron bombs + poison clouds.
-- **On each death** survivors **enrage and fuse patterns**; finale = **all-screen poison + converging triple-spiral**.
+### B5 · **Gorillo Watermellondrillo** — *wave 25* (heavy bruiser)
+*Silverback gorilla fused with a watermelon.*
+- **Gimmick:** massive HP; **smashes the arena**.
+- **Attacks:** **chest-pound shockwave**, **hurls watermelons that burst into a 12-seed spread**, ground-slam radial, **rolls across as a watermelon** (line hazard).
+- **Enrage:** seed-spreads become **seed-spirals**.
 
----
-
-## 4. New engine mechanics needed (for real bullet-hell)
-The current engine only has chase / aimed-shot / 3 boss patterns. To support the above, add:
-- **Telegraphs** — warning shape (ring/line) that flashes ~0.6s before AoE/laser.
-- **Lasers / beams** — swept line hazards (rotating angle + width).
-- **Homing bullets** — a `homing` flag that curves toward the player.
-- **Ground zones** — timed AoE tiles (poison/fire/graveyard) with damage-over-time.
-- **Shields / weak points** — directional block + destructible sub-targets.
-- **Splitters & summoners** — on-death spawn (Slime) and timed spawn (Conjurer/Necromancer).
-- **Player status effects** — slow, brief control-reverse, screen-shake — used *sparingly* for fairness.
-- **Shrinking-arena hazards** — moving/expanding walls (Demon Lord).
+### B6 · **Trippi Troppi** — *wave 30, true final* (chaos / glitch)
+*Glitched cat-head on a shrimp body.*
+- **Gimmick:** **GLITCH** — randomly borrows the *other bosses'* patterns; "datamosh" screen telegraphs; **briefly inverts your controls** (used sparingly + fairly).
+- **Attacks:** steals **La Vaca rings**, **Bombardiro bombs**, **Sahur slams** at random; **glitch bullet-walls**; **teleport-blinks**.
+- **Enrage:** cycles patterns faster + spawns **mini glitch-clones**.
 
 ---
 
-## 5. Abilities
-
-Built for survivors-style auto-combat **plus** dense bullet hell — several interact with
-*enemy bullets*, not just enemies. Themed for Verdant Siege; mechanics are theme-agnostic.
-
-### 🗡️ Weapons (change *how* auto-attack works)
-1. **Cinder Bolt** *(default+)* — every 5th shot is a **charged bolt** that pierces all + leaves a fire trail.
-2. **Twin Daggers** — fire **2 bolts in opposite directions** (forward + behind).
-3. **Chain Spark** — hits **arc to 3 nearby enemies**.
-4. **Boomerang Axe** — flies out, **returns through enemies** (hits twice).
-5. **Hunter's Volley** — a **5-arrow spread** that fires when you stand still ~0.5s.
-6. **Holy Lance** — a **piercing beam** in your facing direction (aim by moving).
-7. **Mortar Toss** — **arcing AoE shell** at the densest cluster.
-8. **Frostbrand** — less damage but **slows** enemies hit (stacking → freeze).
-
-### ⚡ Actives (cooldown button / auto-cast)
-9. **Blink Step** — short **teleport-dash through bullets** (i-frames); explosive after-image at origin.
-10. **Aegis Bubble** — **dome that deletes enemy bullets** for 2s + blocks contact.
-11. **Bullet Parry** — dash into fire to **reflect those bullets back** as your damage.
-12. **War Cry** — **knockback shockwave + 30% damage** for 3s.
-13. **Hexbreaker** — cone that **converts enemy bullets into XP shards**.
-14. **Lightning Rod** — plant a stake that **chain-zaps** everything in range for 4s.
-15. **Shadowstep Decoy** — drop a **decoy that draws enemy fire/aggro** for 3s.
-
-### 🛡️ Defensive / survival
-16. **Guardian Wisps** — orbiting orbs that **each eat one enemy bullet** before vanishing, then recharge.
-17. **Second Wind** — on lethal hit, **survive at 1 HP + 1s invuln + bullet clear** (~45s cd).
-18. **Graze Ward** — **near-misses build a meter** → free shield charge.
-19. **Ember Cloak** — taking damage **leaves a fire ring** where you stood.
-20. **Bloodpact** — **lifesteal on kill**, but +10% damage taken.
-
-### 🌀 Passives & meta
-21. **Overcharge** — every 6s your **next shot is a shotgun blast**.
-22. **Ricochet** — non-piercing bolts **bounce once** to a new target.
-23. **Executioner** — enemies **below 15% HP die instantly** to your hits.
-24. **Greed Engine** — picking up gold/souls **briefly boosts fire rate**.
-25. **Slow Field** — **passive aura slows enemy bullets** in range.
-26. **Time Dilation** — when **3+ bullets are near you**, time slows ~25% for a beat.
-
-### 💥 Ultimates / Evolutions *(charge a meter by killing)*
-27. **Meteor** — delayed AoE telegraph nukes a big circle + leaves lava.
-28. **Black Hole** — **pulls all enemies + their bullets** to a point, then detonates.
-29. **Holy Nova** *(evolve Shockwave)* — repeating ring that **clears bullets + damages**.
-30. **Phoenix** — full heal, **3s invuln + flight**, become a fire trail that ignites everything.
-
-### Synergy evolutions (weapon + passive)
-- **Chain Spark + Lightning Rod → Storm Sigil** (permanent arcing field follows you).
-- **Frostbrand + Slow Field → Absolute Zero** (frozen enemies shatter into shrapnel).
-- **Boomerang Axe + Ricochet → Cyclone** (axe orbits you, infinite returns).
-- **Aegis Bubble + Graze Ward → Mirror Dome** (bubble *reflects* the bullets it eats).
+## 5. New engine mechanics needed (for real bullet-hell)
+The current engine has chase / aimed-shot / 3 boss patterns. Add:
+- **Telegraphs** (warning ring/line before AoE/laser) · **AoE ground zones** (poison/cold/slip/lava, timed)
+- **Homing bullets** · **Shockwave rings** · **Shields / invuln states** (turtle, gargoyle-style perch)
+- **Splitters & summoners** (escorts, mini-clones) · **Player status** (slow, slip, brief control-invert — sparing)
+- **Boss phases / enrage** · **Charge-dash line hazards**
 
 ---
 
-## 6. Card Leveling & Evolution (Survivor.io-style)
+## 6. Cards — leveling + evolution (Survivor.io-style, brainrot-flavored)
 
-Cards now have **levels**. Picking the same card again **levels it up** instead of giving a duplicate.
+Cards have **levels**. Re-picking a card **levels it up**. Two classes:
 
 | Class | Levels | Behavior |
 |---|---|---|
-| **Passive** (stat boosts) | Lv 1 → 5 | Each pick stacks the same stat; caps at Lv 5, then leaves the pool. |
-| **Ability** (active/weapon) | Lv 1 → Lv 2 → **EVOLVE** | 1st & 2nd pick strengthen it; the **3rd pick evolves** it into a new card. |
+| **Passive** (stat) | Lv 1 → 5 | stacks the same boost; caps at Lv 5, then leaves the pool |
+| **Ability** | Lv 1 → Lv 2 → **EVOLVE** | 1st & 2nd pick strengthen it; the **3rd pick evolves** it |
 
-> Your rule = **"get 3 → evolution"** applies to Ability cards: Lv1, Lv2, then the 3rd pick transforms it.
+> Your rule = **"get 3 → evolution."**
 
-### Card data shape
-```
-{
-  id, name, icon, class: 'passive' | 'ability', rare?,
-  levels: [ {desc, effect}, {desc, effect}, ... ],   // one entry per level
-  evolve: { name, icon, desc, effect }               // abilities only; granted after max level
-}
-```
-Player tracks `P.cardLevel[id]` (0 = not owned). Picking applies that level's `effect` and
-increments. When an Ability is at its last base level, the next offer shows the **EVOLVE**
-card; taking it grants the evolution and removes the card from the pool.
-
-### Passive cards (Lv 1–5, no evolve)
+### Passive cards (Lv 1–5)
 | Card | Per-level effect |
 |---|---|
-| **Power Up** | +25% damage |
-| **Quick Hands** | +18% fire rate |
-| **Fleet Foot** | +12% move speed |
-| **Big Heart** | +25 max HP + heal |
-| **Magnet** | +40% pickup range |
-| **Sharpshooter** | +10% crit chance |
-| **Quick Dash** | -20% dash cooldown |
+| **Sigma Grindset** | +25% damage |
+| **Hyper Rizz** | +18% fire rate |
+| **Nike Tech Fleece** | +12% move speed |
+| **Grimace Shake** | +25 max HP + heal |
+| **Gyatt Magnet** | +40% pickup range |
+| **Aimbot (Legal)** | +10% crit |
+| **Zoomies** | −20% dash cooldown |
 
 ### Ability cards → Evolutions ("3 = evolve")
 | Card | Lv 1 | Lv 2 | **Lv 3 = EVOLVE →** | Evolved effect |
 |---|---|---|---|---|
-| **Split Shot** | +1 projectile | +1 projectile | **Storm of Blades** | fire a full **ring** of blades around you |
-| **Drill Rounds** | pierce +1 | pierce +1 | **Railgun** | bullets pierce **everything** + fly faster/bigger |
-| **Long Shot** | +25% range | +25% range | **Deadeye** | huge range **+50% damage** |
-| **Support Orb** ✦ | +1 orbiting orb | +1 orb | **Guardian Halo** | extra orb that also **deletes enemy bullets** |
-| **Shockwave** ✦ | blast every 5s | faster + stronger | **Holy Nova** | huge frequent blast that **wipes nearby bullets** |
-| **Lifesteal** ✦ | heal 1/kill | heal 2/kill | **Sanguine Crown** | heal a big chunk per kill |
-| **Frost Field** ✦ | bullets 15% slower | 15% slower | **Absolute Zero** | enemies you hit **freeze solid** |
+| **Fanum Tax** | +1 projectile | +1 projectile | **Full Fanum Tax** | fire a **full ring** of projectiles |
+| **Ohio Drill** | pierce +1 | pierce +1 | **Drill to Ohio** | pierce **everything** + faster/bigger shots |
+| **Sigma Range** | +25% range | +25% range | **Touch-Grass Sniper** | huge range **+50% damage** |
+| **Emotional Support Orb** ✦ | +1 orb | +1 orb | **Sigma Squad** | extra orb that also **deletes enemy bullets** |
+| **Skibidi Blast** ✦ | blast every 5s | faster + stronger | **Skibidi Nuke** | huge frequent blast that **wipes nearby bullets** |
+| **Edging the Grind** ✦ | heal 1/kill | heal 2/kill | **Vampiric Rizz** | heal a big chunk per kill |
+| **Cold as Ohio** ✦ | bullets 15% slower | 15% slower | **Absolute Ohio** | enemies you hit **freeze solid** |
 
-✦ = rare (shows up less often).
-
-### Level-up screen behavior
-On level-up, draw **3 cards** from a candidate list:
-1. For each card, compute its **next move**: next level, the **evolve** card (if a maxed ability),
-   or *nothing* (maxed passive / already evolved → excluded).
-2. Weight the draw: **Evolve = highest weight**, normal medium, rares lower — evolutions reliably
-   appear once unlocked but aren't guaranteed.
-3. Card shows its state: new → name only · owned → **"Lv 2"** tag · ready → gold **"EVOLVE!"**
-   ribbon + gold border (reuses existing rare styling).
-4. If fewer than 3 candidates remain, backfill with still-levelable passives or a small filler.
-
-### Optional: gated evolutions (Vampire-Survivors style)
-Default is simple **"3 stacks = evolve."** For more build depth, evolutions can instead require
-**max base ability + a partner passive at some level**, e.g.:
-- **Storm of Blades** = Split Shot Lv2 **+ Quick Hands Lv3**
-- **Deadeye** = Long Shot Lv2 **+ Sharpshooter Lv3**
-
-Recommendation: ship the simple version first, layer gating on later if desired.
-
-### Balance notes
-- Passives cap at Lv 5 so damage can't stack infinitely; pushes you toward abilities.
-- Evolutions are strong on purpose — getting one should feel like a power spike.
-- Rare abilities appearing less keeps evolutions feeling earned.
-- Maxed/evolved cards leave the pool so later level-ups stay meaningful.
+✦ = rare (rarer in the draw). UI: owned card shows **"Lv 2"**; ready-to-evolve shows a gold
+**"EVOLVE!"** badge + gold border (reuses the existing rare styling). Evolve gets the highest
+draw weight once unlocked; maxed/evolved cards leave the pool.
 
 ---
 
-## 7. Upgrade & pickup re-skin (same effects, Verdant Siege names)
-Whetstone (+dmg) · Adrenaline (+fire rate) · Boots of Haste (+speed) · Twin Daggers (+projectile) ·
-Armor-Piercing (pierce) · **Longbow (+range)** · Iron Heart (+HP) · Loot Charm (magnet) ·
-Eagle Eye (crit) · Blink Step (dash cd) · Guardian Wisp (orb) · **Holy Nova** (shockwave) ·
-Vampiric Edge (lifesteal) · Frost Ward (slow). Pickups: crystals → **soul shards**,
-coin → **gold**, heart → **health potion**.
+## 7. Planned abilities (brainrot-flavored)
+Designed for survivors auto-combat **+** dense bullet hell; several interact with *enemy bullets*.
+
+**Weapons (how your auto-fire works):**
+- **Skibidi Bolt** *(default+)* — every 5th shot is a **charged piercing bolt** w/ a trail.
+- **Twin Fanum Blades** — fire **2 bolts, front + behind**.
+- **Rizz Chain** — hits **arc to 3 nearby enemies**.
+- **Boomerang Crocs** — Tralalero's sneaker **flies out and back** (hits twice).
+- **Auto-Aim Volley** — a **5-shot spread** when you stand still ~0.5s.
+
+**Actives (cooldown / auto):**
+- **Skibidi Blink** — teleport-dash **through bullets** + explosive after-image.
+- **Gyatt Dome** — bubble that **deletes enemy bullets** for 2s.
+- **Mewing Parry** — dash into fire to **reflect bullets back** as damage.
+- **Sigma Black Hole** *(ult)* — **pulls enemies + their bullets** in, then detonates.
+- **Ohio Meteor** *(ult)* — delayed AoE telegraph nukes a big circle + leaves lava.
+- **Phoenix Rizz** *(ult)* — full heal, **3s invuln + flight**, become a fire trail.
+
+**Defensive / passive:**
+- **Sigma Wisps** — orbs that **each eat one enemy bullet** then recharge.
+- **Second Wind** — survive a lethal hit at **1 HP + i-frames + bullet clear** (long cd).
+- **Graze Rizz** — **near-misses build a shield meter**.
+- **Slow Field** — passive aura that **slows enemy bullets** in range.
+- **Executioner** — enemies **under 15% HP die instantly** to your hits.
 
 ---
 
-## 8. Suggested build order
-1. **Content pass** (cheap, big impact): **keep the grass map, fence, and daylight palette**;
-   just add the new monster + boss sprites (and upgrade names) on the *existing* mechanics
-   (chase/shoot + spiral/rings/chaos bosses).
-2. **Card leveling + evolution system** (contained change to `js/game.js` + a little CSS for badges).
-3. **Core new mechanics:** telegraphs, ground zones, lasers, splitters/summoners.
-4. **Elites + bosses 3–5** using those mechanics.
+## 8. Pickups & misc reskin
+- XP crystals → **Rizz Gems** · big crystal → **Sigma Gem** · coin → **Fanum Coins** · heart → **Grimace Shake** (heal).
+- SFX keep the punchy synth; add a **"tung tung tung"** boss drum and meme-y pickup blips.
 
 ---
 
-## 9. Alternative themes (swap-in if you'd rather)
-- 🌊 **Abyssal Tide** — deep-sea: pufferfish radial-spikes, jellyfish drifting curtains,
-  electric eels (lasers), Kraken/Leviathan bosses.
-- ✨ **Fall of the Constellations** — celestial: zodiac star-beasts firing constellation
-  patterns; Sun / Black Hole / Comet / Moon bosses.
+## 9. Suggested build order
+1. **Art + roster pass** (headline): **keep the grass map/fence/palette**; draw the 24 enemies +
+   6 bosses (reference-searched) and wire them onto the *existing* mechanics (chase/shoot + spiral/rings/chaos).
+2. **Card leveling + evolution system** (contained change to `js/game.js` + CSS for badges).
+3. **New mechanics:** telegraphs, AoE zones, shields, summoners, charge-dashes.
+4. **Elites + bosses B3–B6** using those mechanics; then the planned abilities/ults.
+
+---
+
+## 10. Character → role index (all 30)
+| # | Character | Role |
+|---|---|---|
+| 1 | Tralalero Tralala | **BOSS** (speed) |
+| 2 | Bombardiro Crocodilo | **BOSS** (bomber) |
+| 3 | Ballerina Cappuccina | T2 infantry |
+| 4 | Cappuccino Assassino | T2 infantry |
+| 5 | Tung Tung Tung Sahur | **BOSS** (rhythm) |
+| 6 | Brr Brr Patapim | T2 infantry |
+| 7 | Chimpanzini Bananini | T1 fodder |
+| 8 | Bombombini Gusini | T3 caster |
+| 9 | Lirili Larila | T2 infantry |
+| 10 | Trippi Troppi | **BOSS** (glitch final) |
+| 11 | Gorillo Watermellondrillo | **BOSS** (heavy) |
+| 12 | Crocodillo Ananasinno | T3 caster |
+| 13 | Pandaccini Bananini | T5 elite |
+| 14 | Espressona Signora | T3 caster |
+| 15 | Svinino Bombondino | T2 infantry |
+| 16 | Tigrrullini Watermellini | T5 elite |
+| 17 | Penguino Cocosino | T1 fodder |
+| 18 | Orangutini Ananasini | T3 caster |
+| 19 | Capybarelli Bananalelli | T5 elite (support) |
+| 20 | Torrtuginni Dragonfrutinni | T4 heavy |
+| 21 | Frigo Camelo | T4 heavy |
+| 22 | Rhino Toasterino | T4 heavy |
+| 23 | La Vaca Saturno Saturnita | **BOSS** (bullet hell) |
+| 24 | Castori Gangsteri | T2 infantry |
+| 25 | Blueberrinni Octopussini | T3 caster |
+| 26 | Quacodillo Bombardiro | T1 fodder |
+| 27 | Il Cacto Hipopotamo | T4 heavy |
+| 28 | Graipussi Medussi | T3 caster |
+| 29 | Spijuniro Golubiro | T1 fodder |
+| 30 | Flamingulli-gulli-gulli | T1 fodder |
