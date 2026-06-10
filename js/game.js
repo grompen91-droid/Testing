@@ -6,6 +6,9 @@ const P = {}; // player
 let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[];
 let wave=1, score=0, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let combo=0, comboT=0;
+// boss arena: the field locks to a small bounded square a few seconds before the boss arrives
+let arena=null, bossPending=0;
+const ARENA_SIZE=1000, ARENA_LEAD=4, ARENA_ZOOM=1.3;
 
 // global HP scale: enemies have 10x HP and the player does 10x damage, so the
 // numbers are big enough that % upgrades (e.g. +25%) visibly change the damage.
@@ -113,7 +116,7 @@ function startGame(){
   initAudio();
   resetPlayer();
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[];
-  wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0;
+  wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0; arena=null; bossPending=0;
   state=ST.PLAY;
   $('menu').classList.add('hidden');
   $('gameover').classList.add('hidden');
@@ -127,9 +130,20 @@ function startGame(){
 function startWave(){
   betweenWaves=false;
   $('wavetag').textContent = 'WAVE '+wave;
-  if(wave % 5 === 0){ spawnBoss(); waveEnemiesLeft = 0; }
+  if(wave % 5 === 0){ startBossArena(); waveEnemiesLeft = 0; }
   else { waveEnemiesLeft = 7 + wave*3; spawnTimer = 0; }
   bigText(wave%5===0 ? 'BOSS WAVE' : 'WAVE '+wave, wave%5===0?'#e54d4d':'#ffe08a');
+}
+
+// lock the field into a small bounded arena around the player; boss arrives after a delay
+function startBossArena(){
+  const half = ARENA_SIZE/2;
+  const cxw = clamp(P.x, WALL+half, WORLD.w-WALL-half);
+  const cyw = clamp(P.y, WALL+half, WORLD.h-WALL-half);
+  arena = { x:cxw-half, y:cyw-half, w:ARENA_SIZE, h:ARENA_SIZE };
+  setZoom(clamp(ARENA_ZOOM, ZMIN, ZMAX));   // auto zoom-in (player can still re-zoom)
+  bossPending = ARENA_LEAD;
+  const bw=$('bosswarn'); bw.textContent='⚠ BOSS INCOMING ⚠'; bw.classList.remove('hidden');
 }
 
 function ringPos(){ // spawn point on a ring around player, clamped to world
@@ -141,7 +155,7 @@ function ringPos(){ // spawn point on a ring around player, clamped to world
 function spawnBoss(){
   const def = BOSSES[(Math.floor(wave/5)-1) % BOSSES.length];
   const mult = 1 + (wave-5)*0.22;
-  const p = ringPos();
+  const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
   boss = {
     spr:def.spr, name:def.name, pattern:def.pattern,
     x:p.x, y:p.y, r:def.r,
@@ -153,7 +167,7 @@ function spawnBoss(){
   $('bossname').textContent = boss.name;
   $('bossfill').style.width = '100%';
   $('bossbar').classList.remove('hidden');
-  const bw=$('bosswarn'); bw.classList.remove('hidden');
+  const bw=$('bosswarn'); bw.textContent='⚠ BOSS ⚠'; bw.classList.remove('hidden');
   setTimeout(()=>bw.classList.add('hidden'), 1700);
 }
 
@@ -253,6 +267,7 @@ function openLevelUp(){
 // ============ DEATH ============
 function gameOver(){
   state = ST.OVER;
+  arena=null; bossPending=0;
   sfx.die();
   shake = 22; hitstop = 0.12;
   const best = Math.max(score, +(localStorage.getItem('brainrot_best')||0));
@@ -296,6 +311,7 @@ function comboMult(){ return 1 + Math.floor(combo/5)*0.5; }
 function update(dt){
   elapsed += dt;
   if(comboT>0){ comboT-=dt; if(comboT<=0){ combo=0; $('combotag').style.opacity='0'; } }
+  if(bossPending>0){ bossPending-=dt; if(bossPending<=0){ bossPending=0; spawnBoss(); } }
 
   // --- player move ---
   let mx=joy.dx, my=joy.dy;
@@ -316,6 +332,7 @@ function update(dt){
   }
   P.x = clamp(P.x, WALL+P.r, WORLD.w-WALL-P.r);
   P.y = clamp(P.y, WALL+P.r, WORLD.h-WALL-P.r);
+  if(arena){ P.x=clamp(P.x, arena.x+P.r, arena.x+arena.w-P.r); P.y=clamp(P.y, arena.y+P.r, arena.y+arena.h-P.r); }
   if(P.inv>0) P.inv-=dt;
   if(P.slowT>0) P.slowT-=dt;
   if(P.dashCd>0){ P.dashCd-=dt; $('dashbtn').classList.toggle('cool', P.dashCd>0); }
@@ -441,6 +458,7 @@ function update(dt){
         e.face = Math.cos(a)>=0 ? 1 : -1;
       }
       e.x = clamp(e.x, WALL, WORLD.w-WALL); e.y = clamp(e.y, WALL, WORLD.h-WALL);
+      if(arena){ e.x=clamp(e.x, arena.x+e.r, arena.x+arena.w-e.r); e.y=clamp(e.y, arena.y+e.r, arena.y+arena.h-e.r); }
       if(wave>=3 && e.iv<=0){
         if(e.shoot){
           e.shootCd -= dt;
@@ -477,7 +495,7 @@ function update(dt){
       burst(e.x,e.y,'#ff9f3a',e.isBoss?60:14,e.isBoss?420:200);
       if(P.vamp>0){ P.hp=Math.min(P.maxHp,P.hp+P.vamp); }
       if(e.isBoss){
-        boss=null;
+        boss=null; arena=null;       // open the field back up
         $('bossbar').classList.add('hidden');
         bigText('BOSS DOWN','#4aa3df');
         for(let g=0; g<14; g++) gems.push({x:e.x+rand(-40,40),y:e.y+rand(-40,40),v:3,t:rand(0,6)});
@@ -493,8 +511,8 @@ function update(dt){
     }
   }
 
-  // wave cleared?
-  if(!betweenWaves && waveEnemiesLeft===0 && enemies.length===0){
+  // wave cleared? (not while the boss is still incoming)
+  if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0){
     betweenWaves=true;
     const bonus=wave*50; score+=bonus;
     bigText('WAVE CLEARED +'+bonus,'#5fbf52');
@@ -602,6 +620,7 @@ function updateBoss(e,dt){
     e.x += (tx-e.x)*0.9*dt; e.y += (ty-e.y)*0.9*dt;
   }
   e.x = clamp(e.x, WALL+e.r, WORLD.w-WALL-e.r); e.y = clamp(e.y, WALL+e.r, WORLD.h-WALL-e.r);
+  if(arena){ e.x=clamp(e.x, arena.x+e.r, arena.x+arena.w-e.r); e.y=clamp(e.y, arena.y+e.r, arena.y+arena.h-e.r); }
 
   const rage = e.enraged ? 0.6 : 1;
   if(e.pattern==='spiral'){
@@ -786,6 +805,8 @@ function render(){
   }
   cx.globalAlpha=1;
 
+  renderArena(vx0,vy0,vx1,vy1);
+
   cx.restore(); // back to screen space
 
   // joystick (screen space)
@@ -821,6 +842,26 @@ function drawBorder(vx0,vy0,vx1,vy1){
   if(vx1 > WORLD.w-WALL-10){ for(let y=Math.max(WALL,Math.floor(vy0/postEvery)*postEvery); y<Math.min(WORLD.h-WALL,vy1); y+=postEvery){ post(WORLD.w-WALL+6,y); } cx.beginPath(); cx.moveTo(WORLD.w-WALL+4,Math.max(0,vy0)); cx.lineTo(WORLD.w-WALL+4,Math.min(WORLD.h,vy1)); cx.stroke(); }
 }
 function post(x,y){ cx.fillStyle='#9a6b3d'; cx.fillRect(x-5,y-14,10,28); cx.strokeStyle='#5a3a20'; cx.lineWidth=2.5; cx.strokeRect(x-5,y-14,10,28); }
+
+function renderArena(vx0,vy0,vx1,vy1){
+  if(!arena) return;
+  const a=arena;
+  // dim the locked-out area outside the arena
+  cx.fillStyle='rgba(24,6,6,0.5)';
+  if(vx0 < a.x)       cx.fillRect(vx0-40, vy0-40, a.x-(vx0-40), (vy1-vy0)+80);
+  if(vx1 > a.x+a.w)   cx.fillRect(a.x+a.w, vy0-40, (vx1+40)-(a.x+a.w), (vy1-vy0)+80);
+  const ix0=Math.max(vx0-40,a.x), iw=Math.min(vx1+40,a.x+a.w)-ix0;
+  if(iw>0){
+    if(vy0 < a.y)     cx.fillRect(ix0, vy0-40, iw, a.y-(vy0-40));
+    if(vy1 > a.y+a.h) cx.fillRect(ix0, a.y+a.h, iw, (vy1+40)-(a.y+a.h));
+  }
+  // bright-red striped (dashed) border, animated
+  cx.save();
+  cx.lineWidth=7; cx.setLineDash([24,16]); cx.lineDashOffset=-elapsed*60;
+  cx.strokeStyle='#ff2a2a'; cx.strokeRect(a.x, a.y, a.w, a.h);
+  cx.setLineDash([]); cx.lineWidth=2; cx.strokeStyle='rgba(255,90,90,0.6)'; cx.strokeRect(a.x, a.y, a.w, a.h);
+  cx.restore();
+}
 
 function renderZones(){
   for(const z of zones){
