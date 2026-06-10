@@ -937,6 +937,16 @@ $('charimg').src = SP['player'].toDataURL();
 $('goldicon').src = SP['coin'].toDataURL();
 $('goldtxt').textContent = gold;
 $('besttxt').textContent = +(localStorage.getItem('brainrot_best')||0);
+// mute toggle (saved)
+function refreshMute(){ $('mutebtn').textContent = muted ? '🔇' : '🔊'; }
+$('mutebtn').addEventListener('click', ()=>{
+  initAudio();
+  muted = !muted; localStorage.setItem('br_muted', muted?'1':'0');
+  if(!muted && AC) AC.resume();
+  if(!muted && state===ST.MENU && !musicName) playMusic('menu');
+  refreshMute();
+});
+refreshMute();
 setInterval(()=>{
   if(state===ST.MENU && enemies.length<6){ spawnEnemy(); const e=enemies[enemies.length-1]; e.sp=0; }
 }, 700);
