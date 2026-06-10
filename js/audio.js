@@ -1,9 +1,10 @@
 'use strict';
 // ============ AUDIO (tiny synth, no assets) ============
 let AC = null;
+let muted = localStorage.getItem('br_muted')==='1';
 function initAudio(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC && AC.state==='suspended') AC.resume(); }
 function beep(freq, dur, type='square', vol=0.05, slide=0){
-  if(!AC) return;
+  if(!AC || muted) return;
   try{
     const o=AC.createOscillator(), g=AC.createGain();
     o.type=type; o.frequency.value=freq;
@@ -30,51 +31,62 @@ const sfx = {
   win:   ()=>{ [392,523,659,784].forEach((f,i)=>setTimeout(()=>beep(f,0.14,'triangle',0.06),i*70)); }
 };
 
-// ============ MUSIC (procedural chiptune loops, no audio assets) ============
-const N = {
-  E2:82.41,F2:87.31,G2:98.00,A2:110.00,B2:123.47,
-  C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,B3:246.94,
-  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,
-  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00
-}, _=0;
-const TRACKS = {
-  menu:  { bpm:92,  lt:'triangle', bt:'sine',     lv:0.045, bv:0.05,
-    lead:[N.C5,_,N.E5,_, N.G5,_,N.E5,_, N.A4,_,N.C5,_, N.E5,_,N.D5,_],
-    bass:[N.C3,_,_,_, N.G3,_,_,_, N.A3,_,_,_, N.F3,_,_,_] },
-  game:  { bpm:126, lt:'square',   bt:'triangle', lv:0.036, bv:0.05,
-    lead:[_,_,N.C5,_, _,_,N.A4,_, _,_,N.F4,_, _,N.G4,N.D5,_],
-    bass:[N.C3,N.C3,N.G3,N.C3, N.A2,N.A3,N.E3,N.A3, N.F3,N.F3,N.C4,N.F3, N.G3,N.G3,N.D3,N.G3] },
-  boss0: { bpm:142, lt:'square',   bt:'sawtooth', lv:0.04,  bv:0.045,
-    lead:[N.A4,N.C5,N.E5,N.C5, N.F4,N.A4,N.C5,N.A4, N.G4,N.B4,N.D5,N.B4, N.E4,N.G4,N.B4,N.G4],
-    bass:[N.A2,N.A2,N.A2,N.A2, N.F2,N.F2,N.F2,N.F2, N.G2,N.G2,N.G2,N.G2, N.E2,N.E2,N.E2,N.E2] },
-  boss1: { bpm:152, lt:'sawtooth', bt:'square',   lv:0.032, bv:0.045,
-    lead:[N.D5,N.F5,N.D5,N.A4, N.C5,N.E5,N.C5,N.G4, N.B4,N.D5,N.B4,N.F4, N.A4,N.C5,N.E5,N.A5],
-    bass:[N.D3,N.A2,N.D3,N.A2, N.C3,N.G2,N.C3,N.G2, N.B2,N.F2,N.B2,N.F2, N.A2,N.E2,N.A2,N.E2] },
-  boss2: { bpm:118, lt:'square',   bt:'sawtooth', lv:0.04,  bv:0.05,
-    lead:[N.E5,_,N.D5,N.C5, _,N.B4,_,N.C5, N.A4,_,N.G4,_, N.A4,_,_,_],
-    bass:[N.A2,_,N.A2,_, N.A2,_,N.G2,_, N.F2,_,N.F2,_, N.E2,_,N.E2,_] }
-};
-let musicTimer=null, musicTrack=null, musicStep=0;
-function mNote(freq,dur,type,vol){
-  if(!AC||!freq) return;
+// ============ MUSIC (procedural: drums + bass over a long chord bed, melody generated live) ============
+function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
+function mNote(m, dur, type, vol){           // m = MIDI note number
+  if(!AC || muted || m==null) return;
   try{
     const o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime;
-    o.type=type; o.frequency.value=freq;
+    o.type=type; o.frequency.value=mtof(m);
     g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+dur+0.03);
   }catch(e){}
 }
+function mKick(){ if(!AC||muted) return; try{ const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+  o.type='sine'; o.frequency.setValueAtTime(135,t); o.frequency.exponentialRampToValueAtTime(45,t+0.12);
+  g.gain.setValueAtTime(0.13,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.16); o.connect(g);g.connect(AC.destination); o.start(t);o.stop(t+0.18);}catch(e){} }
+function mNoise(dur,vol,hp){ if(!AC||muted) return; try{ const n=Math.max(1,Math.floor(AC.sampleRate*dur)), b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1; const s=AC.createBufferSource(); s.buffer=b;
+  const f=AC.createBiquadFilter(); f.type=hp?'highpass':'bandpass'; f.frequency.value=hp?7000:1800;
+  const g=AC.createGain(),t=AC.currentTime; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  s.connect(f);f.connect(g);g.connect(AC.destination); s.start(t);s.stop(t+dur+0.02);}catch(e){} }
+
+// prog = chord roots in MIDI, one per bar; scale = melody note offsets from the root
+const TRACKS = {
+  menu:  { bpm:96,  density:0.26, drums:false, lt:'triangle', bt:'sine',     lv:0.05,  bv:0.055, scale:[0,2,4,7,9],
+           prog:[57,57,62,62, 60,60,55,55, 53,53,57,57, 55,55,52,52] },
+  game:  { bpm:128, density:0.36, drums:true,  lt:'square',   bt:'triangle', lv:0.042, bv:0.05,  scale:[0,3,5,7,10],
+           prog:[57,57,53,53, 55,55,52,52, 57,57,60,60, 55,55,52,52,   50,50,53,53, 55,55,57,57, 53,53,52,52, 55,55,55,55] },
+  boss0: { bpm:144, density:0.50, drums:true,  lt:'square',   bt:'sawtooth', lv:0.04,  bv:0.05,  scale:[0,1,3,5,7,8,10],
+           prog:[45,45,41,41, 43,43,40,40, 45,45,48,48, 43,41,40,40] },
+  boss1: { bpm:154, density:0.55, drums:true,  lt:'sawtooth', bt:'square',   lv:0.036, bv:0.05,  scale:[0,2,3,5,7,8,10],
+           prog:[50,50,48,48, 46,46,45,45, 50,53,48,46, 45,43,45,45] },
+  boss2: { bpm:120, density:0.42, drums:true,  lt:'square',   bt:'sawtooth', lv:0.044, bv:0.055, scale:[0,3,5,6,7,10],
+           prog:[45,45,45,45, 41,41,43,43, 44,44,40,40, 45,43,41,40] }
+};
+let musicTimer=null, musicName=null, musicStep=0;
 function playMusic(name){
-  if(musicTrack===name) return;
+  if(musicName===name) return;
   stopMusic();
-  const tr=TRACKS[name]; if(!AC||!tr) return;
-  musicTrack=name; musicStep=0;
-  const stepMs=60000/tr.bpm/2, sl=stepMs/1000;   // 8th-note steps
+  const t=TRACKS[name]; if(!AC||!t) return;
+  musicName=name; musicStep=0;
+  const stepMs=60000/t.bpm/4, sd=stepMs/1000;   // 16th-note steps, 16 per bar
   musicTimer=setInterval(()=>{
-    mNote(tr.lead[musicStep%tr.lead.length], sl*0.9,  tr.lt, tr.lv);
-    mNote(tr.bass[musicStep%tr.bass.length], sl*0.95, tr.bt, tr.bv);
+    const sib=musicStep%16, bar=Math.floor(musicStep/16), root=t.prog[bar%t.prog.length];
+    if(t.drums){
+      if(sib%8===0) mKick();
+      if(sib===4||sib===12) mNoise(0.14,0.05,false);   // snare
+      if(sib%2===0) mNoise(0.025,0.017,true);          // hat
+    }
+    if(sib%4===0) mNote(root-12, sd*3.4, t.bt, t.bv);                              // bass root
+    else if(sib%4===2 && Math.random()<0.5) mNote(root-5, sd*1.4, t.bt, t.bv*0.8);// passing 5th
+    if(Math.random()<t.density){                                                  // live-generated melody
+      const deg=t.scale[Math.floor(Math.random()*t.scale.length)];
+      const oct=12*(Math.random()<0.55?1:2);
+      mNote(root+deg+oct, sd*(Math.random()<0.28?2:1)*0.9, t.lt, t.lv*(0.8+Math.random()*0.4));
+    }
     musicStep++;
   }, stepMs);
 }
-function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } musicTrack=null; }
+function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } musicName=null; }
