@@ -7,19 +7,45 @@ let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[];
 let wave=1, score=0, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let combo=0, comboT=0;
 
-// ---- enemy archetypes (the brainrot bestiary) ----
+// ---- enemy archetypes: the Italian Brainrot bestiary (ordered easy -> hard) ----
 const FOES = [
-  { spr:'skibidi',   name:'skibidi',    hp:3,  sp:58,  r:18, xp:1, score:10, shooter:false },
-  { spr:'cappuccino',name:'cappuccino', hp:2,  sp:98,  r:15, xp:1, score:15, shooter:false },
-  { spr:'crocodilo', name:'crocodilo',  hp:5,  sp:70,  r:19, xp:2, score:25, shooter:true  },
-  { spr:'tralalero', name:'tralalero',  hp:7,  sp:80,  r:20, xp:3, score:35, shooter:false },
-  { spr:'patapim',   name:'patapim',    hp:13, sp:40,  r:23, xp:4, score:50, shooter:true  },
-  { spr:'lirili',    name:'lirili',     hp:20, sp:32,  r:26, xp:5, score:70, shooter:true  },
+  // Tier I — fodder
+  { spr:'pigeon',   name:'Spijuniro',     hp:3,  sp:80, r:15, xp:1, score:10 },
+  { spr:'chimp',    name:'Chimpanzini',   hp:3,  sp:86, r:16, xp:1, score:12 },
+  { spr:'penguin',  name:'Penguino',      hp:4,  sp:60, r:16, xp:1, score:12 },
+  { spr:'flamingo', name:'Flamingulli',   hp:3,  sp:82, r:16, xp:1, score:12 },
+  { spr:'duck',     name:'Quacodillo',    hp:3,  sp:72, r:15, xp:1, score:14, death:{type:'ring',n:4} },
+  // Tier II — infantry
+  { spr:'cappuccino',name:'Cappuccino Assassino', hp:5, sp:90, r:15, xp:2, score:18, shoot:{type:'aim',n:1,cd:2.6,spd:175} },
+  { spr:'ballerina', name:'Ballerina Cappuccina', hp:5, sp:64, r:16, xp:2, score:18, shoot:{type:'ring',n:6,cd:3.2,spd:120,col:'#c98a4f'} },
+  { spr:'candypig',  name:'Svinino',       hp:6,  sp:70, r:16, xp:2, score:18, shoot:{type:'aim',n:1,cd:2.8,spd:130,col:'#f06fa8'} },
+  { spr:'beaver',    name:'Castori Gangsteri', hp:7, sp:62, r:17, xp:2, score:22, shoot:{type:'aim',n:3,cd:2.4,spd:175,col:'#caa12f'} },
+  { spr:'lirili',    name:'Lirili Larila', hp:13, sp:40, r:22, xp:3, score:30, shoot:{type:'aim',n:3,cd:3.0,spd:130,col:'#6b9233'} },
+  { spr:'patapim',   name:'Brr Brr Patapim', hp:12, sp:44, r:21, xp:3, score:28, shoot:{type:'aim',n:2,cd:3.2,spd:120,col:'#9c6b3f'} },
+  // Tier III — casters
+  { spr:'pinecroc',  name:'Crocodillo Ananasinno', hp:8, sp:66, r:19, xp:3, score:28, shoot:{type:'aim',n:3,cd:2.8,spd:150,col:'#e0b400'} },
+  { spr:'goose',     name:'Bombombini',    hp:8,  sp:74, r:18, xp:3, score:30, shoot:{type:'aim',n:3,cd:2.6,spd:150,col:'#e58a3a'} },
+  { spr:'octopus',   name:'Blueberrinni',  hp:9,  sp:50, r:19, xp:3, score:30, shoot:{type:'ring',n:8,cd:3.0,spd:120,col:'#5b6cf0'} },
+  { spr:'jelly',     name:'Graipussi Medussi', hp:8, sp:46, r:19, xp:3, score:30, shoot:{type:'ring',n:6,cd:2.8,spd:95,col:'#d36fb0'} },
+  { spr:'espresso',  name:'Espressona Signora', hp:9, sp:58, r:17, xp:3, score:32, shoot:{type:'ring',n:5,cd:2.2,spd:130,col:'#5b3a22'} },
+  { spr:'orangutan', name:'Orangutini',    hp:10, sp:54, r:20, xp:4, score:34, shoot:{type:'aim',n:1,cd:2.4,spd:140,col:'#e0b400'} },
+  // Tier IV — heavies
+  { spr:'rhino',     name:'Rhino Toasterino', hp:18, sp:42, r:23, xp:4, score:45, shoot:{type:'aim',n:2,cd:3.0,spd:140,col:'#caa12f'} },
+  { spr:'camel',     name:'Frigo Camelo',  hp:20, sp:38, r:24, xp:5, score:50, shoot:{type:'aim',n:5,cd:3.4,spd:120,col:'#9fd0ff'} },
+  { spr:'hippo',     name:'Il Cacto Hipopotamo', hp:22, sp:34, r:25, xp:5, score:55, shoot:{type:'ring',n:8,cd:3.4,spd:120,col:'#6b9233'} },
+  { spr:'turtle',    name:'Torrtuginni',   hp:26, sp:30, r:24, xp:5, score:55 },
+  // Tier V — elites
+  { spr:'panda',     name:'Pandaccini',    hp:14, sp:58, r:20, xp:4, score:40 },
+  { spr:'tiger',     name:'Tigrrullini',   hp:14, sp:76, r:20, xp:4, score:44, shoot:{type:'aim',n:5,cd:3.0,spd:155,col:'#e54d4d'} },
+  { spr:'capy',      name:'Capybarelli',   hp:16, sp:46, r:21, xp:5, score:48 },
 ];
 const BOSSES = [
-  { spr:'skibidi',   name:'SKIBIDI TITAN', hp:140, r:54, pattern:'spiral', tint:'#f4f5f9' },
-  { spr:'tralalero', name:'TRALALERO BOSS',hp:220, r:56, pattern:'rings',  tint:'#3f9bd6' },
-  { spr:'crocodilo', name:'BOMBARDIRO',    hp:320, r:58, pattern:'chaos',  tint:'#5f9e4a' },
+  { spr:'tralalero', name:'TRALALERO TRALALA',        hp:150, r:54, pattern:'spiral' },
+  { spr:'crocodilo', name:'BOMBARDIRO CROCODILO',     hp:230, r:56, pattern:'rings'  },
+  { spr:'sahur',     name:'TUNG TUNG TUNG SAHUR',     hp:300, r:58, pattern:'chaos'  },
+  { spr:'vaca',      name:'LA VACA SATURNO',          hp:380, r:58, pattern:'rings'  },
+  { spr:'gorillo',   name:'GORILLO WATERMELLONDRILLO',hp:460, r:62, pattern:'chaos'  },
+  { spr:'trippi',    name:'TRIPPI TROPPI',            hp:560, r:56, pattern:'spiral' },
 ];
 
 // ---- upgrade pool (icon = sprite used as little asset) ----
@@ -35,7 +61,7 @@ const UPGRADES = [
   { id:'crit',   name:'Sharpshooter', desc:'+15% crit (crits hit 3x).',     icon:'coin',     f:()=>P.crit+=0.15 },
   { id:'dash',   name:'Quick Dash',   desc:'dash recharges 30% faster.',    icon:'tralalero',f:()=>P.dashMax*=0.7 },
   { id:'orbit',  name:'Support Orb',  desc:'+1 orbiting orb, damages on touch.', icon:'gembig', f:()=>P.orbs+=1, rare:true },
-  { id:'nova',   name:'Shockwave',    desc:'every 5s: blast nearby enemies.',icon:'skibidi', f:()=>P.nova=true, once:true, rare:true },
+  { id:'nova',   name:'Skibidi Blast', desc:'every 5s: blast nearby enemies.',icon:'gembig', f:()=>P.nova=true, once:true, rare:true },
   { id:'vamp',   name:'Lifesteal',    desc:'heal 1 HP per kill.',           icon:'heart',    f:()=>P.vamp+=1, rare:true },
   { id:'slow',   name:'Frost Field',  desc:'enemy bullets 20% slower.',     icon:'gem',      f:()=>P.bslow*=0.8, rare:true },
 ];
@@ -102,8 +128,8 @@ function spawnEnemy(){
   enemies.push({
     spr:def.spr, name:def.name, x:p.x, y:p.y, r:def.r,
     hp:def.hp*hpMult, maxHp:def.hp*hpMult,
-    sp:def.sp*(1+wave*0.02), xp:def.xp, score:def.score, shooter:def.shooter,
-    t:rand(0,TAU), wob:rand(2,4), shootCd:rand(2,5), isBoss:false, hitT:0, sq:0, face:1
+    sp:def.sp*(1+wave*0.02), xp:def.xp, score:def.score, shoot:def.shoot, death:def.death,
+    t:rand(0,TAU), wob:rand(2,4), shootCd:rand(1.5,4), isBoss:false, hitT:0, sq:0, face:1
   });
 }
 
@@ -318,11 +344,18 @@ function update(dt){
       e.y += Math.sin(a)*e.sp*dt;
       e.face = Math.cos(a)>=0 ? 1 : -1;
       e.x = clamp(e.x, WALL, WORLD.w-WALL); e.y = clamp(e.y, WALL, WORLD.h-WALL);
-      if(wave>=3 && e.shooter){
+      if(wave>=3 && e.shoot){
         e.shootCd -= dt;
         if(e.shootCd<=0){
-          e.shootCd = rand(2.5,4.5);
-          fireEB(e.x,e.y,Math.atan2(P.y-e.y,P.x-e.x),140,'#e23b3b');
+          e.shootCd = e.shoot.cd || rand(2.5,4.5);
+          const spd = e.shoot.spd||140, col = e.shoot.col||'#e23b3b';
+          if(e.shoot.type==='ring'){
+            const n=e.shoot.n||8, off=rand(0,TAU);
+            for(let k=0;k<n;k++) fireEB(e.x,e.y, off+k*TAU/n, spd, col);
+          } else { // aimed fan
+            const n=e.shoot.n||1, aim=Math.atan2(P.y-e.y,P.x-e.x);
+            for(let k=0;k<n;k++) fireEB(e.x,e.y, aim+(k-(n-1)/2)*0.18, spd, col);
+          }
         }
       }
     }
@@ -345,6 +378,7 @@ function update(dt){
         for(let g=0; g<8; g++) gems.push({x:e.x+rand(-50,50),y:e.y+rand(-50,50),coin:true,t:rand(0,6)});
         ebullets=[];
       } else {
+        if(e.death && e.death.type==='ring'){ const n=e.death.n||4; for(let k=0;k<n;k++) fireEB(e.x,e.y,k*TAU/n,150,'#e58a3a'); }
         for(let g=0; g<e.xp; g++) gems.push({x:e.x+rand(-10,10),y:e.y+rand(-10,10),v:1,t:rand(0,6)});
         if(Math.random()<0.12) gems.push({x:e.x,y:e.y,coin:true,t:0});
         if(Math.random()<0.025) gems.push({x:e.x,y:e.y,heart:true,t:0});
