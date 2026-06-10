@@ -40,3 +40,18 @@ Vanilla JS + Canvas 2D. All characters and pickups are **code-drawn vector sprit
 pre-rendered to offscreen canvases (no emoji, no external image files). Web Audio synth
 sound effects (no audio assets). Clean flat cel-shaded daylight art — no glow/bloom.
 `localStorage` high score, haptic feedback on hit where supported.
+
+## Project structure
+
+No build step — open `index.html` directly or host it statically. The code is split
+into plain (non-module) files so they still run from `file://`:
+
+```
+index.html      markup + script/style links
+styles.css      all styling
+js/core.js      canvas setup, shared helpers, world/camera/zoom, game-state flag
+js/audio.js     Web Audio synth + sound effects
+js/sprites.js   sprite factory + every character/pickup sprite
+js/input.js     joystick, dash, zoom, drag/right-click guards
+js/game.js      entities, upgrades, update/render loop, minimap, init
+```
