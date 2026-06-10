@@ -7,6 +7,9 @@ let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[];
 let wave=1, score=0, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let combo=0, comboT=0;
 
+// global HP scale: enemies have 10x HP and the player does 10x damage, so the
+// numbers are big enough that % upgrades (e.g. +25%) visibly change the damage.
+const HP_MULT = 10;
 // ---- enemy archetypes: the Italian Brainrot bestiary (ordered easy -> hard) ----
 const FOES = [
   // Tier I — fodder
@@ -98,7 +101,7 @@ function nextMove(u){
 function resetPlayer(){
   Object.assign(P, {
     x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:200,
-    dmg:1, fireRate:0.32, fireCd:0, shots:1, pierce:0, range:330,
+    dmg:10, fireRate:0.32, fireCd:0, shots:1, pierce:0, range:330,
     magnet:90, crit:0.05, orbs:0, orbA:0, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
     vamp:0, bslow:1, lv:1, xp:0, xpNext:5, inv:0, up:{}, slowT:0,
     face:0, walk:0, dashCd:0, dashMax:2.2, dashT:0, dvx:0, dvy:0,
@@ -142,7 +145,7 @@ function spawnBoss(){
   boss = {
     spr:def.spr, name:def.name, pattern:def.pattern,
     x:p.x, y:p.y, r:def.r,
-    hp:def.hp*mult, maxHp:def.hp*mult,
+    hp:def.hp*HP_MULT*mult, maxHp:def.hp*HP_MULT*mult,
     t:0, phase:0, isBoss:true, sp:46, xp:0, score:500, hitT:0, sq:0
   };
   enemies.push(boss);
@@ -161,7 +164,7 @@ function spawnEnemy(){
   const hpMult = 1 + (wave-1)*0.16;
   enemies.push({
     spr:def.spr, name:def.name, x:p.x, y:p.y, r:def.r,
-    hp:def.hp*hpMult, maxHp:def.hp*hpMult,
+    hp:def.hp*HP_MULT*hpMult, maxHp:def.hp*HP_MULT*hpMult,
     sp:def.sp*(1+wave*0.02), xp:def.xp, score:def.score, shoot:def.shoot, death:def.death,
     aoe:def.aoe, aoeCd:rand(1.5,3),
     dash:def.dash, dst:'idle', dcd:rand(2,4), da:0, dwin:0, ddur:0,
