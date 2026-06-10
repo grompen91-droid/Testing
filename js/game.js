@@ -48,31 +48,61 @@ const BOSSES = [
   { spr:'trippi',    name:'TRIPPI TROPPI',            hp:560, r:56, pattern:'spiral' },
 ];
 
-// ---- upgrade pool (icon = sprite used as little asset) ----
+// ---- card pool: passives level to a cap; abilities level x2 then EVOLVE on the 3rd pick ----
 const UPGRADES = [
-  { id:'dmg',    name:'Power Up',     desc:'+30% damage.',                  icon:'coin',     f:()=>P.dmg*=1.3 },
-  { id:'rate',   name:'Quick Hands',  desc:'+25% fire rate.',               icon:'gem',      f:()=>P.fireRate*=0.78 },
-  { id:'speed',  name:'Fleet Foot',   desc:'+18% move speed.',              icon:'heart',    f:()=>P.speed*=1.18 },
-  { id:'multi',  name:'Split Shot',   desc:'+1 projectile.',                icon:'gembig',   f:()=>P.shots+=1 },
-  { id:'pierce', name:'Drill Rounds', desc:'bullets pierce +1 enemy.',      icon:'crocodilo',f:()=>P.pierce+=1 },
-  { id:'range',  name:'Long Shot',    desc:'+25% shot range.',              icon:'gembig',   f:()=>P.range*=1.25 },
-  { id:'hp',     name:'Big Heart',    desc:'+30 max HP and full heal.',     icon:'heart',    f:()=>{ P.maxHp+=30; P.hp=P.maxHp; } },
-  { id:'magnet', name:'Magnet',       desc:'+60% pickup range.',            icon:'gem',      f:()=>P.magnet*=1.6 },
-  { id:'crit',   name:'Sharpshooter', desc:'+15% crit (crits hit 3x).',     icon:'coin',     f:()=>P.crit+=0.15 },
-  { id:'dash',   name:'Quick Dash',   desc:'dash recharges 30% faster.',    icon:'tralalero',f:()=>P.dashMax*=0.7 },
-  { id:'orbit',  name:'Support Orb',  desc:'+1 orbiting orb, damages on touch.', icon:'gembig', f:()=>P.orbs+=1, rare:true },
-  { id:'nova',   name:'Skibidi Blast', desc:'every 5s: blast nearby enemies.',icon:'gembig', f:()=>P.nova=true, once:true, rare:true },
-  { id:'vamp',   name:'Lifesteal',    desc:'heal 1 HP per kill.',           icon:'heart',    f:()=>P.vamp+=1, rare:true },
-  { id:'slow',   name:'Frost Field',  desc:'enemy bullets 20% slower.',     icon:'gem',      f:()=>P.bslow*=0.8, rare:true },
+  // passives (Lv 1-5)
+  { id:'dmg',    name:'Sigma Grindset',  icon:'coin',     cap:5, steps:[{desc:'+25% damage.',          f:()=>P.dmg*=1.25}] },
+  { id:'rate',   name:'Hyper Rizz',      icon:'gem',      cap:5, steps:[{desc:'+18% fire rate.',       f:()=>P.fireRate*=0.82}] },
+  { id:'speed',  name:'Nike Tech Fleece',icon:'heart',    cap:5, steps:[{desc:'+12% move speed.',      f:()=>P.speed*=1.12}] },
+  { id:'hp',     name:'Grimace Shake',   icon:'heart',    cap:5, steps:[{desc:'+25 max HP, full heal.',f:()=>{P.maxHp+=25;P.hp=P.maxHp;}}] },
+  { id:'magnet', name:'Gyatt Magnet',    icon:'gem',      cap:5, steps:[{desc:'+40% pickup range.',    f:()=>P.magnet*=1.4}] },
+  { id:'crit',   name:'Aimbot (Legal)',  icon:'coin',     cap:5, steps:[{desc:'+10% crit chance.',     f:()=>P.crit=Math.min(0.8,P.crit+0.10)}] },
+  { id:'dashcd', name:'Zoomies',         icon:'tralalero',cap:5, steps:[{desc:'dash cooldown -20%.',   f:()=>P.dashMax*=0.8}] },
+
+  // abilities (Lv1, Lv2, then EVOLVE)
+  { id:'multi', name:'Fanum Tax', icon:'gembig',
+    steps:[{desc:'+1 projectile.',f:()=>P.shots+=1},{desc:'+1 more projectile.',f:()=>P.shots+=1}],
+    evo:{name:'Full Fanum Tax', icon:'gembig', desc:'EVOLVE — fire shots in a full ring around you.', f:()=>{P.shots+=2;P.radial=true;}} },
+  { id:'pierce', name:'Ohio Drill', icon:'crocodilo',
+    steps:[{desc:'bullets pierce +1 enemy.',f:()=>P.pierce+=1},{desc:'bullets pierce +1 more.',f:()=>P.pierce+=1}],
+    evo:{name:'Drill to Ohio', icon:'crocodilo', desc:'EVOLVE — pierce everything + faster, bigger shots.', f:()=>{P.pierce=999;P.railgun=true;}} },
+  { id:'range', name:'Sigma Range', icon:'gem',
+    steps:[{desc:'+25% shot range.',f:()=>P.range*=1.25},{desc:'+25% more range.',f:()=>P.range*=1.25}],
+    evo:{name:'Touch-Grass Sniper', icon:'coin', desc:'EVOLVE — huge range and +50% damage.', f:()=>{P.range*=1.6;P.dmg*=1.5;}} },
+  { id:'orbit', name:'Emotional Support Orb', icon:'gembig', rare:true,
+    steps:[{desc:'+1 orbiting orb.',f:()=>P.orbs+=1},{desc:'+1 more orb.',f:()=>P.orbs+=1}],
+    evo:{name:'Sigma Squad', icon:'gembig', desc:'EVOLVE — extra orb that also deletes enemy bullets.', f:()=>{P.orbs+=1;P.orbShield=true;}} },
+  { id:'nova', name:'Skibidi Blast', icon:'gembig', rare:true,
+    steps:[{desc:'every 5s, a blast hits nearby enemies.',f:()=>{P.nova=true;}},{desc:'blast is faster and stronger.',f:()=>{P.novaCdBase=Math.max(3.5,P.novaCdBase-1.5);P.novaPow*=1.6;}}],
+    evo:{name:'Skibidi Nuke', icon:'gembig', desc:'EVOLVE — huge frequent blast that wipes nearby bullets.', f:()=>{P.nova=true;P.novaEvo=true;P.novaCdBase=3;P.novaPow*=1.6;}} },
+  { id:'vamp', name:'Edging the Grind', icon:'heart', rare:true,
+    steps:[{desc:'heal 1 HP per kill.',f:()=>P.vamp+=1},{desc:'heal +1 more per kill.',f:()=>P.vamp+=1}],
+    evo:{name:'Vampiric Rizz', icon:'heart', desc:'EVOLVE — heal a big chunk per kill.', f:()=>{P.vamp+=3;}} },
+  { id:'slow', name:'Cold as Ohio', icon:'gem', rare:true,
+    steps:[{desc:'enemy bullets 15% slower.',f:()=>P.bslow*=0.85},{desc:'enemy bullets 15% slower again.',f:()=>P.bslow*=0.85}],
+    evo:{name:'Absolute Ohio', icon:'gem', desc:'EVOLVE — enemies you hit freeze solid.', f:()=>{P.bslow*=0.7;P.freeze=true;}} },
 ];
+// returns the next card "move" for an upgrade, or null if exhausted
+function nextMove(u){
+  const lvl = P.up[u.id]||0;
+  if(u.evo){
+    const n = u.steps.length;
+    if(lvl < n) return { apply:u.steps[lvl].f, name:u.name, icon:u.icon, desc:u.steps[lvl].desc, label:'Lv '+(lvl+1), evolve:false, rare:u.rare };
+    if(lvl === n) return { apply:u.evo.f, name:u.evo.name, icon:u.evo.icon||u.icon, desc:u.evo.desc, label:'EVOLVE', evolve:true, rare:u.rare };
+    return null;
+  }
+  if(lvl >= (u.cap||5)) return null;
+  return { apply:u.steps[0].f, name:u.name, icon:u.icon, desc:u.steps[0].desc, label:'Lv '+(lvl+1), evolve:false, rare:u.rare };
+}
 
 function resetPlayer(){
   Object.assign(P, {
     x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:200,
     dmg:1, fireRate:0.32, fireCd:0, shots:1, pierce:0, range:330,
-    magnet:90, crit:0.05, orbs:0, orbA:0, nova:false, novaCd:5,
-    vamp:0, bslow:1, lv:1, xp:0, xpNext:5, inv:0, taken:{},
-    face:0, walk:0, dashCd:0, dashMax:2.2, dashT:0, dvx:0, dvy:0
+    magnet:90, crit:0.05, orbs:0, orbA:0, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
+    vamp:0, bslow:1, lv:1, xp:0, xpNext:5, inv:0, up:{},
+    face:0, walk:0, dashCd:0, dashMax:2.2, dashT:0, dvx:0, dvy:0,
+    radial:false, railgun:false, orbShield:false, novaEvo:false, freeze:false
   });
 }
 
@@ -162,21 +192,27 @@ function gainXp(n){
 function openLevelUp(){
   state = ST.LEVELUP;
   sfx.level();
-  const pool = UPGRADES.filter(u => !(u.once && P.taken[u.id]));
-  const opts = []; const bag = pool.slice();
+  // candidates = every card with a remaining move
+  const cands = [];
+  for(const u of UPGRADES){ const m = nextMove(u); if(m) cands.push({u,m}); }
+  // weighted draw of 3 distinct (evolve weighted highest, rares lower)
+  const opts = []; const bag = cands.slice();
   while(opts.length<3 && bag.length){
-    let i = Math.floor(Math.random()*bag.length);
-    if(bag[i].rare && Math.random()<0.5){ const j=bag.findIndex(u=>!u.rare); if(j>=0) i=j; }
-    opts.push(bag.splice(i,1)[0]);
+    const w = bag.map(x => x.m.evolve ? 4 : (x.m.rare ? 1 : 2));
+    let total=0; for(const v of w) total+=v;
+    let r = Math.random()*total, idx=0;
+    while(idx<w.length-1 && (r-=w[idx])>0) idx++;
+    opts.push(bag.splice(idx,1)[0]);
   }
   const wrap = $('cards'); wrap.innerHTML='';
-  opts.forEach(u=>{
+  opts.forEach(({u,m})=>{
     const d=document.createElement('button');
-    d.className='card'+(u.rare?' rare':'');
-    const ic = SP[u.icon] ? SP[u.icon].toDataURL() : '';
-    d.innerHTML = `<img class="cicon" draggable="false" src="${ic}"><div class="cbody"><div class="cname">${u.name}${u.rare?' ★':''}</div><div class="cdesc">${u.desc}</div></div>`;
+    d.className = 'card' + (m.evolve ? ' rare evolve' : (m.rare ? ' rare' : ''));
+    const ic = SP[m.icon] ? SP[m.icon].toDataURL() : '';
+    const badge = m.evolve ? '<span class="evobadge">EVOLVE!</span>' : '<span class="lvtag">'+m.label+'</span>';
+    d.innerHTML = `<img class="cicon" draggable="false" src="${ic}"><div class="cbody"><div class="cname">${m.name}${badge}</div><div class="cdesc">${m.desc}</div></div>`;
     d.onclick = ()=>{
-      u.f(); P.taken[u.id]=true;
+      m.apply(); P.up[u.id] = (P.up[u.id]||0)+1;
       $('levelup').classList.add('hidden');
       state = ST.PLAY;
       tPrev = performance.now();
@@ -263,11 +299,20 @@ function update(dt){
     for(const e of enemies){ const d=dist2(P.x,P.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
     if(best && bd <= P.range*P.range){   // only shoot what's in range
       P.fireCd = P.fireRate;
-      const base = Math.atan2(best.y-P.y, best.x-P.x);
-      const spread = 0.16;
-      for(let i=0;i<P.shots;i++){
-        const a = base + (i-(P.shots-1)/2)*spread;
-        bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*560,vy:Math.sin(a)*560,r:6,pierce:P.pierce,hit:new Set(),dist:P.range});
+      const spd = P.railgun ? 760 : 560;
+      const br  = P.railgun ? 9 : 6;
+      if(P.radial){                       // Full Fanum Tax: ring of shots
+        const n = clamp(P.shots*2, 8, 24);
+        for(let i=0;i<n;i++){
+          const a = (i/n)*TAU + elapsed*1.5;
+          bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:br,pierce:P.pierce,hit:new Set(),dist:P.range});
+        }
+      } else {
+        const base = Math.atan2(best.y-P.y, best.x-P.x), spread = 0.16;
+        for(let i=0;i<P.shots;i++){
+          const a = base + (i-(P.shots-1)/2)*spread;
+          bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:br,pierce:P.pierce,hit:new Set(),dist:P.range});
+        }
       }
       sfx.shoot();
     }
@@ -284,6 +329,11 @@ function update(dt){
           e.hp -= 9*dt*P.dmg; e.hitT=Math.max(e.hitT,0.06);
         }
       }
+      if(P.orbShield){                    // Sigma Squad: orbs eat enemy bullets
+        for(let bi=ebullets.length-1;bi>=0;bi--){
+          if(dist2(ox,oy,ebullets[bi].x,ebullets[bi].y) < 14*14) ebullets.splice(bi,1);
+        }
+      }
     }
   }
 
@@ -291,13 +341,14 @@ function update(dt){
   if(P.nova){
     P.novaCd -= dt;
     if(P.novaCd<=0){
-      P.novaCd = 5; shake = Math.max(shake,8);
-      burst(P.x,P.y,'#9fd0ff',26,400); sfx.boss();
-      for(let k=0;k<3;k++) parts.push({x:P.x,y:P.y,vx:0,vy:0,life:0.4,max:0.4,color:'#cfeaff',r:200,ring:true});
+      P.novaCd = P.novaCdBase; shake = Math.max(shake, P.novaEvo?12:8);
+      const R = P.novaEvo ? 280 : 190;
+      burst(P.x,P.y,'#9fd0ff',P.novaEvo?40:26,420); sfx.boss();
+      for(let k=0;k<3;k++) parts.push({x:P.x,y:P.y,vx:0,vy:0,life:0.4,max:0.4,color:'#cfeaff',r:R,ring:true});
       for(const e of enemies){
-        if(dist2(P.x,P.y,e.x,e.y) < 190*190){ damageEnemy(e,28*P.dmg,P.x,P.y,false); }
+        if(dist2(P.x,P.y,e.x,e.y) < R*R){ damageEnemy(e,(P.novaEvo?40:28)*P.dmg*P.novaPow,P.x,P.y,false); }
       }
-      ebullets = ebullets.filter(b => dist2(P.x,P.y,b.x,b.y) > 190*190);
+      ebullets = ebullets.filter(b => dist2(P.x,P.y,b.x,b.y) > R*R);  // Skibidi Nuke clears bullets
     }
   }
 
@@ -335,13 +386,15 @@ function update(dt){
     e.t += dt;
     if(e.hitT>0) e.hitT-=dt;
     if(e.sq>0) e.sq-=dt*4;
+    if(e.frz>0) e.frz-=dt;
 
     if(e.isBoss){
       updateBoss(e,dt);
     } else {
+      const fs = e.frz>0 ? 0.2 : 1;       // Absolute Ohio freeze
       const a = Math.atan2(P.y-e.y, P.x-e.x) + Math.sin(e.t*e.wob)*0.4;
-      e.x += Math.cos(a)*e.sp*dt;
-      e.y += Math.sin(a)*e.sp*dt;
+      e.x += Math.cos(a)*e.sp*fs*dt;
+      e.y += Math.sin(a)*e.sp*fs*dt;
       e.face = Math.cos(a)>=0 ? 1 : -1;
       e.x = clamp(e.x, WALL, WORLD.w-WALL); e.y = clamp(e.y, WALL, WORLD.h-WALL);
       if(wave>=3 && e.shoot){
@@ -444,6 +497,7 @@ function update(dt){
 
 function damageEnemy(e,dmg,fx,fy,crit){
   e.hp -= dmg; e.hitT=0.12; e.sq=1;
+  if(P.freeze && !e.isBoss) e.frz=1.2;
   sfx.hit();
   floatText(e.x,e.y-e.r-4, (crit?'':'')+Math.round(dmg), crit?'#ffd23a':'#fff', crit?18:13);
   if(crit) floatText(e.x,e.y-e.r-20,'CRIT','#ffd23a',15);
@@ -575,6 +629,7 @@ function render(){
     cx.beginPath(); cx.ellipse(e.x, e.y+e.r*0.85, e.r*0.8, e.r*0.32, 0,0,TAU); cx.fill();
     const wob = e.isBoss ? Math.sin(e.t*2)*0.06 : Math.sin(e.t*6)*0.12;
     drawSprite(e.spr, e.x, e.y, e.r*2.5, wob, e.sq, e.hitT, e.face===-1);
+    if(e.frz>0){ cx.globalAlpha=0.4; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
     if(e.hp<e.maxHp){
       const w=e.r*1.9;
       cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(e.x-w/2,e.y-e.r-12,w,5);
