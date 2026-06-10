@@ -25,7 +25,7 @@ const WALL = 46;                 // fence thickness
 const camera = { x:0, y:0 };
 // camera zoom: <1 = zoomed out (see more), >1 = zoomed in
 let zoom = 1;
-const ZMIN = 0.06, ZMAX = 2.2;   // max zoom-out / max zoom-in bounds
+const ZMIN = 0.7, ZMAX = 2.2;    // max zoom-out (0.7 = only slightly out, keeps character big) / max zoom-in
 function setZoom(z){ zoom = clamp(z, ZMIN, ZMAX); }
 function zoomBy(d){ setZoom(+(zoom + d).toFixed(3)); }
 function computeCamera(){
