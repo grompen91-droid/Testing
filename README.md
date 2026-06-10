@@ -1,27 +1,42 @@
-# 💀 SKIBIDI SURVIVORS — Brainrot Roguelike Bullet Hell
+# BRAINROT SURVIVORS — Italian Brainrot Bullet Hell
 
 A mobile-first web game. One HTML file, zero dependencies, zero build step.
 
 ## Play
 
 Open `index.html` in any browser, or host it anywhere static (GitHub Pages, Vercel, etc.).
-Built for phones — add it to your home screen for fullscreen vibes.
+Built for phones — add it to your home screen for fullscreen.
 
 ## How it works
 
-- 🕹️ **Drag anywhere** to move (floating virtual joystick). WASD/arrows work on desktop.
-- 🔫 **Auto-fire** at the nearest brainrot. Just dodge.
-- 💎 Kills drop gems → fill the XP bar → **pick 1 of 3 random upgrades** (roguelike!).
-- 🌊 Waves get harder forever. Every 5th wave is a **bullet-hell boss** (spirals, rings, chaos).
-- ☠️ Death is permanent. Run it back.
+- **Drag anywhere** to move (floating joystick). WASD/arrows work on desktop.
+- **Auto-fire** at the nearest enemy. Your job is to position and dodge.
+- **DASH** button (mobile) or Space/Shift (desktop) — a short i-frame burst to escape.
+- Kills drop **crystals** → fill the XP bar → **pick 1 of 3 upgrades** (roguelike).
+- Coins add score; rare hearts heal. Chain kills for a **combo score multiplier**.
+- Waves get harder forever. Every 5th wave is a **boss** (spiral / ring / chaos patterns).
 
-## The bestiary
+## The map
 
-🚽 skibidi · 🗿 moai sigma · 🐊 crocodilo · ☕ cappuccino · 🦈 tralalero · 🐘 lirili
-Bosses: SKIBIDI TITAN, GORILLA RIZZ, THE BRAINROT.
+A real bordered arena (~2600×2600) surrounded by a wooden fence. The **camera follows you**
+as you roam the field — walk to the edges, kite enemies around the world, watch the minimap
+in the bottom-left to read the swarm.
+
+## The bestiary (hand-drawn vector sprites)
+
+Skibidi Toilet · Cappuccino Assassino · Bombardiro Crocodilo · Tralalero Tralala ·
+Brr Brr Patapim · Lirili Larila.
+Bosses: SKIBIDI TITAN, TRALALERO BOSS, BOMBARDIRO.
+
+## Feel
+
+Hit-stop on impact, squash & stretch, white hit-flash, floating damage numbers, screen
+shake, knockback, particle bursts, dash afterimages, and a shockwave upgrade — tuned for
+satisfying game feel.
 
 ## Tech
 
-Vanilla JS + Canvas 2D, Web Audio synth sound effects (no audio assets),
-emoji sprites (no image assets), `localStorage` high score, haptic feedback
-on hit where supported.
+Vanilla JS + Canvas 2D. All characters and pickups are **code-drawn vector sprites**
+pre-rendered to offscreen canvases (no emoji, no external image files). Web Audio synth
+sound effects (no audio assets). Clean flat cel-shaded daylight art — no glow/bloom.
+`localStorage` high score, haptic feedback on hit where supported.
