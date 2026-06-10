@@ -114,6 +114,7 @@ function startGame(){
   state=ST.PLAY;
   $('menu').classList.add('hidden');
   $('gameover').classList.add('hidden');
+  $('bossbar').classList.add('hidden');
   $('hud').classList.remove('hidden');
   $('zoomctl').classList.remove('hidden');
   if(IS_TOUCH) $('dashbtn').classList.remove('hidden');   // mobile-only on-screen dash
@@ -146,6 +147,9 @@ function spawnBoss(){
   };
   enemies.push(boss);
   sfx.boss();
+  $('bossname').textContent = boss.name;
+  $('bossfill').style.width = '100%';
+  $('bossbar').classList.remove('hidden');
   const bw=$('bosswarn'); bw.classList.remove('hidden');
   setTimeout(()=>bw.classList.add('hidden'), 1700);
 }
@@ -210,7 +214,20 @@ function openLevelUp(){
     d.className = 'card' + (m.evolve ? ' rare evolve' : (m.rare ? ' rare' : ''));
     const ic = SP[m.icon] ? SP[m.icon].toDataURL() : '';
     const badge = m.evolve ? '<span class="evobadge">EVOLVE!</span>' : '<span class="lvtag">'+m.label+'</span>';
-    d.innerHTML = `<img class="cicon" draggable="false" src="${ic}"><div class="cbody"><div class="cname">${m.name}${badge}</div><div class="cdesc">${m.desc}</div></div>`;
+    // evolution progress (Survivor.io-style pips + "N more to evolve")
+    const owned = P.up[u.id]||0;
+    let pips='', ptxt='', pevo='';
+    if(u.evo){
+      const slots = u.steps.length;
+      for(let i=0;i<slots;i++) pips += `<span class="pip ${i<owned?'on':(i===owned?'next':'')}"></span>`;
+      pips += `<span class="pip evo ${owned>=slots?'on':(owned===slots?'next':'')}"></span>`;
+      if(m.evolve){ ptxt='EVOLUTION READY!'; pevo='evo'; } else ptxt=(slots-owned)+' more to evolve';
+    } else {
+      const cap = u.cap||5;
+      for(let i=0;i<cap;i++) pips += `<span class="pip ${i<owned?'on':(i===owned?'next':'')}"></span>`;
+      ptxt = 'Lv '+(owned+1)+' / '+cap;
+    }
+    d.innerHTML = `<img class="cicon" draggable="false" src="${ic}"><div class="cbody"><div class="cname">${m.name}${badge}</div><div class="cdesc">${m.desc}</div><div class="cprog">${pips}<span class="ptxt ${pevo}">${ptxt}</span></div></div>`;
     d.onclick = ()=>{
       m.apply(); P.up[u.id] = (P.up[u.id]||0)+1;
       $('levelup').classList.add('hidden');
@@ -236,6 +253,7 @@ function gameOver(){
   $('hud').classList.add('hidden');
   $('dashbtn').classList.add('hidden');
   $('zoomctl').classList.add('hidden');
+  $('bossbar').classList.add('hidden');
   setTimeout(()=>$('gameover').classList.remove('hidden'), 600);
 }
 
@@ -426,6 +444,7 @@ function update(dt){
       if(P.vamp>0){ P.hp=Math.min(P.maxHp,P.hp+P.vamp); }
       if(e.isBoss){
         boss=null;
+        $('bossbar').classList.add('hidden');
         bigText('BOSS DOWN','#4aa3df');
         for(let g=0; g<14; g++) gems.push({x:e.x+rand(-40,40),y:e.y+rand(-40,40),v:3,t:rand(0,6)});
         for(let g=0; g<8; g++) gems.push({x:e.x+rand(-50,50),y:e.y+rand(-50,50),coin:true,t:rand(0,6)});
@@ -493,6 +512,7 @@ function update(dt){
 
   $('hpfill').style.width = Math.max(0,(P.hp/P.maxHp)*100)+'%';
   $('xpfill').style.width = (P.xp/P.xpNext)*100+'%';
+  if(boss) $('bossfill').style.width = Math.max(0,(boss.hp/boss.maxHp)*100)+'%';
 }
 
 function damageEnemy(e,dmg,fx,fy,crit){
@@ -604,11 +624,13 @@ function render(){
   }
 
   // --- player bullets: bright gold with a white halo = YOURS ---
+  const bcore = P.railgun ? '#5fe6ff' : '#ffd21f';      // evolved Railgun shots glow cyan
+  const bhi   = P.railgun ? '#dafcff' : '#fff6bf';
   for(const b of bullets){
     if(b.x<vx0-20||b.x>vx1+20||b.y<vy0-20||b.y>vy1+20) continue;
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(b.x,b.y,b.r+2,0,TAU); cx.fill();        // white rim
-    cx.fillStyle='#ffd21f'; cx.beginPath(); cx.arc(b.x,b.y,b.r,0,TAU); cx.fill();        // gold core
-    cx.fillStyle='#fff6bf'; cx.beginPath(); cx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.4,0,TAU); cx.fill(); // highlight
+    cx.fillStyle=bcore; cx.beginPath(); cx.arc(b.x,b.y,b.r,0,TAU); cx.fill();           // core
+    cx.fillStyle=bhi; cx.beginPath(); cx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.4,0,TAU); cx.fill(); // highlight
   }
 
   // --- orbs ---

@@ -65,6 +65,15 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .card .cname .lvtag { font-size:.66em; color:#8a7a5a; font-weight:800; margin-left:7px; vertical-align:middle; }
 .card .cname .evobadge { font-size:.6em; color:#fff; background:#e0a92e; border:2px solid #3a2d22; border-radius:7px; padding:1px 7px; margin-left:8px; vertical-align:middle; }
 .card.evolve { border-color:#e0a92e; background:#fff4da; }
+/* evolution progress pips */
+.card .cprog { display:flex; align-items:center; gap:clamp(3px,0.8vmin,6px); margin-top:6px; flex-wrap:wrap; }
+.card .pip { width:clamp(8px,1.5vmin,13px); height:clamp(8px,1.5vmin,13px); border-radius:50%; background:#e6dfca; border:2px solid #b3a98c; }
+.card .pip.on { background:#5fbf52; border-color:#3f8a36; }
+.card .pip.next { border-color:#4aa3df; background:#dff0ff; }
+.card .pip.evo { border-radius:3px; }
+.card .pip.evo.on, .card .pip.evo.next { background:#e0a92e; border-color:#b07f12; }
+.card .ptxt { font-size:clamp(10px,1.7vmin,15px); color:#a08a5a; font-weight:800; margin-left:5px; }
+.card .ptxt.evo { color:#c47f12; }
 /* hover lift + icon pop (desktop) */
 @media (hover:hover) and (pointer:fine){
   .card { transition:transform .13s ease, box-shadow .13s ease, border-color .13s ease; }
@@ -88,6 +97,10 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 #xpfill { height:100%; width:0%; background:#4aa3df; transition:width .12s; }
 #hudrow { display:flex; justify-content:space-between; font-weight:900; color:#fff; font-size:clamp(15px,2.5vmin,24px); -webkit-text-stroke:.5px #3a2d22; text-shadow:0 2px 0 rgba(58,45,34,0.6); }
 #wavetag { color:#ffe08a; }
+#bossbar { margin-top:7px; pointer-events:none; }
+#bossname { text-align:center; font-weight:900; color:#fff; -webkit-text-stroke:.5px #3a2d22; text-shadow:0 2px 0 rgba(58,45,34,0.6); font-size:clamp(13px,2.5vmin,23px); margin-bottom:3px; letter-spacing:.5px; }
+#bossbar .bar { border-color:#7a1f1f; }
+#bossfill { height:100%; width:100%; background:linear-gradient(#ff5a5a,#d63030); transition:width .15s; }
 #combotag { position:fixed; top:clamp(60px,9vmin,96px); left:0; right:0; text-align:center; z-index:6; pointer-events:none;
   font-size:clamp(20px,5vmin,36px); font-weight:900; color:#ffb43a; -webkit-text-stroke:1.5px #3a2d22; opacity:0; transition:opacity .15s; }
 #bosswarn {
