@@ -115,6 +115,7 @@ function resetPlayer(){
 
 function startGame(){
   initAudio();
+  playMusic('game');
   resetPlayer();
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[];
   wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0; arena=null; bossPending=0;
@@ -132,7 +133,7 @@ function startWave(){
   betweenWaves=false;
   $('wavetag').textContent = 'WAVE '+wave;
   if(wave % 5 === 0){ startBossArena(); waveEnemiesLeft = 0; }
-  else { waveEnemiesLeft = 7 + wave*3; spawnTimer = 0; }
+  else { waveEnemiesLeft = 7 + wave*3; spawnTimer = 0; sfx.wave(); }
   bigText(wave%5===0 ? 'BOSS WAVE' : 'WAVE '+wave, wave%5===0?'#e54d4d':'#ffe08a');
 }
 
@@ -145,6 +146,7 @@ function startBossArena(){
   setZoom(clamp(ARENA_ZOOM, ZMIN, ZMAX));   // auto zoom-in (player can still re-zoom)
   bossPending = ARENA_LEAD;
   const bw=$('bosswarn'); bw.textContent='⚠ BOSS INCOMING ⚠'; bw.classList.remove('hidden');
+  sfx.warn();
 }
 
 function ringPos(){ // spawn point on a ring around player, clamped to world
@@ -165,6 +167,7 @@ function spawnBoss(){
   };
   enemies.push(boss);
   sfx.boss();
+  playMusic('boss'+(((Math.floor(wave/5)-1)%3+3)%3));   // a different loop per boss
   $('bossname').textContent = boss.name;
   $('bossfill').style.width = '100%';
   $('bossbar').classList.remove('hidden');
@@ -198,11 +201,11 @@ function burst(x,y,color,n=10,spd=160){
 }
 // satisfying impact: quick expanding ring + round sparks + white flash core
 function hitSpark(x,y,color,crit){
-  parts.push({x,y,vx:0,vy:0,life:0.22,max:0.22,color,r:crit?12:8,ring:true,gr:crit?340:240,lw:crit?5:4});
-  const n=crit?8:5;
-  for(let i=0;i<n;i++){ const a=rand(0,TAU), s=rand(70,crit?300:180);
-    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.18,0.42),max:0.42,color,r:rand(2.5,crit?6:4)}); }
-  parts.push({x,y,vx:0,vy:0,life:0.12,max:0.12,color:'#ffffff',r:crit?11:7});
+  parts.push({x,y,vx:0,vy:0,life:0.16,max:0.16,color,r:crit?6:4,ring:true,gr:crit?190:130,lw:crit?2.5:2});
+  const n=crit?5:3;
+  for(let i=0;i<n;i++){ const a=rand(0,TAU), s=rand(35,crit?170:100);
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.1,0.26),max:0.26,color,r:rand(1.2,crit?3:2)}); }
+  parts.push({x,y,vx:0,vy:0,life:0.09,max:0.09,color:'#ffffff',r:crit?4.5:3});
 }
 function floatText(x,y,str,color='#fff',size=14){
   texts.push({x,y,str,color,size,life:0.9,max:0.9,vy:-55});
@@ -263,6 +266,7 @@ function openLevelUp(){
     }
     d.innerHTML = `<img class="cicon" draggable="false" src="${ic}"><div class="cbody"><div class="cname">${m.name}${badge}</div><div class="cdesc">${m.desc}</div><div class="cprog">${pips}<span class="ptxt ${pevo}">${ptxt}</span></div></div>`;
     d.onclick = ()=>{
+      m.evolve ? sfx.evolve() : sfx.pick();
       m.apply(); P.up[u.id] = (P.up[u.id]||0)+1;
       $('levelup').classList.add('hidden');
       state = ST.PLAY;
@@ -277,6 +281,7 @@ function openLevelUp(){
 function gameOver(){
   state = ST.OVER;
   arena=null; bossPending=0;
+  stopMusic();
   sfx.die();
   shake = 22; hitstop = 0.12;
   const best = Math.max(score, +(localStorage.getItem('brainrot_best')||0));
@@ -506,6 +511,7 @@ function update(dt){
       if(e.isBoss){
         boss=null; arena=null;       // open the field back up
         $('bossbar').classList.add('hidden');
+        playMusic('game'); sfx.win();
         bigText('BOSS DOWN','#4aa3df');
         for(let g=0; g<14; g++) gems.push({x:e.x+rand(-40,40),y:e.y+rand(-40,40),v:3,t:rand(0,6)});
         for(let g=0; g<8; g++) gems.push({x:e.x+rand(-50,50),y:e.y+rand(-50,50),coin:true,t:rand(0,6)});

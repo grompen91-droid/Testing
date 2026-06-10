@@ -32,6 +32,16 @@ window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 $('dashbtn').addEventListener('touchstart', e=>{ e.preventDefault(); tryDash(); }, {passive:false});
 $('dashbtn').addEventListener('mousedown', e=>{ e.preventDefault(); tryDash(); });
 
+// start audio + menu music on the first user interaction (browsers block autoplay)
+function _firstAudio(){
+  initAudio();
+  if(state===ST.MENU) playMusic('menu');
+  window.removeEventListener('pointerdown', _firstAudio);
+  window.removeEventListener('keydown', _firstAudio);
+}
+window.addEventListener('pointerdown', _firstAudio);
+window.addEventListener('keydown', _firstAudio);
+
 // ---- zoom controls: buttons + scroll wheel ----
 $('zoomin').addEventListener('click', ()=>zoomBy(0.2));
 $('zoomout').addEventListener('click', ()=>zoomBy(-0.2));
