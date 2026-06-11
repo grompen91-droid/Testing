@@ -441,6 +441,20 @@ makeSprite('gembig', 64, (g,u)=>{
   sh(g,'#7c5cff',3.4*u,(g)=>{ g.moveTo(0,-24*u); g.lineTo(18*u,-4*u); g.lineTo(0,24*u); g.lineTo(-18*u,-4*u); g.closePath(); });
   sh(g,'#d6c9ff',0,(g)=>{ g.moveTo(0,-24*u); g.lineTo(18*u,-4*u); g.lineTo(0,-4*u); g.closePath(); });
 });
+// ---- XP orb tiers: small light-blue / medium emerald / large gold (w/ shine) ----
+makeSprite('orbS', 48, (g,u)=>{
+  sh(g,'#bfe6ff',3*u,(g)=>{ g.moveTo(0,-20*u); g.lineTo(14*u,-3*u); g.lineTo(0,20*u); g.lineTo(-14*u,-3*u); g.closePath(); });
+  sh(g,'#eaf7ff',0,(g)=>{ g.moveTo(0,-20*u); g.lineTo(14*u,-3*u); g.lineTo(0,-3*u); g.closePath(); });
+});
+makeSprite('orbM', 56, (g,u)=>{
+  sh(g,'#46d98a',3.2*u,(g)=>{ g.moveTo(0,-22*u); g.lineTo(16*u,-3*u); g.lineTo(0,22*u); g.lineTo(-16*u,-3*u); g.closePath(); });
+  sh(g,'#b8f5d6',0,(g)=>{ g.moveTo(0,-22*u); g.lineTo(16*u,-3*u); g.lineTo(0,-3*u); g.closePath(); });
+});
+makeSprite('orbL', 64, (g,u)=>{
+  sh(g,'#ffc23a',3.6*u,(g)=>{ g.moveTo(0,-26*u); g.lineTo(19*u,-3*u); g.lineTo(0,26*u); g.lineTo(-19*u,-3*u); g.closePath(); });
+  sh(g,'#fff0c0',0,(g)=>{ g.moveTo(0,-26*u); g.lineTo(19*u,-3*u); g.lineTo(0,-3*u); g.closePath(); });
+  sh(g,'#ffffff',0,(g)=>{ g.moveTo(0,-12*u); g.lineTo(3.5*u,-3*u); g.lineTo(0,6*u); g.lineTo(-3.5*u,-3*u); g.closePath(); });
+});
 makeSprite('coin', 52, (g,u)=>{
   sh(g,'#f5c542',3.4*u,(g)=>{ g.arc(0,0,20*u,0,TAU); });
   sh(g,'#ffe39a',0,(g)=>{ g.arc(0,0,13*u,0,TAU); });

@@ -10,6 +10,14 @@ let gold = +(localStorage.getItem('br_gold')||0);   // persistent currency (save
 // boss arena: the field locks to a small bounded square a few seconds before the boss arrives
 let arena=null, bossPending=0;
 const ARENA_SIZE=1000, ARENA_LEAD=4, ARENA_ZOOM=1.3;
+// XP orb tiers (index = tier). Enemies drop one orb; tier scales with their xp value.
+const ORB = [null, {spr:'orbS',v:1,sz:28}, {spr:'orbM',v:4,sz:34}, {spr:'orbL',v:10,sz:44}];
+function orbTier(xp){ return xp<=1 ? 1 : xp<=3 ? 2 : 3; }
+// spawn one xp orb of the given tier with a little scatter velocity
+function dropOrb(x,y,tier,smin=90,smax=210){
+  const a=rand(0,TAU), s=rand(smin,smax);
+  gems.push({x,y,tier,v:ORB[tier].v,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+}
 
 // global HP scale: enemies have 10x HP and the player does 10x damage, so the
 // numbers are big enough that % upgrades (e.g. +25%) visibly change the damage.
@@ -665,12 +673,14 @@ function update(dt){
         $('bossbar').classList.add('hidden');
         playMusic('game'); sfx.win();
         bigText('BOSS DOWN','#4aa3df');
-        for(let g=0; g<14; g++){ const a=rand(0,TAU), s=rand(120,300); gems.push({x:e.x,y:e.y,v:3,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
-        for(let g=0; g<8; g++){ const a=rand(0,TAU), s=rand(120,300); gems.push({x:e.x,y:e.y,coin:true,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
+        const bossNum=Math.max(1,Math.floor(wave/5));          // 1st boss=1, 2nd=2, ...
+        const nLarge=8+(bossNum-1)*3, nCoin=8+(bossNum-1)*2;    // drops escalate per boss
+        for(let g=0; g<nLarge; g++) dropOrb(e.x, e.y, 3, 120, 300);
+        for(let g=0; g<nCoin; g++){ const a=rand(0,TAU), s=rand(120,300); gems.push({x:e.x,y:e.y,coin:true,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
         ebullets=[];
       } else {
         if(e.death && e.death.type==='ring'){ const n=e.death.n||4; for(let k=0;k<n;k++) fireEB(e.x,e.y,k*TAU/n,150,'#e58a3a'); }
-        for(let g=0; g<e.xp; g++){ const a=rand(0,TAU), s=rand(90,210); gems.push({x:e.x,y:e.y,v:1,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
+        dropOrb(e.x, e.y, orbTier(e.xp));
         if(Math.random()<0.12){ const a=rand(0,TAU), s=rand(90,210); gems.push({x:e.x,y:e.y,coin:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
         if(Math.random()<0.025){ const a=rand(0,TAU), s=rand(90,210); gems.push({x:e.x,y:e.y,heart:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
       }
@@ -952,8 +962,9 @@ function render(){
   for(const gm of gems){
     if(gm.x<vx0-40||gm.x>vx1+40||gm.y<vy0-40||gm.y>vy1+40) continue;
     const bob=Math.sin(gm.t*5)*3;
-    const name = gm.heart?'heart':(gm.coin?'coin':(gm.v>=3?'gembig':'gem'));
-    const psz = gm.v>=3 ? 40 : (gm.heart?32 : (gm.coin?32 : 31));
+    const orb = ORB[gm.tier] || ORB[1];
+    const name = gm.heart?'heart':(gm.coin?'coin':orb.spr);
+    const psz = gm.heart?32 : (gm.coin?32 : orb.sz);
     drawSprite(name, gm.x, gm.y+bob, psz, 0,0,0,false);
   }
 
