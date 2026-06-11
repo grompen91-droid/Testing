@@ -201,7 +201,7 @@ const UPGRADES = [
   { id:'critdmg',name:'Killer Instinct', icon:'coin',     rarity:'uncommon',cap:5,steps:[{desc:'+0.5x critical damage.',f:()=>P.critMul+=0.5}] },
   { id:'gold',   name:'Treasure Hunter', icon:'coin',     rarity:'uncommon',cap:5,steps:[{desc:'+20% gold & +12% XP.',  f:()=>{P.goldMul*=1.2;P.xpMul*=1.12;}}] },
   { id:'steady', name:'Steady Hands',    icon:'gem',      rarity:'uncommon',cap:5,steps:[{desc:'-15% bullet spread & +6% damage.',f:()=>{P.spread*=0.85;P.dmg*=1.06;}}] },
-  { id:'frenzy', name:'Killing Frenzy',  icon:'tiger',    rarity:'rare',   cap:5, steps:[{desc:'kills build stacks: +3% damage & fire rate each.',f:()=>{P.frenzyGain+=1;P.frenzyMax+=3;}}] },
+  { id:'frenzy', name:'Killing Frenzy',  icon:'tiger',    rarity:'rare',   cap:5, steps:[{desc:'each kill: +0.2% damage & fire rate, up to 100 stacks. Fades when you stop killing.',f:()=>{P.frenzyGain+=1;P.frenzyMax=Math.max(P.frenzyMax,100);}}] },
   { id:'glass',  name:'Glass Cannon',    icon:'cappuccino',rarity:'epic',  cap:3, steps:[{desc:'+35% damage, but -15 max HP.',f:()=>{P.dmg*=1.35;if(!P.glassSafe){P.maxHp=Math.max(20,P.maxHp-15);P.hp=Math.min(P.hp,P.maxHp);}}}] },
 
   // 🔮 abilities — 4 levels, then EVOLVE
@@ -578,7 +578,7 @@ function update(dt){
     let best=null, bd=Infinity;
     for(const e of enemies){ const d=dist2(P.x,P.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
     if(best && bd <= P.range*P.range){   // only shoot what's in range
-      P.fireCd = P.fireRate / (1 + (P.frenzy||0)*0.03);   // Killing Frenzy speeds up fire
+      P.fireCd = P.fireRate / (1 + (P.frenzy||0)*0.002);   // Killing Frenzy speeds up fire (+0.2%/stack)
       const spd = (P.railgun ? 760 : 560) * (P.bulletSpd||1);
       const br  = (P.railgun ? 9 : 6) * (P.bulletR||1);
       // always fire the aimed volley at the nearest enemy
@@ -708,9 +708,9 @@ function update(dt){
     for(const e of enemies){
       if(b.hit.has(e) || e.iv>0) continue;
       if(dist2(b.x,b.y,e.x,e.y) < (e.r+b.r)*(e.r+b.r)){
-        const critC = P.crit + (P.overdrive ? (P.frenzy||0)*0.004 : 0);   // Overdrive: frenzy stacks add crit
+        const critC = P.crit + (P.overdrive ? (P.frenzy||0)*0.001 : 0);   // Overdrive: frenzy stacks add crit
         const isCrit = Math.random()<critC;
-        const dmg = P.dmg * (b.dmgMul||1) * (1 + (P.frenzy||0)*0.03) * (isCrit?(P.critMul||3):1);
+        const dmg = P.dmg * (b.dmgMul||1) * (1 + (P.frenzy||0)*0.002) * (isCrit?(P.critMul||3):1);   // Killing Frenzy +0.2%/stack
         b.hit.add(e);
         hitSpark(b.x,b.y,isCrit?'#ffe14d':'#ff9f3a',isCrit);
         damageEnemy(e,dmg,b.x,b.y,isCrit);
@@ -859,6 +859,8 @@ function update(dt){
         for(let g=0; g<nLarge; g++) dropOrb(e.x, e.y, 3, 120, 300);
         for(let g=0; g<nCoin; g++){ const a=rand(0,TAU), s=rand(120,300); gems.push({x:e.x,y:e.y,coin:true,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
         ebullets=[];
+        enemies = enemies.filter(o=>o.isBoss);   // clear summoned adds so the boss wave can clear (else it stalls)
+        zones=[];                                 // drop lingering boss hazard zones
       } else {
         if(e.death && e.death.type==='ring'){ const n=e.death.n||4; for(let k=0;k<n;k++) fireEB(e.x,e.y,k*TAU/n,150,'#e58a3a'); }
         if(e.death && e.death.type==='split') spawnSplit(e);
