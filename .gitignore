@@ -1,0 +1,4 @@
+# Local-only design/scratch tools — never push these
+mapdesign.html
+__*.html
+*.local.html

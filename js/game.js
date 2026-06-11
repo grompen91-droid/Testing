@@ -110,7 +110,8 @@ const WORLDS = [
     foes:FOES_GRASS, bosses:BOSSES_GRASS },
   { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false,
     theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
-            wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'game' },
+            wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'game',
+            debris:0.8, edgeDark:0.15 },
     foes:FOES_DIRT, bosses:BOSSES_DIRT },
   { id:'under', name:'THE UNDERGROUND', waveTarget:0, endless:true,
     theme:{ void:'#1c1622', tile1:'#33293f', tile2:'#2c2336', tuft:'rgba(120,90,160,0.25)',
@@ -216,7 +217,7 @@ const UPGRADES = [
   { id:'orbit', name:'Orbiting Barrier', icon:'gembig', rarity:'epic',
     steps:[{desc:'+1 orbiting projectile.',f:()=>P.orbs+=1},{desc:'+1 orbiting projectile.',f:()=>P.orbs+=1},{desc:'+1 orbiting projectile.',f:()=>P.orbs+=1},{desc:'+1 orbiting projectile.',f:()=>P.orbs+=1}],
     evo:{name:'Guardian Shield', icon:'gembig', desc:'EVOLVE — extra orb that destroys incoming bullets.', f:()=>{P.orbs+=1;P.orbShield=true;}} },
-  { id:'nova', name:'Pulse Wave', icon:'gembig', rarity:'epic',
+  { id:'nova', name:'Pulse Wave', icon:'gembig', rarity:'legendary',
     steps:[{desc:'every 5s, a shockwave hits nearby enemies.',f:()=>{P.nova=true;}},{desc:'shockwave: faster + stronger.',f:()=>{P.novaCdBase=Math.max(3.5,P.novaCdBase-0.6);P.novaPow*=1.35;}},{desc:'shockwave: faster + stronger.',f:()=>{P.novaCdBase=Math.max(3.2,P.novaCdBase-0.6);P.novaPow*=1.35;}},{desc:'shockwave: faster + stronger.',f:()=>{P.novaCdBase=Math.max(3.0,P.novaCdBase-0.6);P.novaPow*=1.35;}}],
     evo:{name:'Nova Cataclysm', icon:'gembig', desc:'EVOLVE — massive fast shockwave that clears nearby bullets.', f:()=>{P.nova=true;P.novaEvo=true;P.novaCdBase=3;P.novaPow*=1.5;}} },
   { id:'vamp', name:'Soul Harvest', icon:'heart', rarity:'epic',
@@ -1265,6 +1266,35 @@ function drawSprite(name, x, y, size, rot, sq, hitT, flip, tint){
   cx.restore();
 }
 
+// scattered ground debris — stable per tile (hashes the tile coords, no per-frame flicker)
+function drawDebris(gx0,gy0,gx1,gy1){
+  const D = curTheme.debris||0.8;
+  for(let gy=gy0; gy<gy1; gy+=TILE){
+    for(let gx=gx0; gx<gx1; gx+=TILE){
+      let n = ((gx*73856093) ^ (gy*19349663)) >>> 0;
+      const rnd = ()=>{ n = (n*1664525 + 1013904223) >>> 0; return n/4294967296; };
+      if(rnd() > 0.46*D) continue;                 // most tiles stay clear
+      const px = gx + rnd()*TILE, py = gy + rnd()*TILE, t = rnd();
+      if(t<0.52){                                   // rock with shadow + highlight
+        const s = 4 + rnd()*7;
+        cx.fillStyle='#5e4d39'; cx.beginPath(); cx.ellipse(px, py+s*0.45, s*1.25, s*0.62, 0,0,TAU); cx.fill();
+        cx.fillStyle='#8a7558'; cx.beginPath(); cx.ellipse(px, py, s*1.12, s*0.84, rnd()*TAU, 0,TAU); cx.fill();
+        cx.fillStyle='rgba(255,240,210,0.16)'; cx.beginPath(); cx.ellipse(px-s*0.3, py-s*0.3, s*0.4, s*0.26, 0,0,TAU); cx.fill();
+      } else if(t<0.78){                            // pebble cluster
+        cx.fillStyle='#6b5a42';
+        for(let k=0;k<3;k++){ cx.beginPath(); cx.arc(px+(rnd()-0.5)*14, py+(rnd()-0.5)*14, 1.6+rnd()*2.1, 0,TAU); cx.fill(); }
+      } else if(t<0.92){                            // hairline crack
+        cx.strokeStyle='rgba(26,17,9,0.5)'; cx.lineWidth=1.6;
+        let cxp=px, cyp=py, a=rnd()*TAU; cx.beginPath(); cx.moveTo(cxp,cyp);
+        for(let k=0;k<3;k++){ a += (rnd()-0.5)*1.2; cxp+=Math.cos(a)*10; cyp+=Math.sin(a)*10; cx.lineTo(cxp,cyp); } cx.stroke();
+      } else {                                      // bone shard
+        cx.save(); cx.translate(px,py); cx.rotate(rnd()*TAU); cx.fillStyle='#cabfa6';
+        cx.fillRect(-5,-1.2,10,2.4); cx.beginPath(); cx.arc(-5,0,2,0,TAU); cx.arc(5,0,2,0,TAU); cx.fill(); cx.restore();
+      }
+    }
+  }
+}
+
 function render(){
   cx.save();
   let sx=0, sy=0;
@@ -1297,6 +1327,8 @@ function render(){
       if(h<0.3){ cx.fillRect((gx+ (gx>>3)%60)+10, (gy+(gy>>2)%60)+12, 3, 7); }
     }
   }
+  // scattered debris (DIRT DEPTHS): rocks, pebbles, cracks, bone shards — deterministic per tile
+  if(curTheme.debris) drawDebris(gx0,gy0,gx1,gy1);
 
   // --- fence border (wooden wall) ---
   drawBorder(vx0,vy0,vx1,vy1);
@@ -1449,6 +1481,13 @@ function render(){
   renderArena(vx0,vy0,vx1,vy1);
 
   cx.restore(); // back to screen space
+
+  // depth edge-darkening (theme vignette, e.g. DIRT DEPTHS)
+  if(curTheme.edgeDark>0 && state!==ST.MENU){
+    const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.34, W/2,H/2,Math.max(W,H)*0.62);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,'+(0.72*curTheme.edgeDark)+')');
+    cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  }
 
   // joystick (screen space)
   if(joy.active && state===ST.PLAY){
