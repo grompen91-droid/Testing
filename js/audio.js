@@ -58,6 +58,9 @@ const TRACKS = {
            prog:[57,57,62,62, 60,60,55,55, 53,53,57,57, 55,55,52,52] },
   game:  { bpm:128, density:0.36, drums:true,  lt:'square',   bt:'triangle', lv:0.042, bv:0.05,  scale:[0,3,5,7,10],
            prog:[57,57,53,53, 55,55,52,52, 57,57,60,60, 55,55,52,52,   50,50,53,53, 55,55,57,57, 53,53,52,52, 55,55,55,55] },
+  // DIRT DEPTHS: slow + heavy underground march, dark minor scale, gritty bass-forward low end
+  dirt:  { bpm:112, density:0.30, drums:true,  lt:'triangle', bt:'sawtooth', lv:0.044, bv:0.062, scale:[0,3,5,7,8,10],
+           prog:[45,45,45,45, 43,43,41,41, 40,40,40,40, 41,41,43,43,   45,45,48,48, 41,41,43,43, 45,45,43,43, 41,40,40,40] },
   boss0: { bpm:144, density:0.50, drums:true,  lt:'square',   bt:'sawtooth', lv:0.04,  bv:0.05,  scale:[0,1,3,5,7,8,10],
            prog:[45,45,41,41, 43,43,40,40, 45,45,48,48, 43,41,40,40] },
   boss1: { bpm:154, density:0.55, drums:true,  lt:'sawtooth', bt:'square',   lv:0.036, bv:0.05,  scale:[0,2,3,5,7,8,10],
