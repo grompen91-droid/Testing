@@ -443,6 +443,184 @@ makeSprite('patapim', 130, (g,u)=>{
   sh(g,'#6b4a2b',2.6*u,(g)=>{ g.roundRect(-14*u,22*u,8*u,12*u,3*u); }); sh(g,'#6b4a2b',2.6*u,(g)=>{ g.roundRect(6*u,22*u,8*u,12*u,3*u); });
 });
 
+// ============ WORLD 2 — DIRT DEPTHS ENEMIES ============
+// Tier I
+makeSprite('golubiro', 100, (g,u)=>{   // Spijuniro Golubiro: burrowing pigeon-mole
+  sh(g,'#6b5544',0,(g)=>{ g.ellipse(0,24*u,26*u,8*u,0,0,Math.PI); }); // dirt mound
+  sh(g,'#8a96a4',3.2*u,(g)=>{ g.ellipse(0,2*u,22*u,17*u,0,0,TAU); }); // body
+  sh(g,'#9aa6b4',3*u,(g)=>{ g.ellipse(0,-14*u,13*u,12*u,0,0,TAU); }); // head
+  sh(g,'#f0a23a',0,(g)=>{ g.moveTo(0,-14*u); g.lineTo(14*u,-12*u); g.lineTo(0,-8*u); g.closePath(); }); // beak/snout
+  eyes(g,u,-2*u,-15*u,5*u,3*u);
+  sh(g,'#c9b39a',2.4*u,(g)=>{ g.moveTo(-16*u,8*u); g.lineTo(-24*u,2*u); }); sh(g,'#c9b39a',2.4*u,(g)=>{ g.moveTo(16*u,8*u); g.lineTo(24*u,2*u); }); // claws
+});
+makeSprite('bananini', 104, (g,u)=>{   // Chimpanzini Bananini: brown chimp w/ banana
+  sh(g,'#6e4a30',3.4*u,(g)=>{ g.ellipse(0,4*u,20*u,22*u,0,0,TAU); }); // body
+  sh(g,'#6e4a30',3.2*u,(g)=>{ g.ellipse(0,-18*u,15*u,13*u,0,0,TAU); }); // head
+  sh(g,'#d8b48a',0,(g)=>{ g.ellipse(0,-13*u,9*u,8*u,0,0,TAU); }); // muzzle
+  sh(g,'#6e4a30',0,(g)=>{ g.ellipse(-15*u,-20*u,5*u,6*u,0,0,TAU); }); sh(g,'#6e4a30',0,(g)=>{ g.ellipse(15*u,-20*u,5*u,6*u,0,0,TAU); }); // ears
+  eyes(g,u,0,-20*u,5*u,3*u);
+  sh(g,'#f4d24a',3*u,(g)=>{ g.moveTo(16*u,-2*u); g.quadraticCurveTo(34*u,8*u,24*u,26*u); g.quadraticCurveTo(20*u,12*u,12*u,8*u); g.closePath(); }); // banana
+});
+makeSprite('dolfinita', 104, (g,u)=>{  // Bananita Dolfinita: banana-dolphin
+  sh(g,'#f4d24a',3.6*u,(g)=>{ g.moveTo(-22*u,-14*u); g.quadraticCurveTo(30*u,-18*u,28*u,12*u); g.quadraticCurveTo(0,28*u,-22*u,14*u); g.quadraticCurveTo(-30*u,0,-22*u,-14*u); g.closePath(); }); // banana body
+  sh(g,'#7fb0c8',0,(g)=>{ g.moveTo(20*u,-4*u); g.lineTo(36*u,-10*u); g.lineTo(28*u,6*u); g.closePath(); }); // dorsal fin/snout
+  sh(g,'#5a8aa0',0,(g)=>{ g.moveTo(-22*u,-10*u); g.lineTo(-34*u,-18*u); g.lineTo(-26*u,0); g.closePath(); }); // tail
+  eyes(g,u,8*u,-4*u,5*u,3*u);
+});
+makeSprite('frula', 100, (g,u)=>{      // Fruli Frula: splitting fruit blob
+  sh(g,'#d8504a',3.6*u,(g)=>{ g.ellipse(0,4*u,22*u,21*u,0,0,TAU); }); // fruit body
+  sh(g,'#7ab955',0,(g)=>{ g.moveTo(-4*u,-18*u); g.lineTo(2*u,-30*u); g.lineTo(8*u,-18*u); g.closePath(); }); // leaf
+  sh(g,'#ffd0c0',0,(g)=>{ g.ellipse(-8*u,-4*u,6*u,5*u,0,0,TAU); }); // shine
+  eyes(g,u,0,2*u,7*u,4*u);
+  sh(g,OUT,2*u,(g)=>{ g.moveTo(-10*u,16*u); g.lineTo(0,12*u); g.lineTo(10*u,16*u); }); // mouth
+});
+makeSprite('baraboom', 100, (g,u)=>{   // Tric Trac Baraboom: bomb (ring death)
+  sh(g,'#3a3a44',3.6*u,(g)=>{ g.ellipse(0,6*u,22*u,21*u,0,0,TAU); }); // bomb sphere
+  sh(g,'#5a5a66',0,(g)=>{ g.ellipse(-8*u,-2*u,6*u,5*u,0,0,TAU); }); // shine
+  sh(g,'#6b4a2b',0,(g)=>{ g.rect(-4*u,-22*u,8*u,8*u); }); // fuse cap
+  sh(g,'#caa12f',2.4*u,(g)=>{ g.moveTo(0,-22*u); g.quadraticCurveTo(12*u,-32*u,6*u,-40*u); }); // fuse
+  dot(g,6*u,-40*u,4*u,'#ff7a2a'); dot(g,6*u,-40*u,2*u,'#ffe08a'); // spark
+  eyes(g,u,0,6*u,6*u,3.4*u);
+});
+// Tier II
+makeSprite('bobrito', 108, (g,u)=>{    // Bobrito Bandito: bandit beaver
+  sh(g,'#7a5230',3.2*u,(g)=>{ g.ellipse(-24*u,18*u,15*u,8*u,0.3,0,TAU); }); // tail
+  sh(g,'#8a5f38',3.6*u,(g)=>{ g.roundRect(-16*u,-4*u,32*u,28*u,8*u); }); // body
+  sh(g,'#9a6b40',3.2*u,(g)=>{ g.ellipse(0,-16*u,15*u,13*u,0,0,TAU); }); // head
+  sh(g,'#b03a3a',0,(g)=>{ g.rect(-15*u,-18*u,30*u,8*u); }); // bandana mask
+  eyes(g,u,0,-15*u,5*u,3*u);
+  sh(g,'#fff',1*u,(g)=>{ g.rect(-4*u,-7*u,8*u,5*u); }); // teeth
+  sh(g,'#d8b46a',0,(g)=>{ g.moveTo(-14*u,-26*u); g.lineTo(0,-34*u); g.lineTo(14*u,-26*u); g.closePath(); }); // sombrero
+});
+makeSprite('trulimero', 108, (g,u)=>{  // Trulimero Trulichina: fish w/ legs
+  sh(g,'#3fa6a0',3.4*u,(g)=>{ g.ellipse(-2*u,-4*u,22*u,16*u,0,0,TAU); }); // fish body
+  sh(g,'#2f8a84',0,(g)=>{ g.moveTo(18*u,-4*u); g.lineTo(34*u,-14*u); g.lineTo(34*u,6*u); g.closePath(); }); // tail
+  sh(g,'#2f8a84',0,(g)=>{ g.moveTo(-2*u,-18*u); g.lineTo(4*u,-30*u); g.lineTo(10*u,-18*u); g.closePath(); }); // fin
+  eyes(g,u,-10*u,-6*u,5*u,3*u);
+  sh(g,'#e0c39a',2.4*u,(g)=>{ g.moveTo(-8*u,12*u); g.lineTo(-10*u,26*u); }); sh(g,'#e0c39a',2.4*u,(g)=>{ g.moveTo(6*u,12*u); g.lineTo(8*u,26*u); }); // human legs
+});
+// Tier III
+makeSprite('ananasini', 116, (g,u)=>{  // Orangutini Ananasini: orangutan-pineapple
+  sh(g,'#d9b441',0,(g)=>{ for(let k=-1;k<=1;k++){ g.moveTo(k*8*u,-22*u); g.lineTo(k*8*u-3*u,-38*u); g.lineTo(k*8*u+4*u,-24*u);} }); // crown leaves
+  sh(g,'#e3a13a',3.8*u,(g)=>{ g.ellipse(0,2*u,24*u,26*u,0,0,TAU); }); // pineapple body
+  g.strokeStyle='#b07a22'; g.lineWidth=1.4*u;
+  for(let a=-2;a<=2;a++){ g.beginPath(); g.moveTo(-22*u,a*8*u); g.lineTo(22*u,a*8*u+6*u); g.stroke(); }
+  sh(g,'#c97a2a',2.4*u,(g)=>{ g.roundRect(-26*u,-2*u,9*u,20*u,4*u); }); sh(g,'#c97a2a',2.4*u,(g)=>{ g.roundRect(17*u,-2*u,9*u,20*u,4*u); }); // long arms
+  eyes(g,u,0,0,8*u,4.4*u);
+});
+makeSprite('glorbo', 110, (g,u)=>{     // Glorbo Fruttodrillo: fruit crocodile
+  sh(g,'#5a9e3f',3.6*u,(g)=>{ g.ellipse(-4*u,4*u,24*u,16*u,0,0,TAU); }); // body
+  sh(g,'#4f8a36',0,(g)=>{ for(let k=-2;k<=2;k++) { g.moveTo(k*8*u,-12*u); g.lineTo(k*8*u+4*u,-22*u); g.lineTo(k*8*u+8*u,-12*u);} }); // back ridges
+  sh(g,'#5a9e3f',3.2*u,(g)=>{ g.moveTo(14*u,-4*u); g.lineTo(40*u,-8*u); g.lineTo(40*u,8*u); g.lineTo(14*u,10*u); g.closePath(); }); // snout
+  sh(g,'#fff',1*u,(g)=>{ for(let k=0;k<5;k++){ g.moveTo((16+k*4)*u,2*u); g.lineTo((18+k*4)*u,7*u);} }); // teeth
+  sh(g,'#e0503f',0,(g)=>{ g.ellipse(-18*u,-12*u,7*u,7*u,0,0,TAU); }); // fruit on back
+  eyes(g,u,6*u,-12*u,5*u,3*u);
+});
+makeSprite('zibra', 110, (g,u)=>{      // Zibra Zubra Zibralini: zebra
+  sh(g,'#e8e4dc',3.6*u,(g)=>{ g.ellipse(0,6*u,22*u,20*u,0,0,TAU); }); // body
+  sh(g,'#e8e4dc',3.2*u,(g)=>{ g.ellipse(2*u,-16*u,13*u,14*u,0,0,TAU); }); // head
+  g.strokeStyle=OUT; g.lineWidth=2.2*u;
+  for(let k=-2;k<=2;k++){ g.beginPath(); g.moveTo(k*7*u,-12*u); g.lineTo(k*7*u+2*u,22*u); g.stroke(); } // body stripes
+  sh(g,'#2b2b32',0,(g)=>{ g.ellipse(-4*u,-26*u,4*u,7*u,0,0,TAU); }); sh(g,'#2b2b32',0,(g)=>{ g.ellipse(8*u,-26*u,4*u,7*u,0,0,TAU); }); // ears
+  eyes(g,u,2*u,-16*u,5*u,3*u);
+});
+// Tier IV
+makeSprite('burbaloni', 116, (g,u)=>{  // Burbaloni Luliloli: bubbly capybara
+  sh(g,'#9aa6c4',0,(g)=>{ g.ellipse(20*u,-16*u,12*u,12*u,0,0,TAU); }); g.globalAlpha=1; // bubble
+  sh(g,'#a07a52',3.8*u,(g)=>{ g.roundRect(-24*u,-6*u,46*u,34*u,14*u); }); // body
+  sh(g,'#b08a60',3.4*u,(g)=>{ g.ellipse(-18*u,-12*u,15*u,13*u,0,0,TAU); }); // head
+  sh(g,'#6b4a2b',0,(g)=>{ g.ellipse(-30*u,-14*u,4*u,5*u,0,0,TAU); }); // ear
+  eyes(g,u,-18*u,-12*u,6*u,3.4*u);
+  sh(g,'#5a3d28',0,(g)=>{ g.ellipse(-30*u,-8*u,5*u,4*u,0,0,TAU); }); // nose
+});
+makeSprite('cocofanto', 120, (g,u)=>{  // Cocofanto Elefanto: coconut elephant
+  sh(g,'#7d8a93',3.8*u,(g)=>{ g.ellipse(0,6*u,28*u,24*u,0,0,TAU); }); // body
+  sh(g,'#6e7a82',0,(g)=>{ g.ellipse(-22*u,-2*u,12*u,14*u,0,0,TAU); }); sh(g,'#6e7a82',0,(g)=>{ g.ellipse(22*u,-2*u,12*u,14*u,0,0,TAU); }); // ears
+  sh(g,'#8a5a32',3*u,(g)=>{ g.ellipse(0,-10*u,15*u,13*u,0,0,TAU); }); // coconut head
+  dot(g,-5*u,-12*u,2*u,'#5e3b1e'); dot(g,5*u,-12*u,2*u,'#5e3b1e');
+  sh(g,'#7d8a93',3.2*u,(g)=>{ g.moveTo(-2*u,2*u); g.quadraticCurveTo(-2*u,28*u,12*u,30*u); }); // trunk
+  eyes(g,u,0,-12*u,5*u,3*u);
+});
+makeSprite('girafa', 124, (g,u)=>{     // Girafa Celeste: celestial giraffe
+  sh(g,'#f2c84a',5*u,(g)=>{ g.moveTo(-4*u,28*u); g.lineTo(2*u,-20*u); }); // long neck
+  sh(g,'#f2c84a',3.4*u,(g)=>{ g.ellipse(-2*u,30*u,18*u,12*u,0,0,TAU); }); // body
+  sh(g,'#f2c84a',3*u,(g)=>{ g.ellipse(6*u,-26*u,12*u,10*u,0,0,TAU); }); // head
+  sh(g,'#c89a2a',0,(g)=>{ g.ellipse(-6*u,18*u,4*u,4*u,0,0,TAU); }); dot(g,4*u,4*u,3*u,'#c89a2a'); dot(g,-2*u,-8*u,3*u,'#c89a2a'); // celestial spots
+  sh(g,'#6b9bd8',0,(g)=>{ g.moveTo(2*u,-34*u); g.lineTo(4*u,-44*u); g.lineTo(8*u,-36*u); g.closePath(); }); // star ossicone
+  eyes(g,u,6*u,-26*u,4*u,2.6*u);
+});
+// Tier V
+makeSprite('bicus', 110, (g,u)=>{      // Brri Brri Bicus Dicus Bombicus: roman bird
+  sh(g,'#b6bdc7',3.4*u,(g)=>{ g.ellipse(0,6*u,20*u,18*u,0,0,TAU); }); // body
+  sh(g,'#c7ccd4',3*u,(g)=>{ g.ellipse(0,-14*u,13*u,12*u,0,0,TAU); }); // head
+  sh(g,'#b03a3a',0,(g)=>{ g.moveTo(-10*u,-24*u); g.quadraticCurveTo(0,-38*u,10*u,-24*u); g.closePath(); }); // roman helmet crest
+  sh(g,'#caa12f',0,(g)=>{ g.arc(0,-18*u,12*u,Math.PI,TAU); }); // helmet
+  sh(g,'#f0a23a',0,(g)=>{ g.moveTo(10*u,-12*u); g.lineTo(22*u,-10*u); g.lineTo(10*u,-7*u); g.closePath(); }); // beak
+  eyes(g,u,-1*u,-13*u,4.4*u,2.8*u);
+  dot(g,-16*u,16*u,5*u,'#3a3a44'); dot(g,16*u,16*u,5*u,'#3a3a44'); // little bombs
+});
+makeSprite('ambalabu', 110, (g,u)=>{   // Boneca Ambalabu: frog-tire creature
+  sh(g,'#2b2b32',4*u,(g)=>{ g.ellipse(0,16*u,24*u,12*u,0,0,TAU); }); // tire
+  sh(g,'#5a5a66',0,(g)=>{ g.ellipse(0,16*u,12*u,6*u,0,0,TAU); }); // hub
+  sh(g,'#5a9e3f',3.4*u,(g)=>{ g.ellipse(0,-10*u,18*u,15*u,0,0,TAU); }); // frog head
+  sh(g,'#6fb050',3*u,(g)=>{ g.ellipse(-12*u,-22*u,8*u,8*u,0,0,TAU); }); sh(g,'#6fb050',3*u,(g)=>{ g.ellipse(12*u,-22*u,8*u,8*u,0,0,TAU); }); // eye bulges
+  dot(g,-12*u,-22*u,3*u,OUT); dot(g,12*u,-22*u,3*u,OUT);
+  sh(g,OUT,2*u,(g)=>{ g.moveTo(-12*u,-4*u); g.quadraticCurveTo(0,2*u,12*u,-4*u); }); // mouth
+});
+makeSprite('dindin', 116, (g,u)=>{     // U Din Din...: bell-tower titan
+  sh(g,'#9a7a52',3.6*u,(g)=>{ g.moveTo(-16*u,28*u); g.lineTo(-12*u,-18*u); g.lineTo(12*u,-18*u); g.lineTo(16*u,28*u); g.closePath(); }); // tower body
+  sh(g,'#caa96a',3*u,(g)=>{ g.moveTo(-16*u,-18*u); g.lineTo(0,-34*u); g.lineTo(16*u,-18*u); g.closePath(); }); // roof
+  sh(g,'#caa12f',3*u,(g)=>{ g.moveTo(-9*u,-2*u); g.quadraticCurveTo(-11*u,14*u,0,16*u); g.quadraticCurveTo(11*u,14*u,9*u,-2*u); g.closePath(); }); // bell
+  dot(g,0,18*u,3*u,OUT); // clapper
+  eyes(g,u,0,4*u,5*u,3*u);
+});
+// ============ WORLD 2 — DIRT DEPTHS BOSSES ============
+makeSprite('tatasahur', 132, (g,u)=>{  // TA TA TA TA SAHUR: burrowing wooden drummer
+  sh(g,'#8a6a3a',2.6*u,(g)=>{ g.roundRect(26*u,-30*u,8*u,40*u,3*u); }); // bat handle
+  sh(g,'#a9844a',3*u,(g)=>{ g.roundRect(22*u,-46*u,16*u,22*u,5*u); }); // bat head
+  sh(g,'#b5894e',4*u,(g)=>{ g.roundRect(-18*u,-20*u,36*u,50*u,10*u); }); // wooden body
+  sh(g,'#7a5a30',0,(g)=>{ g.ellipse(0,4*u,10*u,16*u,0,0,TAU); }); // wood grain
+  sh(g,'#caa96a',3.4*u,(g)=>{ g.ellipse(0,-30*u,16*u,15*u,0,0,TAU); }); // head
+  sh(g,'#2b2b32',0,(g)=>{ g.rect(-16*u,-34*u,32*u,8*u); }); // brow
+  eyes(g,u,0,-28*u,6*u,3.4*u);
+  sh(g,OUT,2.4*u,(g)=>{ g.moveTo(-10*u,-18*u); g.lineTo(0,-22*u); g.lineTo(10*u,-18*u); }); // grimace
+});
+makeSprite('hotspot', 130, (g,u)=>{    // POT HOTSPOT: cracked geyser pot
+  sh(g,'#7a4a2c',4*u,(g)=>{ g.moveTo(-28*u,-12*u); g.quadraticCurveTo(-34*u,28*u,0,30*u); g.quadraticCurveTo(34*u,28*u,28*u,-12*u); g.closePath(); }); // pot
+  sh(g,'#8a5a34',3*u,(g)=>{ g.ellipse(0,-12*u,28*u,9*u,0,0,TAU); }); // rim
+  sh(g,'#e0503f',0,(g)=>{ g.ellipse(0,-12*u,22*u,6*u,0,0,TAU); }); // lava surface
+  sh(g,'#ff9f3a',0,(g)=>{ g.ellipse(-6*u,-14*u,6*u,3*u,0,0,TAU); }); // glow
+  g.strokeStyle='#3a2616'; g.lineWidth=1.6*u;
+  g.beginPath(); g.moveTo(-10*u,2*u); g.lineTo(-4*u,14*u); g.lineTo(-12*u,22*u); g.stroke(); // crack
+  eyes(g,u,0,8*u,7*u,4*u);
+});
+makeSprite('saturnita', 134, (g,u)=>{  // LA VACA SATURNO SATURNITA: molten ringed cow
+  g.save(); g.rotate(-0.4); sh(g,'#caa96a',3*u,(g)=>{ g.ellipse(0,0,46*u,12*u,0,0,TAU); }); g.restore(); // saturn ring (behind via draw order ok)
+  sh(g,'#e6e0d4',4*u,(g)=>{ g.ellipse(0,4*u,26*u,23*u,0,0,TAU); }); // body
+  sh(g,'#e0503f',0,(g)=>{ g.ellipse(-8*u,8*u,8*u,6*u,0,0,TAU); }); sh(g,'#e0503f',0,(g)=>{ g.ellipse(10*u,-2*u,7*u,6*u,0,0,TAU); }); // molten patches
+  sh(g,'#e6e0d4',3.2*u,(g)=>{ g.ellipse(0,-16*u,16*u,13*u,0,0,TAU); }); // head
+  sh(g,'#caa96a',0,(g)=>{ g.moveTo(-14*u,-26*u); g.lineTo(-22*u,-34*u); }); sh(g,'#caa96a',0,(g)=>{ g.moveTo(14*u,-26*u); g.lineTo(22*u,-34*u); }); // horns
+  sh(g,'#f4a6c0',0,(g)=>{ g.ellipse(0,-10*u,9*u,7*u,0,0,TAU); }); // snout
+  eyes(g,u,0,-18*u,5*u,3*u);
+});
+makeSprite('madudung', 138, (g,u)=>{   // MADUDUNGDUNG: rock golem titan
+  sh(g,'#6b5a48',4.4*u,(g)=>{ g.moveTo(-28*u,-18*u); g.lineTo(-22*u,30*u); g.lineTo(22*u,30*u); g.lineTo(28*u,-18*u); g.lineTo(16*u,-30*u); g.lineTo(-16*u,-30*u); g.closePath(); }); // boulder body
+  sh(g,'#7d6a54',0,(g)=>{ g.moveTo(-20*u,-8*u); g.lineTo(-6*u,-4*u); g.lineTo(-14*u,8*u); g.closePath(); }); // facet
+  sh(g,'#7d6a54',0,(g)=>{ g.moveTo(8*u,2*u); g.lineTo(22*u,6*u); g.lineTo(12*u,18*u); g.closePath(); });
+  dot(g,-10*u,-16*u,4*u,'#ffd23a'); dot(g,10*u,-16*u,4*u,'#ffd23a'); // glowing eyes
+  sh(g,OUT,3*u,(g)=>{ g.moveTo(-12*u,-4*u); g.lineTo(0,-8*u); g.lineTo(12*u,-4*u); }); // brow
+  sh(g,'#3a2e22',0,(g)=>{ g.rect(-12*u,8*u,24*u,5*u); }); // mouth slit
+});
+makeSprite('garamaraman', 138, (g,u)=>{ // GARAMARAMAN: horned magma titan
+  sh(g,'#3a2a26',4.4*u,(g)=>{ g.ellipse(0,6*u,28*u,26*u,0,0,TAU); }); // dark body
+  sh(g,'#e0503f',0,(g)=>{ g.moveTo(-14*u,-6*u); g.lineTo(0,-2*u); g.lineTo(-8*u,12*u); g.closePath(); }); // magma crack
+  sh(g,'#ff9f3a',0,(g)=>{ g.moveTo(6*u,-2*u); g.lineTo(18*u,4*u); g.lineTo(8*u,16*u); g.closePath(); });
+  sh(g,'#caa96a',3.4*u,(g)=>{ g.moveTo(-26*u,-18*u); g.lineTo(-40*u,-36*u); g.lineTo(-20*u,-28*u); g.closePath(); }); // horn L
+  sh(g,'#caa96a',3.4*u,(g)=>{ g.moveTo(26*u,-18*u); g.lineTo(40*u,-36*u); g.lineTo(20*u,-28*u); g.closePath(); }); // horn R
+  dot(g,-9*u,-6*u,4.4*u,'#ffe08a'); dot(g,9*u,-6*u,4.4*u,'#ffe08a'); // eyes
+  sh(g,'#ff7a2a',2.6*u,(g)=>{ g.moveTo(-12*u,12*u); g.lineTo(-6*u,18*u); g.lineTo(0,12*u); g.lineTo(6*u,18*u); g.lineTo(12*u,12*u); }); // fiery grin
+});
+
 // ---- pickups ----
 makeSprite('gem', 56, (g,u)=>{
   sh(g,'#4fc3f7',3*u,(g)=>{ g.moveTo(0,-22*u); g.lineTo(16*u,-4*u); g.lineTo(0,22*u); g.lineTo(-16*u,-4*u); g.closePath(); });

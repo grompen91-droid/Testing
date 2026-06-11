@@ -62,6 +62,46 @@ const BOSSES_GRASS = [
   { spr:'gorillo',   name:'GORILLO WATERMELLONDRILLO',hp:460, r:62, pattern:'chaos'  },
   { spr:'trippi',    name:'TRIPPI TROPPI',            hp:560, r:56, pattern:'spiral' },
 ];
+// ============ WORLD 2 — DIRT DEPTHS roster ============
+const FOES_DIRT = [
+  // Tier I — fodder
+  { spr:'golubiro',  name:'Spijuniro Golubiro', hp:3, sp:84, r:15, xp:1, score:10, burrow:true },
+  { spr:'bananini',  name:'Chimpanzini Bananini', hp:3, sp:86, r:16, xp:1, score:12 },
+  { spr:'dolfinita', name:'Bananita Dolfinita',  hp:4, sp:56, r:16, xp:1, score:12, dash:true },
+  { spr:'frula',     name:'Fruli Frula',         hp:3, sp:50, r:15, xp:1, score:14, death:{type:'split',n:2} },
+  { spr:'baraboom',  name:'Tric Trac Baraboom',  hp:3, sp:72, r:15, xp:1, score:14, death:{type:'ring',n:4} },
+  // Tier II — infantry
+  { spr:'cappuccino',name:'Cappuccino Assassino 2.0', hp:5, sp:70, r:15, xp:2, score:18, front:0.35 },
+  { spr:'ballerina', name:'Ballerina Cappuccina 2.0', hp:5, sp:64, r:16, xp:2, score:18, range:300, shoot:{type:'aim',n:1,cd:2.8,spd:130,col:'#c98a4f',arc:true} },
+  { spr:'bobrito',   name:'Bobrito Bandito',     hp:6, sp:62, r:17, xp:2, score:22, range:340, shoot:{type:'aim',n:3,cd:2.4,spd:175,col:'#caa12f'} },
+  { spr:'trulimero', name:'Trulimero Trulichina', hp:7, sp:64, r:16, xp:2, score:18, range:260, shoot:{type:'ring',n:6,cd:3.2,spd:120,col:'#3fa6a0',move:true} },
+  { spr:'lirili',    name:'Lirili Larila 2.0',   hp:13, sp:40, r:22, xp:3, score:30, range:320, shoot:{type:'aim',n:3,cd:3.0,spd:130,col:'#6b9233'} },
+  { spr:'patapim',   name:'Brr Brr Patapim 2.0', hp:12, sp:44, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.2,spd:120,col:'#9c6b3f'} },
+  // Tier III — casters
+  { spr:'ananasini', name:'Orangutini Ananasini', hp:8, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.8,spd:150,col:'#e3a13a',arc:true} },
+  { spr:'glorbo',    name:'Glorbo Fruttodrillo', hp:8, sp:50, r:19, xp:3, score:30, cast:{kind:'geyser',cd:3.2,range:380,n:5,col:'#5a9e3f'} },
+  { spr:'octopus',   name:'Blueberrinni Octopussini 2.0', hp:9, sp:50, r:19, xp:3, score:30, cast:{kind:'debris',cd:3.0,n:3,col:'#5b6cf0'} },
+  { spr:'jelly',     name:'Graipussi Medussi 2.0', hp:8, sp:46, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.6,dur:1.6,col:'#d36fb0'} },
+  { spr:'espresso',  name:'Espressona Signora 2.0', hp:9, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.2,spd:130,col:'#a16a3c'} },
+  { spr:'zibra',     name:'Zibra Zubra Zibralini', hp:10, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.6,spd:150,col:'#cfcfd8',split:true} },
+  // Tier IV — heavies
+  { spr:'rhino',     name:'Rhino Toasterino 2.0', hp:18, sp:42, r:23, xp:4, score:45, range:340, shoot:{type:'aim',n:2,cd:3.0,spd:140,col:'#e8b96a'}, death:{type:'split',n:2} },
+  { spr:'burbaloni', name:'Burbaloni Luliloli',  hp:20, sp:36, r:24, xp:5, score:50, aoe:{r:52,dps:9,life:1.6,tele:0.6,slow:true,col:'#9fd0ff',cd:3.4} },
+  { spr:'cocofanto', name:'Cocofanto Elefanto',  hp:22, sp:32, r:25, xp:5, score:55, pullAura:60 },
+  { spr:'girafa',    name:'Girafa Celeste',      hp:26, sp:30, r:26, xp:5, score:55, dash:true, kb:true },
+  // Tier V — elites
+  { spr:'bicus',     name:'Brri Brri Bicus Dicus Bombicus', hp:14, sp:50, r:20, xp:4, score:44, cast:{kind:'summon',cd:5,spr:'golubiro',n:3,cap:4} },
+  { spr:'ambalabu',  name:'Boneca Ambalabu',     hp:14, sp:44, r:20, xp:4, score:44, cast:{kind:'geyser',cd:3.4,range:420,n:5,lines:3,col:'#5a9e3f'} },
+  { spr:'dindin',    name:'U Din Din Din Din Dun Ma Din Din Din Dun', hp:16, sp:38, r:22, xp:5, score:48, death:{type:'split',n:2} },
+];
+const BOSSES_DIRT = [
+  { spr:'tatasahur', name:'TA TA TA TA SAHUR',        hp:150, r:54, pattern:'chaos',  phased:true },
+  { spr:'hotspot',   name:'POT HOTSPOT',              hp:230, r:60, pattern:'rings',  phased:true },
+  { spr:'saturnita', name:'LA VACA SATURNO SATURNITA',hp:300, r:58, pattern:'chaos',  phased:true },
+  { spr:'tralalero', name:'TRALALERO TRALALA 2.0',    hp:380, r:56, pattern:'spiral', phased:true, moveKey:'tralala2' },
+  { spr:'crocodilo', name:'BOMBARDIRO CROCODILO 2.0', hp:460, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
+  { spr:'madudung',  name:'MADUDUNGDUNG',             hp:560, r:62, pattern:'chaos',  bars:2, hp2:400, duo:'garamaraman' },
+];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
 const WORLDS = [
   { id:'grass', name:'GRASSLANDS', waveTarget:20, endless:false,
@@ -71,7 +111,7 @@ const WORLDS = [
   { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false,
     theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
             wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'game' },
-    foes:FOES_GRASS, bosses:BOSSES_GRASS },
+    foes:FOES_DIRT, bosses:BOSSES_DIRT },
   { id:'under', name:'THE UNDERGROUND', waveTarget:0, endless:true,
     theme:{ void:'#1c1622', tile1:'#33293f', tile2:'#2c2336', tuft:'rgba(120,90,160,0.25)',
             wall:'#241a30', post:'#4a3a60', postDark:'#160f1e', bg:'#241a30', tint:'#6a4f8a', music:'boss2' },
@@ -297,19 +337,33 @@ function spawnBoss(){
   const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
   const mult = 1 + (wave-5)*0.22;
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
+  const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult, total = bar1+bar2;
   boss = {
-    spr:def.spr, name:def.name, pattern:def.pattern,
+    spr:def.spr, name:def.name, pattern:def.pattern, mk:def.moveKey||def.spr,
+    phased:def.phased, bars:def.bars||1, bar1, bar2,
     x:p.x, y:p.y, r:def.r,
-    hp:def.hp*HP_MULT*mult, maxHp:def.hp*HP_MULT*mult,
+    hp:total, maxHp:total,
     t:0, phase:0, isBoss:true, sp:46, xp:0, score:500, hitT:0, sq:0,
     mst:'recover', mt:1.0, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0,
     rollSpray:0, warpT:0
   };
   enemies.push(boss);
+  if(def.duo){   // final-boss partner: own body + move cycle, shares the lead's HP pool
+    const mate = {
+      spr:def.duo, name:def.duo.toUpperCase(), mk:def.duo, partner:true, lead:boss,
+      x:clamp(p.x+110,WALL+def.r,WORLD.w-WALL-def.r), y:p.y, r:def.r,
+      hp:1, maxHp:1, t:0, phase:0, isBoss:true, sp:46, xp:0, score:0, hitT:0, sq:0,
+      mst:'recover', mt:1.6, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0,
+      rollSpray:0, warpT:0
+    };
+    enemies.push(mate); boss.mate=mate;
+  }
   sfx.boss();
   playMusic('boss'+(((Math.floor(wave/5)-1)%3+3)%3));   // a different loop per boss
   $('bossname').textContent = boss.name;
   $('bossfill').style.width = '100%';
+  $('bossfill2').style.width = '100%';
+  $('bossbar2').classList.toggle('hidden', boss.bars!==2);
   $('bossbar').classList.remove('hidden');
   const bw=$('bosswarn'); bw.textContent='⚠ BOSS ⚠'; bw.classList.remove('hidden');
   setTimeout(()=>bw.classList.add('hidden'), 1700);
@@ -328,6 +382,10 @@ function spawnEnemy(){
     dash:def.dash, dst:'idle', dcd:rand(2,4), da:0, dwin:0, ddur:0,
     shell:def.shell, shellCd:rand(3,5), iv:0,
     support:def.support, supCd:rand(2,3.5),
+    // ---- World 2 (DIRT DEPTHS) fields ----
+    front:def.front, kb:def.kb, pullAura:def.pullAura,
+    cast:def.cast, castCd: def.cast ? rand(1.4,2.8) : 0,
+    under: !!def.burrow, digT: def.burrow ? rand(0.7,1.3) : 0, spin:0,
     t:rand(0,TAU), wob:rand(2,4), shootCd:rand(1.5,4), frz:0, isBoss:false, hitT:0, sq:0, face:1
   });
 }
@@ -672,6 +730,7 @@ function update(dt){
   // --- enemies ---
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
+    if(!e) continue;   // worldCleared() can shrink the array mid-loop (boss dies while adds are alive)
     e.t += dt;
     if(e.hitT>0) e.hitT-=dt;
     if(e.sq>0) e.sq-=dt*4;
@@ -679,8 +738,18 @@ function update(dt){
 
     if(e.isBoss){
       updateBoss(e,dt);
+    } else if(e.under){
+      // burrowed: travel toward the player underground (untargetable), then surface with a pop
+      e.digT-=dt;
+      const a=Math.atan2(P.y-e.y,P.x-e.x);
+      e.x=clamp(e.x+Math.cos(a)*e.sp*1.35*dt,WALL,WORLD.w-WALL); e.y=clamp(e.y+Math.sin(a)*e.sp*1.35*dt,WALL,WORLD.h-WALL);
+      if(e.digT<=0){ e.under=false; e.iv=0.2; burst(e.x,e.y,'#7a5a30',16,220); shake=Math.max(shake,4); }
     } else {
       if(e.iv>0) e.iv-=dt;
+      // sweep spoke (sweep cast) — rotating dual bullet arm
+      if(e.spin>0){ e.spin-=dt; e.spinT=(e.spinT||0)-dt; if(e.spinT<=0){ e.spinT=0.12; e.sphase=(e.sphase||0)+0.5; const col=e.spinCol||'#b06ff0'; fireEB(e.x,e.y,e.sphase,150,col); fireEB(e.x,e.y,e.sphase+Math.PI,150,col); } }
+      // sinkhole pull aura — drags the player toward this enemy every frame
+      if(e.pullAura){ const a=Math.atan2(e.y-P.y,e.x-P.x); P.x=clamp(P.x+Math.cos(a)*e.pullAura*dt,WALL+P.r,WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*e.pullAura*dt,WALL+P.r,WORLD.h-WALL-P.r); }
       // turtle: periodically pull into an invulnerable shell and hold still
       if(e.shell && e.iv<=0){ e.shellCd-=dt; if(e.shellCd<=0){ e.iv=1.6; e.shellCd=4.5; } }
       // charge-dash state machine (Penguino slide, Tigrrullini pounce, ...)
@@ -715,8 +784,23 @@ function update(dt){
             e.shootCd = e.shoot.cd || rand(2.5,4.5);
             const spd = e.shoot.spd||140, col = e.shoot.col||'#e23b3b';
             muzzleFlash(e.x, e.y, col);   // colored puff = "this enemy fired these bullets"
-            if(e.shoot.type==='ring'){ const n=e.shoot.n||8, off=rand(0,TAU); for(let k=0;k<n;k++) fireEB(e.x,e.y, off+k*TAU/n, spd, col); }
-            else { const n=e.shoot.n||1, aim=Math.atan2(P.y-e.y,P.x-e.x); for(let k=0;k<n;k++) fireEB(e.x,e.y, aim+(k-(n-1)/2)*0.18, spd, col); }
+            const opts = e.shoot.split ? {split:true, splitT:0.55} : undefined;
+            if(e.shoot.arc){               // lobbed shot: telegraphed landing zone instead of a bullet line
+              const n=e.shoot.n||1; for(let k=0;k<n;k++) addZone(P.x+rand(-30,30)+ (k-(n-1)/2)*40, P.y+rand(-30,30), 40, {tele:0.85, life:0.5, dps:15, col});
+            }
+            else if(e.shoot.type==='ring'){ const n=e.shoot.n||8, off=rand(0,TAU); for(let k=0;k<n;k++) fireEB(e.x,e.y, off+k*TAU/n, spd, col, opts); }
+            else { const n=e.shoot.n||1, aim=Math.atan2(P.y-e.y,P.x-e.x); for(let k=0;k<n;k++) fireEB(e.x,e.y, aim+(k-(n-1)/2)*0.18, spd, col, opts); }
+          }
+        }
+        if(e.cast){                        // generic dirt-caster ability (geyser / debris / sweep / summon)
+          e.castCd -= dt;
+          const inRange = !e.cast.range || dist2(e.x,e.y,P.x,P.y) <= e.cast.range*e.cast.range;
+          if(e.castCd<=0 && inRange){
+            const c=e.cast; e.castCd = c.cd||3.5;
+            if(c.kind==='geyser'){ const a=Math.atan2(P.y-e.y,P.x-e.x), lines=c.lines||1; for(let l=0;l<lines;l++) geyserLine(e.x,e.y, a + (l-(lines-1)/2)*0.5, c.col, c.n||5); muzzleFlash(e.x,e.y,c.col||'#e0503f'); }
+            else if(c.kind==='debris'){ debrisDrop(c.n||3, c.col); }
+            else if(c.kind==='sweep'){ e.spin=c.dur||1.4; e.spinCol=c.col||'#b06ff0'; e.sphase=Math.atan2(P.y-e.y,P.x-e.x); muzzleFlash(e.x,e.y,c.col||'#b06ff0'); }
+            else if(c.kind==='summon'){ summonAdds(e, c.spr||'golubiro', c.n||3, c.cap||4); floatText(e.x,e.y-e.r-6,'summon!','#d2a0ff',12); }
           }
         }
         if(e.aoe){
@@ -733,7 +817,14 @@ function update(dt){
       }
     }
 
-    if(dist2(e.x,e.y,P.x,P.y) < (e.r+P.r)*(e.r+P.r)) hurtPlayer(e.isBoss?20:10, e);
+    if(!e.under && dist2(e.x,e.y,P.x,P.y) < (e.r+P.r)*(e.r+P.r)){
+      hurtPlayer(e.isBoss?20:10, e);
+      if(e.kb && e.dst==='dash'){   // charging boulder bowls the player back
+        const a=Math.atan2(P.y-e.y,P.x-e.x);
+        P.x=clamp(P.x+Math.cos(a)*120, WALL+P.r, WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*120, WALL+P.r, WORLD.h-WALL-P.r);
+        shake=Math.max(shake,7);
+      }
+    }
 
     if(e.hp<=0){
       enemies.splice(i,1);
@@ -767,6 +858,7 @@ function update(dt){
         ebullets=[];
       } else {
         if(e.death && e.death.type==='ring'){ const n=e.death.n||4; for(let k=0;k<n;k++) fireEB(e.x,e.y,k*TAU/n,150,'#e58a3a'); }
+        if(e.death && e.death.type==='split') spawnSplit(e);
         dropOrb(e.x, e.y, orbTier(e.xp));
         if(Math.random()<0.12){ const a=rand(0,TAU), s=rand(90,210); gems.push({x:e.x,y:e.y,coin:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
         if(Math.random()<0.025){ const a=rand(0,TAU), s=rand(90,210); gems.push({x:e.x,y:e.y,heart:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
@@ -790,6 +882,11 @@ function update(dt){
     b.x += b.vx*dt*P.bslow; b.y += b.vy*dt*P.bslow;
     b.t = (b.t||0)+dt;
     if(b.x<-30||b.x>WORLD.w+30||b.y<-30||b.y>WORLD.h+30||b.t>9){ ebullets.splice(i,1); continue; }
+    if(b.split && b.t>=b.splitT){    // shard bursts into a 3-way fan mid-flight
+      const base=Math.atan2(b.vy,b.vx), sp=Math.hypot(b.vx,b.vy);
+      for(let s=-1;s<=1;s++) fireEB(b.x,b.y, base+s*0.32, sp, b.color);
+      ebullets.splice(i,1); continue;
+    }
     if(dist2(b.x,b.y,P.x,P.y) < (b.r+P.r-3)*(b.r+P.r-3)){ ebullets.splice(i,1); hurtPlayer(8); }
   }
 
@@ -840,11 +937,22 @@ function update(dt){
 
   $('hpfill').style.width = Math.max(0,(P.hp/P.maxHp)*100)+'%';
   $('xpfill').style.width = (P.xp/P.xpNext)*100+'%';
-  if(boss) $('bossfill').style.width = Math.max(0,(boss.hp/boss.maxHp)*100)+'%';
+  if(boss){
+    if(boss.bars===2){
+      $('bossfill').style.width  = clamp((boss.hp-boss.bar2)/boss.bar1,0,1)*100+'%';
+      $('bossfill2').style.width = clamp(boss.hp/boss.bar2,0,1)*100+'%';
+    } else $('bossfill').style.width = Math.max(0,(boss.hp/boss.maxHp)*100)+'%';
+  }
 }
 
 function damageEnemy(e,dmg,fx,fy,crit){
-  if(e.iv>0) return;                 // shelled / invulnerable
+  if(e.iv>0 || e.under) return;      // shelled / invulnerable / burrowed
+  if(e.lead){ damageEnemy(e.lead,dmg,fx,fy,crit); e.hitT=0.12; e.sq=1; return; }  // duo partner routes to the lead's shared HP
+  if(e.front!=null && fx!=null){     // frontal armor: hits from the player-facing arc are softened
+    const toSrc=Math.atan2(fy-e.y,fx-e.x), toP=Math.atan2(P.y-e.y,P.x-e.x);
+    let d=Math.abs(((toSrc-toP+Math.PI)%TAU+TAU)%TAU-Math.PI);
+    if(d<1.2) dmg*=e.front;
+  }
   e.hp -= dmg; e.hitT=0.12; e.sq=1;
   if(P.freeze && !e.isBoss) e.frz=1.2;
   sfx.hit();
@@ -852,16 +960,50 @@ function damageEnemy(e,dmg,fx,fy,crit){
   if(crit) floatText(e.x,e.y-e.r-20,'CRIT','#ffd23a',15);
 }
 
-function fireEB(x,y,a,sp,color){
-  ebullets.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:7,color});
+function fireEB(x,y,a,sp,color,opts){
+  const b={x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:7,color};
+  if(opts) Object.assign(b,opts);
+  ebullets.push(b);
 }
 
 // ---- boss move primitives (finite bursts) ----
 function mRing(e,n,spd,col){ const off=rand(0,TAU); for(let i=0;i<n;i++) fireEB(e.x,e.y,off+i*TAU/n,spd,col); muzzleFlash(e.x,e.y,col); }
 function mAimed(e,n,spread,spd,col){ const aim=Math.atan2(P.y-e.y,P.x-e.x); for(let i=0;i<n;i++) fireEB(e.x,e.y,aim+(i-(n-1)/2)*spread,spd,col); muzzleFlash(e.x,e.y,col); }
+
+// ---- World 2 shared hazard helpers (used by dirt enemies AND bosses) ----
+// a marching row of telegraphed zones erupting from (x,y) along angle a
+function geyserLine(x,y,a,col,n=5,step=46){
+  for(let k=1;k<=n;k++) addZone(x+Math.cos(a)*step*k, y+Math.sin(a)*step*k, 34, {tele:0.35+k*0.12, life:0.45, dps:15, col:col||'#e0503f'});
+}
+// overhead rocks dropping near the player
+function debrisDrop(n=3,col){
+  for(let k=0;k<n;k++) addZone(P.x+rand(-100,100), P.y+rand(-100,100), 40, {tele:0.9, life:0.5, dps:16, col:col||'#9a7a52'});
+}
+// spawn a lightweight minion of the given sprite, tagged to its summoner for the cap count
+function spawnMini(spr,x,y,summoner){
+  const def = curFoes.find(f=>f.spr===spr) || {spr, hp:3, sp:84, r:15, xp:1, score:8};
+  enemies.push({ spr:def.spr, name:def.name||'', x:clamp(x,WALL,WORLD.w-WALL), y:clamp(y,WALL,WORLD.h-WALL),
+    r:def.r||15, hp:(def.hp||3)*HP_MULT, maxHp:(def.hp||3)*HP_MULT, sp:def.sp||84, xp:def.xp||1, score:def.score||8,
+    t:rand(0,TAU), wob:rand(2,4), shootCd:99, frz:0, iv:0, isBoss:false, hitT:0, sq:0, face:1, summoner });
+}
+function summonAdds(e,spr,n,cap){
+  const live = enemies.filter(o=>o.summoner===e).length;
+  for(let k=0;k<n && live+k<cap; k++){ const a=rand(0,TAU), d=rand(46,82); spawnMini(spr, e.x+Math.cos(a)*d, e.y+Math.sin(a)*d, e); }
+  burst(e.x,e.y,'#d2a0ff',12,180);
+}
+// burst a dying enemy into smaller, non-splitting copies
+function spawnSplit(e){
+  const n=(e.death&&e.death.n)||2, hp=Math.max(1,Math.round(e.maxHp*0.34));
+  for(let k=0;k<n;k++){ const a=k/n*TAU+rand(0,1);
+    enemies.push({ spr:e.spr, name:e.name, x:e.x+Math.cos(a)*16, y:e.y+Math.sin(a)*16,
+      r:Math.max(10,e.r*0.62), hp, maxHp:hp, sp:e.sp*1.18, xp:1, score:Math.round((e.score||10)*0.4),
+      t:rand(0,TAU), wob:rand(2,4), shootCd:99, frz:0, iv:0, isBoss:false, hitT:0, sq:0, face:1 }); }
+  burst(e.x,e.y,'#d8504a',10,180);
+}
 // move pool for the current boss / Vaca phase
 function bossMoves(e){
-  switch(e.spr){
+  switch(e.mk||e.spr){
+    // ---- World 1 ----
     case 'tralalero': return ['dash','spiral','aimed3'];
     case 'crocodilo': return ['carpet','ring16'];
     case 'sahur':     return ['slam','aimed5','dblslam'];
@@ -871,13 +1013,49 @@ function bossMoves(e){
       if(e.vph>=3) return ['ring2x','pullspiral','aimed5'];
       if(e.vph>=2) return ['ring2','spiral','aimed5','pull'];
       return ['ring16','pull'];
+    // ---- World 2 (DIRT DEPTHS) ----
+    case 'tatasahur':                      // burrow-slam intro
+      if(e.vph>=3) return ['BURROW_DOUBLE','DEBRIS3','aimed5'];
+      if(e.vph>=2) return ['BURROW_SLAM','DEBRIS3','ring2','aimed5'];
+      return ['BURROW_SLAM','aimed3','ring16'];
+    case 'hotspot':                        // geyser ground-denial
+      if(e.vph>=3) return ['QUAKE_RADIAL','dblslam','aimed5'];
+      if(e.vph>=2) return ['QUAKE_CROSS','dblslam','aimed5'];
+      return ['QUAKE_LINE','slam','ring16'];
+    case 'saturnita':                      // lava floor
+      if(e.vph>=3) return ['MELTDOWN','spiral','ring2x'];
+      if(e.vph>=2) return ['LAVA_POOL','EMBER_RAIN','aimed5','spiral'];
+      return ['LAVA_POOL','ring16','aimed3'];
+    case 'tralala2':                       // crystal refractor
+      if(e.vph>=3) return ['EXPAND_IMPLODE','SWEEP_DUAL','ring2'];
+      if(e.vph>=2) return ['SWEEP_DUAL','PRISM_SPLIT','ring2'];
+      return ['SWEEP','ring16','aimed3'];
+    case 'croco2':                         // brood / adds
+      if(e.vph>=3) return ['BROOD_BURST','SPORE_FIELD','ring2x'];
+      if(e.vph>=2) return ['SUMMON','SPORE_FIELD','spiral'];
+      return ['SUMMON','ring16','aimed5'];
+    case 'madudung':                       // final boss — lead
+      if(e.vph>=3) return ['DEVOUR','MELTDOWN','SUMMON','ring2x'];
+      if(e.vph>=2) return ['LAVA_POOL','SWEEP_DUAL','BURROW_DOUBLE','ring2'];
+      return ['BURROW_SLAM','QUAKE_LINE','aimed5','ring16'];
+    case 'garamaraman':                    // final boss — duo partner (complementary)
+      if(e.vph>=3) return ['QUAKE_RADIAL','EMBER_RAIN','spiral'];
+      if(e.vph>=2) return ['QUAKE_CROSS','PRISM_SPLIT','aimed5'];
+      return ['QUAKE_LINE','aimed5','ring12'];
   }
   return ['ring16'];
 }
 const MOVE_COL = { dash:'#e54d4d', spiral:'#e54d4d', aimed3:'#e23b3b', aimed5:'#e23b3b',
   ring16:'#4aa3df', ring12:'#3f7d33', ring2:'#7ec8ff', ring2x:'#d2a0ff', carpet:'#ff2e2e',
   slam:'#a9763e', dblslam:'#a9763e', seedsmash:'#e0503f', pull:'#d2a0ff', pullspiral:'#d2a0ff',
-  roll:'#e0503f', warp:'#c77dff' };
+  roll:'#e0503f', warp:'#c77dff',
+  // World 2
+  BURROW_SLAM:'#7a5a30', BURROW_DOUBLE:'#7a5a30', DEBRIS3:'#9a7a52',
+  QUAKE_LINE:'#e0503f', QUAKE_CROSS:'#e0503f', QUAKE_RADIAL:'#e0503f',
+  LAVA_POOL:'#e0503f', EMBER_RAIN:'#ff7a2a', MELTDOWN:'#ff7a2a',
+  SWEEP:'#b06ff0', SWEEP_DUAL:'#d2a0ff', PRISM_SPLIT:'#7ec8ff',
+  EXPAND_IMPLODE:'#d2a0ff', SUMMON:'#d2a0ff', SPORE_FIELD:'#7ab955',
+  BROOD_BURST:'#d2a0ff', DEVOUR:'#d2a0ff' };
 function pickMove(e){ const pool=bossMoves(e); let m; do{ m=pick(pool); }while(pool.length>1 && m===e.lastMv); e.lastMv=m; return m; }
 // run one move; returns how long the boss stays in the "fire" state before recovering
 function execMove(e){
@@ -902,6 +1080,24 @@ function execMove(e){
     case 'warp':   // Trippi: blink near player, then disorienting double-spiral
       e.warpT=0.45; burst(e.x,e.y,'#c77dff',18,240);   // departure tell at old position
       return 0.9;
+    // ---- World 2 moves ----
+    case 'BURROW_SLAM':   addZone(P.x,P.y,84,{tele:0.7,life:0.6,dps:22,col:'#7a5a30'}); shake=Math.max(shake,6); return 0.4;
+    case 'BURROW_DOUBLE': addZone(P.x,P.y,76,{tele:0.6,life:0.6,dps:22,col:'#7a5a30'}); addZone(P.x+rand(-120,120),P.y+rand(-120,120),70,{tele:0.95,life:0.6,dps:20,col:'#7a5a30'}); shake=Math.max(shake,7); return 0.6;
+    case 'DEBRIS3':       debrisDrop(4,'#9a7a52'); return 0.3;
+    case 'QUAKE_LINE':    geyserLine(e.x,e.y,Math.atan2(P.y-e.y,P.x-e.x),'#e0503f',7,52); return 0.3;
+    case 'QUAKE_CROSS':   { const a=Math.atan2(P.y-e.y,P.x-e.x); for(let q=0;q<4;q++) geyserLine(e.x,e.y,a+q*Math.PI/2,'#e0503f',6,52); return 0.35; }
+    case 'QUAKE_RADIAL':  { const off=rand(0,TAU); for(let q=0;q<6;q++) geyserLine(e.x,e.y,off+q*TAU/6,'#e0503f',6,50); return 0.4; }
+    case 'LAVA_POOL':     addZone(P.x,P.y,70,{tele:0.6,life:2.2,dps:16,col:'#e0503f'}); return 0.3;
+    case 'EMBER_RAIN':    debrisDrop(5,'#ff7a2a'); return 0.35;
+    case 'MELTDOWN':      for(let k=0;k<4;k++) addZone(rand(WALL+80,WORLD.w-WALL-80),rand(WALL+80,WORLD.h-WALL-80),66,{tele:0.7,life:2.6,dps:16,col:'#e0503f'}); mRing(e,20,150,'#ff7a2a'); return 0.4;
+    case 'SWEEP':         e.spin=1.4; e.spinCol='#b06ff0'; return 1.0;
+    case 'SWEEP_DUAL':    e.spin=1.6; e.spinCol='#d2a0ff'; return 1.1;
+    case 'PRISM_SPLIT':   { const aim=Math.atan2(P.y-e.y,P.x-e.x); for(let k=-2;k<=2;k++) fireEB(e.x,e.y,aim+k*0.18,150,'#7ec8ff',{split:true,splitT:0.5}); muzzleFlash(e.x,e.y,'#7ec8ff'); return 0.25; }
+    case 'EXPAND_IMPLODE':mRing(e,22,160,'#d2a0ff'); e.pull=1.2; e.pullStr=120; return 1.2;
+    case 'SUMMON':        summonAdds(e,'golubiro',3,6); return 0.4;
+    case 'SPORE_FIELD':   for(let k=0;k<4;k++) addZone(P.x+rand(-160,160),P.y+rand(-160,160),60,{tele:0.6,life:2.4,dps:8,slow:true,col:'#7ab955'}); return 0.4;
+    case 'BROOD_BURST':   summonAdds(e,'golubiro',4,8); mRing(e,20,160,'#d2a0ff'); mRing(e,16,110,'#b06ff0'); return 0.4;
+    case 'DEVOUR':        e.pull=1.4; e.pullStr=150; mRing(e,20,160,'#d2a0ff'); mRing(e,20,110,'#b06ff0'); return 1.2;
   }
   return 0.2;
 }
@@ -910,10 +1106,15 @@ function updateBoss(e,dt){
   if(e.iv>0) e.iv-=dt;
   if(!e.enraged && e.hp/e.maxHp < 0.4){ e.enraged=true; bigText('ENRAGED!','#e54d4d'); shake=Math.max(shake,12); }
 
-  // La Vaca Saturno climbs HP-gated phases
-  if(e.spr==='vaca'){
-    const frac=e.hp/e.maxHp, ph = frac<0.33?3 : frac<0.66?2 : 1;
-    if(ph>e.vph){ e.vph=ph; bigText('PHASE '+ph+'!','#d2a0ff'); shake=Math.max(shake,12); e.iv=0.6; ebullets=[]; sfx.boss(); }
+  // HP-gated phases. Two-bar bosses split phase 2 at the first bar's midpoint; phase 3 = second bar.
+  if(e.partner){
+    e.vph = e.lead ? e.lead.vph : 1;          // duo partner mirrors the lead's phase
+  } else if(e.bars===2 || e.phased || e.spr==='vaca'){
+    let ph;
+    if(e.bars===2){ ph = e.hp > e.bar2 + e.bar1*0.5 ? 1 : e.hp > e.bar2 ? 2 : 3; }
+    else { const frac=e.hp/e.maxHp; ph = frac<0.33?3 : frac<0.66?2 : 1; }
+    if(ph>e.vph){ e.vph=ph; bigText(e.bars===2 && ph===3 ? 'FINAL PHASE!' : 'PHASE '+ph+'!','#d2a0ff');
+      shake=Math.max(shake,12); e.iv=0.6; ebullets=[]; sfx.boss(); if(e.mate) e.mate.iv=0.6; }
   }
 
   // sustained sub-attacks (run independent of the move state machine)
@@ -1099,6 +1300,12 @@ function render(){
   // --- enemies (sorted by y for depth) ---
   const vis = enemies.filter(e=> e.x>vx0-60&&e.x<vx1+60&&e.y>vy0-60&&e.y<vy1+60).sort((a,b)=>a.y-b.y);
   for(const e of vis){
+    if(e.under){   // burrowed: just a heaving dirt mound that tracks the player
+        const w=e.r*1.1+Math.sin(e.t*10)*3;
+        cx.fillStyle='#5a3d28'; cx.beginPath(); cx.ellipse(e.x,e.y,w,w*0.5,0,Math.PI,TAU); cx.fill();
+        cx.fillStyle='#6e4d34'; cx.beginPath(); cx.ellipse(e.x,e.y-2,w*0.7,w*0.32,0,Math.PI,TAU); cx.fill();
+        continue;
+    }
     // shadow
     cx.fillStyle='rgba(40,60,25,0.28)';
     cx.beginPath(); cx.ellipse(e.x, e.y+e.r*0.85, e.r*0.8, e.r*0.32, 0,0,TAU); cx.fill();
