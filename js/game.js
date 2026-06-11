@@ -1322,7 +1322,7 @@ function render(){
     }
     const wob = e.isBoss ? Math.sin(e.t*2)*0.06 : Math.sin(e.t*6)*0.12;
     if(e.cut && cut){ cx.globalAlpha = cut.alpha; }
-    drawSprite(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), wob, e.sq, e.hitT, e.face===-1, curTheme.tint);
+    drawSprite(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), wob, e.sq, e.hitT, e.face===-1, null);
     if(e.cut){ cx.globalAlpha = 1; }
     if(e.frz>0){ cx.globalAlpha=0.4; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
     if(e.iv>0){ cx.strokeStyle='#d8b46a'; cx.lineWidth=4; cx.globalAlpha=0.85; cx.beginPath(); cx.arc(e.x,e.y,e.r+6,0,TAU); cx.stroke(); cx.globalAlpha=1; }
