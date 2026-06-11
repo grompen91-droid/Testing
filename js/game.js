@@ -230,7 +230,8 @@ function spawnBoss(){
     x:p.x, y:p.y, r:def.r,
     hp:def.hp*HP_MULT*mult, maxHp:def.hp*HP_MULT*mult,
     t:0, phase:0, isBoss:true, sp:46, xp:0, score:500, hitT:0, sq:0,
-    mst:'recover', mt:1.0, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0
+    mst:'recover', mt:1.0, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0,
+    rollSpray:0, warpT:0
   };
   enemies.push(boss);
   sfx.boss();
@@ -787,8 +788,8 @@ function bossMoves(e){
     case 'tralalero': return ['dash','spiral','aimed3'];
     case 'crocodilo': return ['carpet','ring16'];
     case 'sahur':     return ['slam','aimed5','dblslam'];
-    case 'gorillo':   return ['seedsmash','aimed5','ring12'];
-    case 'trippi':    return ['spiral','ring16','aimed5'];
+    case 'gorillo':   return ['roll','seedsmash','ring12'];
+    case 'trippi':    return ['warp','spiral','ring16'];
     case 'vaca':
       if(e.vph>=3) return ['ring2x','pullspiral','aimed5'];
       if(e.vph>=2) return ['ring2','spiral','aimed5','pull'];
@@ -798,7 +799,8 @@ function bossMoves(e){
 }
 const MOVE_COL = { dash:'#e54d4d', spiral:'#e54d4d', aimed3:'#e23b3b', aimed5:'#e23b3b',
   ring16:'#4aa3df', ring12:'#3f7d33', ring2:'#7ec8ff', ring2x:'#d2a0ff', carpet:'#ff2e2e',
-  slam:'#a9763e', dblslam:'#a9763e', seedsmash:'#e0503f', pull:'#d2a0ff', pullspiral:'#d2a0ff' };
+  slam:'#a9763e', dblslam:'#a9763e', seedsmash:'#e0503f', pull:'#d2a0ff', pullspiral:'#d2a0ff',
+  roll:'#e0503f', warp:'#c77dff' };
 function pickMove(e){ const pool=bossMoves(e); let m; do{ m=pick(pool); }while(pool.length>1 && m===e.lastMv); e.lastMv=m; return m; }
 // run one move; returns how long the boss stays in the "fire" state before recovering
 function execMove(e){
@@ -817,6 +819,12 @@ function execMove(e){
     case 'seedsmash': addZone(P.x,P.y,62,{tele:0.7,life:1.0,dps:18,col:'#3f7d33'}); { const off=rand(0,TAU); for(let k=0;k<12;k++) fireEB(e.x,e.y,off+k*TAU/12,130,'#e0503f'); } muzzleFlash(e.x,e.y,'#e0503f'); return 0.3;
     case 'pull':   e.pull=1.2; e.pullStr=110; return 1.2;
     case 'pullspiral': e.pull=1.4; e.pullStr=130; e.spin=1.0; e.spinCol='#d2a0ff'; return 1.0;
+    case 'roll':   // Gorillo: rolling-melon charge (reuses dash fields) + seed spray + trail zones
+      e.dst='wind'; e.dwin=e.enraged?0.3:0.5; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.rollSpray=0.4; return 0.9;   // spray spans the 0.4s dash; fire window matches 'dash'
+    case 'warp':   // Trippi: blink near player, then disorienting double-spiral
+      e.warpT=0.45; burst(e.x,e.y,'#c77dff',18,240);   // departure tell at old position
+      return 0.9;
   }
   return 0.2;
 }
@@ -839,6 +847,19 @@ function updateBoss(e,dt){
   else if(e.dst==='dash'){ dashing=true; e.ddur-=dt; e.x+=Math.cos(e.da)*520*dt; e.y+=Math.sin(e.da)*520*dt; if(e.ddur<=0) e.dst='idle'; }
   if(e.spin>0){ e.spin-=dt; e.spinT=(e.spinT||0)-dt; if(e.spinT<=0){ e.spinT=0.1; e.phase=(e.phase||0)+0.42;
     const col=e.spinCol||'#e54d4d'; fireEB(e.x,e.y,e.phase,170,col); fireEB(e.x,e.y,e.phase+Math.PI,170,col); } }
+  // Gorillo rolling-melon: while dashing from a 'roll', spray seeds sideways + drop trail
+  if(e.rollSpray>0 && e.dst==='dash'){
+    e.rollSpray-=dt; e.spT=(e.spT||0)-dt;
+    if(e.spT<=0){ e.spT=0.09;
+      fireEB(e.x,e.y,e.da+Math.PI/2,150,'#e0503f'); fireEB(e.x,e.y,e.da-Math.PI/2,150,'#e0503f');
+      addZone(e.x,e.y,40,{tele:0.3,life:0.8,dps:14,col:'#3f7d33'}); }
+  }
+  // Trippi warp: count down the blink tell, then teleport beside the player and burst
+  if(e.warpT>0){ e.warpT-=dt;
+    if(e.warpT<=0){
+      const a=rand(0,TAU); e.x=clamp(P.x+Math.cos(a)*180,WALL+e.r,WORLD.w-WALL-e.r); e.y=clamp(P.y+Math.sin(a)*180,WALL+e.r,WORLD.h-WALL-e.r);
+      burst(e.x,e.y,'#c77dff',22,260); e.spin=0.7; e.spinCol='#c77dff'; e.iv=0.2; }
+  }
 
   // ---- telegraphed move cycle: recover -> wind -> fire -> recover ----
   const enr = e.enraged?0.65:1;
