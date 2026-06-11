@@ -29,6 +29,17 @@ function eyes(g,u,sx,sy,sp,rr){
   }
 }
 
+const TINTED = {};
+function tintedSprite(name, tint){
+  const key=name+'|'+tint; if(TINTED[key]) return TINTED[key];
+  const src=SP[name]; if(!src) return null;
+  const c=document.createElement('canvas'); c.width=src.width; c.height=src.height;
+  const g=c.getContext('2d'); g.drawImage(src,0,0);
+  g.globalCompositeOperation='source-atop'; g.globalAlpha=0.42; g.fillStyle=tint;
+  g.fillRect(0,0,c.width,c.height);
+  TINTED[key]=c; return c;
+}
+
 // ---- Player: cool cartoon survivor with shades ----
 makeSprite('player', 128, (g,u)=>{
   sh(g,'#3f6fae',3*u,(g)=>{ g.roundRect(-12*u,16*u,9*u,20*u,4*u); });

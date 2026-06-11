@@ -933,7 +933,7 @@ function hurtPlayer(dmg, src){
 
 // ============ RENDER ============
 const TILE = 80;
-function drawSprite(name, x, y, size, rot, sq, hitT, flip){
+function drawSprite(name, x, y, size, rot, sq, hitT, flip, tint){
   const img = SP[name]; if(!img) return;
   cx.save();
   cx.translate(x,y);
@@ -943,7 +943,8 @@ function drawSprite(name, x, y, size, rot, sq, hitT, flip){
   let sxk=1, syk=1;
   if(sq>0){ const k=Math.sin(sq*Math.PI)*0.22; sxk=1+k; syk=1-k; }
   cx.scale(sxk,syk);
-  cx.drawImage(img, -size/2, -size/2, size, size);
+  const drawImg = (tint && tintedSprite(name,tint)) || img;
+  cx.drawImage(drawImg, -size/2, -size/2, size, size);
   if(hitT>0){ cx.globalAlpha=Math.min(1,hitT/0.12); cx.drawImage(SPW[name], -size/2, -size/2, size, size); cx.globalAlpha=1; }
   cx.restore();
 }
@@ -959,7 +960,7 @@ function render(){
   const vx0=camera.x, vy0=camera.y, vx1=vx0+vw, vy1=vy0+vh;
 
   // --- ground: outside-world void ---
-  cx.fillStyle='#5b7d33';
+  cx.fillStyle=curTheme.void;
   cx.fillRect(vx0-40, vy0-40, vw+80, vh+80);
 
   // --- grass field (checkerboard tiles, only visible region) ---
@@ -968,12 +969,12 @@ function render(){
   for(let gy=gy0; gy<gy1; gy+=TILE){
     for(let gx=gx0; gx<gx1; gx+=TILE){
       const odd=((gx/TILE)+(gy/TILE))&1;
-      cx.fillStyle = odd ? '#86c64a' : '#7cbd43';
+      cx.fillStyle = odd ? curTheme.tile1 : curTheme.tile2;
       cx.fillRect(gx, gy, TILE, TILE);
     }
   }
   // subtle grass tufts (deterministic per tile)
-  cx.fillStyle='rgba(60,110,40,0.35)';
+  cx.fillStyle=curTheme.tuft;
   for(let gy=gy0; gy<gy1; gy+=TILE){
     for(let gx=gx0; gx<gx1; gx+=TILE){
       const h=((gx*31+gy*17)%97)/97;
@@ -1048,7 +1049,7 @@ function render(){
       cx.setLineDash([]); cx.globalAlpha=1;
     }
     const wob = e.isBoss ? Math.sin(e.t*2)*0.06 : Math.sin(e.t*6)*0.12;
-    drawSprite(e.spr, e.x, e.y, e.r*2.5, wob, e.sq, e.hitT, e.face===-1);
+    drawSprite(e.spr, e.x, e.y, e.r*2.5, wob, e.sq, e.hitT, e.face===-1, curTheme.tint);
     if(e.frz>0){ cx.globalAlpha=0.4; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
     if(e.iv>0){ cx.strokeStyle='#d8b46a'; cx.lineWidth=4; cx.globalAlpha=0.85; cx.beginPath(); cx.arc(e.x,e.y,e.r+6,0,TAU); cx.stroke(); cx.globalAlpha=1; }
     if(e.hp<e.maxHp){
@@ -1143,21 +1144,21 @@ function render(){
 
 function drawBorder(vx0,vy0,vx1,vy1){
   // dark band just inside the world edge + posts
-  cx.fillStyle='#7a5230';
+  cx.fillStyle=curTheme.wall||'#7a5230';
   if(vy0 < WALL) cx.fillRect(Math.max(0,vx0-40), 0, Math.min(WORLD.w,vx1)-Math.max(0,vx0-40)+40, WALL);
   if(vy1 > WORLD.h-WALL) cx.fillRect(Math.max(0,vx0-40), WORLD.h-WALL, Math.min(WORLD.w,vx1)-Math.max(0,vx0-40)+40, WALL);
   if(vx0 < WALL) cx.fillRect(0, Math.max(0,vy0-40), WALL, Math.min(WORLD.h,vy1)-Math.max(0,vy0-40)+40);
   if(vx1 > WORLD.w-WALL) cx.fillRect(WORLD.w-WALL, Math.max(0,vy0-40), WALL, Math.min(WORLD.h,vy1)-Math.max(0,vy0-40)+40);
   // fence posts/rail along inner edge
-  cx.strokeStyle='#5a3a20'; cx.lineWidth=6;
-  cx.fillStyle='#9a6b3d';
+  cx.strokeStyle=curTheme.postDark||'#5a3a20'; cx.lineWidth=6;
+  cx.fillStyle=curTheme.post||'#9a6b3d';
   const postEvery=80;
   if(vy0 < WALL+10){ for(let x=Math.max(WALL,Math.floor(vx0/postEvery)*postEvery); x<Math.min(WORLD.w-WALL,vx1); x+=postEvery){ post(x,WALL-6); } cx.beginPath(); cx.moveTo(Math.max(0,vx0),WALL-4); cx.lineTo(Math.min(WORLD.w,vx1),WALL-4); cx.stroke(); }
   if(vy1 > WORLD.h-WALL-10){ for(let x=Math.max(WALL,Math.floor(vx0/postEvery)*postEvery); x<Math.min(WORLD.w-WALL,vx1); x+=postEvery){ post(x,WORLD.h-WALL+6); } cx.beginPath(); cx.moveTo(Math.max(0,vx0),WORLD.h-WALL+4); cx.lineTo(Math.min(WORLD.w,vx1),WORLD.h-WALL+4); cx.stroke(); }
   if(vx0 < WALL+10){ for(let y=Math.max(WALL,Math.floor(vy0/postEvery)*postEvery); y<Math.min(WORLD.h-WALL,vy1); y+=postEvery){ post(WALL-6,y); } cx.beginPath(); cx.moveTo(WALL-4,Math.max(0,vy0)); cx.lineTo(WALL-4,Math.min(WORLD.h,vy1)); cx.stroke(); }
   if(vx1 > WORLD.w-WALL-10){ for(let y=Math.max(WALL,Math.floor(vy0/postEvery)*postEvery); y<Math.min(WORLD.h-WALL,vy1); y+=postEvery){ post(WORLD.w-WALL+6,y); } cx.beginPath(); cx.moveTo(WORLD.w-WALL+4,Math.max(0,vy0)); cx.lineTo(WORLD.w-WALL+4,Math.min(WORLD.h,vy1)); cx.stroke(); }
 }
-function post(x,y){ cx.fillStyle='#9a6b3d'; cx.fillRect(x-5,y-14,10,28); cx.strokeStyle='#5a3a20'; cx.lineWidth=2.5; cx.strokeRect(x-5,y-14,10,28); }
+function post(x,y){ cx.fillStyle=curTheme.post||'#9a6b3d'; cx.fillRect(x-5,y-14,10,28); cx.strokeStyle=curTheme.postDark||'#5a3a20'; cx.lineWidth=2.5; cx.strokeRect(x-5,y-14,10,28); }
 
 function renderArena(vx0,vy0,vx1,vy1){
   if(!arena) return;
@@ -1232,6 +1233,7 @@ function menuUpdate(dt){
 // ============ INIT ============
 resetPlayer(); state=ST.MENU;
 computeCamera();
+document.body.style.background = curTheme.bg;
 // populate the main menu (character + saved gold + best)
 $('charimg').src = SP['player'].toDataURL();
 $('goldicon').src = SP['coin'].toDataURL();
