@@ -110,7 +110,7 @@ const WORLDS = [
     theme:{ void:'#5b7d33', tile1:'#86c64a', tile2:'#7cbd43', tuft:'rgba(60,110,40,0.35)',
             wall:null, post:null, bg:'#6fae3d', tint:null, music:'game' },
     foes:FOES_GRASS, bosses:BOSSES_GRASS },
-  { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false,
+  { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false, hpMul:1.25,   // tougher world: +25% enemy & boss HP
     theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
             wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'dirt',
             debris:0.8, edgeDark:0.15 },
@@ -339,7 +339,7 @@ function ringPos(){ // spawn point on a ring around player, clamped to world
 
 function spawnBoss(){
   const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
-  const mult = 1 + (wave-5)*0.22;
+  const mult = (1 + (wave-5)*0.22) * (curWorld().hpMul||1);
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
   const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult, total = bar1+bar2;
   boss = {
@@ -377,7 +377,7 @@ function spawnEnemy(){
   const maxIdx = Math.min(curFoes.length-1, Math.floor(wave/2));
   const def = curFoes[Math.floor(Math.random()*(maxIdx+1))];
   const p = ringPos();
-  const hpMult = 1 + (wave-1)*0.16;
+  const hpMult = (1 + (wave-1)*0.16) * (curWorld().hpMul||1);
   enemies.push({
     spr:def.spr, name:def.name, x:p.x, y:p.y, r:def.r,
     hp:def.hp*HP_MULT*hpMult, maxHp:def.hp*HP_MULT*hpMult,
