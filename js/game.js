@@ -5,7 +5,7 @@ let shake = 0, hitFlash = 0, hitstop = 0, tPrev = 0, elapsed = 0;
 const P = {}; // player
 let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[];
 let wave=1, score=0, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
-let combo=0, comboT=0;
+let combo=0, comboT=0, waveGapT=0;   // waveGapT: countdown between a cleared wave and the next
 // One-time coin reset (2026-06-12): wipe every existing player's gold exactly once.
 if(!localStorage.getItem('br_reset_20260612')){ localStorage.setItem('br_gold','0'); localStorage.setItem('br_reset_20260612','1'); }
 let gold = +(localStorage.getItem('br_gold')||0);   // persistent currency (saved)
@@ -300,7 +300,7 @@ function startGame(idx){
   resetPlayer();
   if(typeof equippedDmgMult==='function') P.dmg *= equippedDmgMult();   // equipped gear boosts starting damage
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[];
-  wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0; arena=null; bossPending=0;
+  wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0; waveGapT=0; arena=null; bossPending=0;
   state=ST.PLAY;
   $('menu').classList.add('hidden');
   $('gameover').classList.add('hidden');
@@ -875,13 +875,16 @@ function update(dt){
     }
   }
 
+  // advance after the cleared-gap. In-update countdown (NOT a wall-clock setTimeout) so it
+  // pauses with the game and can never be dropped by a pause/blur firing during the gap.
+  if(betweenWaves && waveGapT>0){ waveGapT-=dt; if(waveGapT<=0){ waveGapT=0; wave++; startWave(); } }
+
   // wave cleared? (not while the boss is still incoming)
   if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0){
-    betweenWaves=true;
+    betweenWaves=true; waveGapT=2.2;
     const bonus=wave*50; score+=bonus;
     bigText('WAVE CLEARED +'+bonus,'#5fbf52');
     $('scoretag').textContent='★ '+score;
-    setTimeout(()=>{ if(state===ST.PLAY||state===ST.LEVELUP){ wave++; startWave(); } }, 2200);
   }
 
   // --- enemy bullets ---
