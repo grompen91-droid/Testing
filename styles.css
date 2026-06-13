@@ -84,7 +84,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .tabpanel.hidden { display:none !important; }
 #tab-battle { display:flex; flex-direction:column; justify-content:space-between; align-items:center; }
 #tab-shop, #tab-inventory { display:flex; flex-direction:column; gap:clamp(10px,2vmin,18px);
-  overflow-y:auto; padding:clamp(4px,1.2vmin,12px) 2px clamp(8px,1.6vmin,16px); }
+  overflow-y:auto; -webkit-overflow-scrolling:touch; padding:clamp(4px,1.2vmin,12px) 2px clamp(8px,1.6vmin,16px); }
+/* the global `* { touch-action:none }` kills touch scrolling — re-enable vertical pan inside the scroll panels */
+#tab-shop, #tab-shop *, #tab-inventory, #tab-inventory * { touch-action:pan-y; }
 .tabhead { text-align:center; }
 .tabtitle { font-size:clamp(24px,5vmin,42px); font-weight:900; color:#ffe08a; letter-spacing:1px;
   -webkit-text-stroke:1.5px #3a2d22; text-shadow:0 2px 0 rgba(30,22,14,.5); }
@@ -170,11 +172,16 @@ button.gbuy.poor { background:#d8cdae; color:#8a7a5a; box-shadow:0 4px 0 #b3a98c
 
 /* bottom tab bar */
 #tabbar { display:flex; gap:clamp(6px,1.4vmin,12px); width:100%; max-width:clamp(360px,64vmin,640px); }
-.tabbtn { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+.tabbtn { position:relative; flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
   background:#fbf3df; border:3px solid #3a2d22; border-radius:14px; padding:clamp(7px,1.5vmin,12px) 4px;
   font-weight:900; font-size:clamp(12px,2.1vmin,17px); color:#7a6a4a; box-shadow:0 4px 0 rgba(58,45,34,.3); cursor:pointer; }
 .tabbtn .tabico { font-size:clamp(17px,3vmin,24px); line-height:1; }
 .tabbtn.active { background:#5fbf52; color:#fff; box-shadow:0 4px 0 #3f8a36; }
+/* "new items" badge on the Inventory tab */
+.tabbadge { position:absolute; top:-7px; right:-5px; min-width:22px; height:22px; padding:0 5px;
+  display:flex; align-items:center; justify-content:center; background:#e8342b; color:#fff;
+  border:2px solid #fff; border-radius:11px; font-size:13px; font-weight:900; line-height:1;
+  box-shadow:0 2px 4px rgba(0,0,0,.35); z-index:2; }
 .tabbtn:active { transform:translateY(2px); box-shadow:0 2px 0 rgba(58,45,34,.3); }
 
 #levelup h2 {

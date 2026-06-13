@@ -63,8 +63,16 @@ if(!localStorage.getItem('br_gear_reset_v2')){
 let gearOwned = new Set(JSON.parse(localStorage.getItem('br_items_owned')||'[]'));
 let gearEquip = Object.assign({helmet:null,chest:null,pants:null,shoes:null},
                               JSON.parse(localStorage.getItem('br_gear_equipped')||'{}'));
+// items already viewed in the Inventory tab — anything owned-but-unseen drives the red tab badge.
+// First run (no key): seed with current owned so existing gear doesn't badge.
+let gearSeen = localStorage.getItem('br_gear_seen')!=null
+  ? new Set(JSON.parse(localStorage.getItem('br_gear_seen'))) : new Set(gearOwned);
 function saveOwned(){ localStorage.setItem('br_items_owned', JSON.stringify([...gearOwned])); }
 function saveEquip(){ localStorage.setItem('br_gear_equipped', JSON.stringify(gearEquip)); }
+function saveSeen(){  localStorage.setItem('br_gear_seen',   JSON.stringify([...gearSeen])); }
+function unseenCount(){ let n=0; for(const id of gearOwned) if(!gearSeen.has(id)) n++; return n; }
+function updateInvBadge(){ const b=$('invbadge'); if(!b) return; const n=unseenCount();
+  b.textContent = n>99?'99+':n; b.classList.toggle('hidden', n<=0); }
 
 // ---- equipped starting-stat multipliers (summed bonuses across the 4 slots) ----
 function equippedStatMult(stat){
@@ -121,7 +129,7 @@ function rtagHTML(rar){ return '<span class="rtag r-'+rar+'">'+RAR[rar].name+'</
 function statTag(stat){ return '<span class="stag s-'+stat+'">'+STAT[stat].short+'</span>'; }
 
 // ============ PURCHASING ============
-function ownItem(id){ gearOwned.add(id); saveOwned(); }
+function ownItem(id){ gearOwned.add(id); saveOwned(); updateInvBadge(); }   // badge the Inventory tab
 function buyItem(id, price){
   if(gearOwned.has(id) || gold<price) return false;
   gold-=price; localStorage.setItem('br_gold',gold);
@@ -260,7 +268,7 @@ function showTab(name){
   for(const t of ['battle','shop','inventory']){ const p=$('tab-'+t); if(p) p.classList.toggle('hidden', t!==name); }
   document.querySelectorAll('#tabbar .tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   if(name==='shop') renderShop();
-  if(name==='inventory') renderInventory();
+  if(name==='inventory'){ gearSeen=new Set(gearOwned); saveSeen(); updateInvBadge(); renderInventory(); }   // mark all seen -> clear badge
 }
 document.querySelectorAll('#tabbar .tabbtn').forEach(b=>b.addEventListener('click',()=>{ showTab(b.dataset.tab); if(typeof sfx!=='undefined') sfx.pick(); }));
 const _crclaim=$('crclaim'); if(_crclaim) _crclaim.addEventListener('click', closeCrate);
@@ -269,6 +277,7 @@ const _crclaim=$('crclaim'); if(_crclaim) _crclaim.addEventListener('click', clo
 refreshMenuChar();
 renderShop();
 renderInventory();
+saveSeen(); updateInvBadge();   // persist the first-run seed + show any pending "new items" badge
 const _initTab = (location.hash||'').slice(1);
 showTab(['battle','shop','inventory'].indexOf(_initTab)>=0 ? _initTab : 'battle');
 

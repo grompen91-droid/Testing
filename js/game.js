@@ -31,6 +31,7 @@ const MAX_SHOOTERS = 14;                    // foes with any `shoot` attack
 const MAX_HAZARD   = 4;                     // "earthquake" types: ground AoE / geyser / debris
 const MAX_BURST    = 4;                     // burst shooters: ring volleys or 3+ aimed shots
 const SPECIAL_HP_BUFF = 1.6, SPECIAL_DMG_BUFF = 1.3;   // hazard/burst foes are rarer, so tankier & hit harder
+const MAXPARTS = 440, MAXEB = 520;   // hard caps on particles / enemy bullets (bound worst-case render + GC)
 function foeIsShooter(d){ return !!d.shoot; }
 function foeIsHazard(d){ return !!d.aoe || (d.cast && (d.cast.kind==='geyser'||d.cast.kind==='debris')); }
 function foeIsBurst(d){ return !!d.shoot && (d.shoot.type==='ring' || (d.shoot.n||1)>=3); }
@@ -79,7 +80,7 @@ const BOSSES_GRASS = [
 // ============ WORLD 2 — DIRT DEPTHS roster ============
 const FOES_DIRT = [
   // Tier I — fodder
-  { spr:'golubiro',  name:'Spijuniro Golubiro', hp:3, sp:84, r:15, xp:1, score:10, burrow:true },
+  { spr:'golubiro',  name:'Spijuniro Golubiro', hp:3, sp:84, r:15, xp:1, score:10 },
   { spr:'bananini',  name:'Chimpanzini Bananini', hp:3, sp:86, r:16, xp:1, score:12 },
   { spr:'dolfinita', name:'Bananita Dolfinita',  hp:4, sp:56, r:16, xp:1, score:12, dash:true },
   { spr:'frula',     name:'Fruli Frula',         hp:3, sp:50, r:15, xp:1, score:14, death:{type:'split',n:2} },
@@ -143,6 +144,7 @@ function loadWorld(idx){
   worldIdx = clamp(idx,0,WORLDS.length-1);
   const w = curWorld(); curFoes = w.foes; curBosses = w.bosses; curTheme = w.theme;
   document.body.style.background = curTheme.bg;
+  buildGround();   // pre-render this world's ground once (avoids per-frame tile loops)
 }
 let cut = null;   // cutscene state
 function worldCleared(boss){
@@ -588,13 +590,16 @@ function tryDash(){
 // ============ SPATIAL HASH GRID (enemy separation + fast collision queries) ============
 const CELL = 64, GW = 8192;           // 64px cells; GW packs (cx,cy) into a single int key
 let egrid = new Map();
+let _cellPool = [];   // reused per-cell arrays so the grid rebuild allocates ~nothing each frame
 function cellKey(cx,cy){ return cx*GW + cy; }
 // rebuild once per frame from current enemy positions (burrowed foes are untargetable -> skipped)
 function buildEnemyGrid(){
-  egrid.clear();
+  egrid.clear(); let pi=0;
   for(const e of enemies){ if(e.under) continue;
     const k=cellKey(Math.floor(e.x/CELL), Math.floor(e.y/CELL));
-    let a=egrid.get(k); if(!a){ a=[]; egrid.set(k,a); } a.push(e);
+    let a=egrid.get(k);
+    if(!a){ a=_cellPool[pi] || (_cellPool[pi]=[]); a.length=0; pi++; egrid.set(k,a); }
+    a.push(e);
   }
 }
 // visit every enemy in a cell-block covering radius R around (x,y); cb does the exact hit test
@@ -1016,6 +1021,7 @@ function update(dt){
   }
 
   // --- enemy bullets ---
+  if(ebullets.length>MAXEB) ebullets.splice(0, ebullets.length-MAXEB);   // bound bullet-hell worst case (drop oldest)
   for(let i=ebullets.length-1;i>=0;i--){
     const b=ebullets[i];
     if(b.orbit){   // Saturn ring: revolve around a fixed center while spiralling outward
@@ -1064,6 +1070,7 @@ function update(dt){
   }
 
   // --- particles & texts ---
+  if(parts.length>MAXPARTS) parts.splice(0, parts.length-MAXPARTS);   // cap particle count (drop oldest)
   for(let i=parts.length-1;i>=0;i--){
     const p=parts[i];
     if(p.ring){ p.r+=(p.gr||600)*dt; p.life-=dt; if(p.life<=0) parts.splice(i,1); continue; }
@@ -1433,7 +1440,7 @@ function drawSprite(name, x, y, size, rot, sq, hitT, flip, tint){
 }
 
 // scattered ground debris — stable per tile (hashes the tile coords, no per-frame flicker)
-function drawDebris(gx0,gy0,gx1,gy1){
+function drawDebris(g,gx0,gy0,gx1,gy1){
   const D = curTheme.debris||0.8;
   for(let gy=gy0; gy<gy1; gy+=TILE){
     for(let gx=gx0; gx<gx1; gx+=TILE){
@@ -1443,22 +1450,47 @@ function drawDebris(gx0,gy0,gx1,gy1){
       const px = gx + rnd()*TILE, py = gy + rnd()*TILE, t = rnd();
       if(t<0.52){                                   // rock with shadow + highlight
         const s = 4 + rnd()*7;
-        cx.fillStyle='#5e4d39'; cx.beginPath(); cx.ellipse(px, py+s*0.45, s*1.25, s*0.62, 0,0,TAU); cx.fill();
-        cx.fillStyle='#8a7558'; cx.beginPath(); cx.ellipse(px, py, s*1.12, s*0.84, rnd()*TAU, 0,TAU); cx.fill();
-        cx.fillStyle='rgba(255,240,210,0.16)'; cx.beginPath(); cx.ellipse(px-s*0.3, py-s*0.3, s*0.4, s*0.26, 0,0,TAU); cx.fill();
+        g.fillStyle='#5e4d39'; g.beginPath(); g.ellipse(px, py+s*0.45, s*1.25, s*0.62, 0,0,TAU); g.fill();
+        g.fillStyle='#8a7558'; g.beginPath(); g.ellipse(px, py, s*1.12, s*0.84, rnd()*TAU, 0,TAU); g.fill();
+        g.fillStyle='rgba(255,240,210,0.16)'; g.beginPath(); g.ellipse(px-s*0.3, py-s*0.3, s*0.4, s*0.26, 0,0,TAU); g.fill();
       } else if(t<0.78){                            // pebble cluster
-        cx.fillStyle='#6b5a42';
-        for(let k=0;k<3;k++){ cx.beginPath(); cx.arc(px+(rnd()-0.5)*14, py+(rnd()-0.5)*14, 1.6+rnd()*2.1, 0,TAU); cx.fill(); }
+        g.fillStyle='#6b5a42';
+        for(let k=0;k<3;k++){ g.beginPath(); g.arc(px+(rnd()-0.5)*14, py+(rnd()-0.5)*14, 1.6+rnd()*2.1, 0,TAU); g.fill(); }
       } else if(t<0.92){                            // hairline crack
-        cx.strokeStyle='rgba(26,17,9,0.5)'; cx.lineWidth=1.6;
-        let cxp=px, cyp=py, a=rnd()*TAU; cx.beginPath(); cx.moveTo(cxp,cyp);
-        for(let k=0;k<3;k++){ a += (rnd()-0.5)*1.2; cxp+=Math.cos(a)*10; cyp+=Math.sin(a)*10; cx.lineTo(cxp,cyp); } cx.stroke();
+        g.strokeStyle='rgba(26,17,9,0.5)'; g.lineWidth=1.6;
+        let cxp=px, cyp=py, a=rnd()*TAU; g.beginPath(); g.moveTo(cxp,cyp);
+        for(let k=0;k<3;k++){ a += (rnd()-0.5)*1.2; cxp+=Math.cos(a)*10; cyp+=Math.sin(a)*10; g.lineTo(cxp,cyp); } g.stroke();
       } else {                                      // bone shard
-        cx.save(); cx.translate(px,py); cx.rotate(rnd()*TAU); cx.fillStyle='#cabfa6';
-        cx.fillRect(-5,-1.2,10,2.4); cx.beginPath(); cx.arc(-5,0,2,0,TAU); cx.arc(5,0,2,0,TAU); cx.fill(); cx.restore();
+        g.save(); g.translate(px,py); g.rotate(rnd()*TAU); g.fillStyle='#cabfa6';
+        g.fillRect(-5,-1.2,10,2.4); g.beginPath(); g.arc(-5,0,2,0,TAU); g.arc(5,0,2,0,TAU); g.fill(); g.restore();
       }
     }
   }
+}
+
+// Pre-render the whole-world ground (tiles + tufts + debris) to one offscreen canvas, ONCE per theme.
+// Per frame the renderer just blits this instead of re-looping every tile — a big win in DIRT DEPTHS.
+let groundCanvas=null, groundFor=null;
+function buildGround(){
+  if(!groundCanvas){ groundCanvas=document.createElement('canvas'); }
+  groundCanvas.width=WORLD.w; groundCanvas.height=WORLD.h;
+  const g=groundCanvas.getContext('2d');
+  for(let gy=0; gy<WORLD.h; gy+=TILE){
+    for(let gx=0; gx<WORLD.w; gx+=TILE){
+      const odd=((gx/TILE)+(gy/TILE))&1;
+      g.fillStyle = odd ? curTheme.tile1 : curTheme.tile2;
+      g.fillRect(gx, gy, TILE, TILE);
+    }
+  }
+  g.fillStyle=curTheme.tuft;
+  for(let gy=0; gy<WORLD.h; gy+=TILE){
+    for(let gx=0; gx<WORLD.w; gx+=TILE){
+      const h=((gx*31+gy*17)%97)/97;
+      if(h<0.3){ g.fillRect((gx+ (gx>>3)%60)+10, (gy+(gy>>2)%60)+12, 3, 7); }
+    }
+  }
+  if(curTheme.debris) drawDebris(g, 0,0, WORLD.w, WORLD.h);
+  groundFor=curTheme;
 }
 
 function render(){
@@ -1475,26 +1507,11 @@ function render(){
   cx.fillStyle=curTheme.void;
   cx.fillRect(vx0-40, vy0-40, vw+80, vh+80);
 
-  // --- grass field (checkerboard tiles, only visible region) ---
-  const gx0=Math.max(0,Math.floor(vx0/TILE)*TILE), gx1=Math.min(WORLD.w,vx1);
-  const gy0=Math.max(0,Math.floor(vy0/TILE)*TILE), gy1=Math.min(WORLD.h,vy1);
-  for(let gy=gy0; gy<gy1; gy+=TILE){
-    for(let gx=gx0; gx<gx1; gx+=TILE){
-      const odd=((gx/TILE)+(gy/TILE))&1;
-      cx.fillStyle = odd ? curTheme.tile1 : curTheme.tile2;
-      cx.fillRect(gx, gy, TILE, TILE);
-    }
-  }
-  // subtle grass tufts (deterministic per tile)
-  cx.fillStyle=curTheme.tuft;
-  for(let gy=gy0; gy<gy1; gy+=TILE){
-    for(let gx=gx0; gx<gx1; gx+=TILE){
-      const h=((gx*31+gy*17)%97)/97;
-      if(h<0.3){ cx.fillRect((gx+ (gx>>3)%60)+10, (gy+(gy>>2)%60)+12, 3, 7); }
-    }
-  }
-  // scattered debris (DIRT DEPTHS): rocks, pebbles, cracks, bone shards — deterministic per tile
-  if(curTheme.debris) drawDebris(gx0,gy0,gx1,gy1);
+  // --- ground: blit the pre-rendered world (tiles + tufts + debris), only the visible slice ---
+  if(!groundCanvas || groundFor!==curTheme) buildGround();
+  const sx0=clamp(vx0-2,0,WORLD.w), sy0=clamp(vy0-2,0,WORLD.h);
+  const sx1=clamp(vx1+2,0,WORLD.w), sy1=clamp(vy1+2,0,WORLD.h);
+  if(sx1>sx0 && sy1>sy0) cx.drawImage(groundCanvas, sx0,sy0,sx1-sx0,sy1-sy0, sx0,sy0,sx1-sx0,sy1-sy0);
 
   // --- fence border (wooden wall) ---
   drawBorder(vx0,vy0,vx1,vy1);
