@@ -12,6 +12,14 @@
 <body>
 <canvas id="game"></canvas>
 
+<div id="loading" class="overlay">
+  <div class="loadwrap">
+    <div class="title">BRAINROT<br>RUMBLE</div>
+    <div class="loadspin"></div>
+    <div class="loadtxt">loading the invasion…</div>
+  </div>
+</div>
+
 <div id="hud" class="hidden">
   <button id="pausebtn" type="button" aria-label="Pause">II</button>
   <div class="bar"><div id="hpfill"></div></div>
@@ -88,6 +96,15 @@
     <button class="tabbtn active" type="button" data-tab="battle"><span class="tabico">⚔️</span>Battle</button>
     <button class="tabbtn" type="button" data-tab="shop"><span class="tabico">🛒</span>Shop</button>
     <button class="tabbtn" type="button" data-tab="inventory"><span class="tabico">🎒</span>Inventory</button>
+  </div>
+</div>
+
+<div id="crate" class="overlay hidden">
+  <div class="panel cratepanel">
+    <h2 class="ptitle">OPENING…</h2>
+    <div id="crview" class="crview"><div class="crmarker"></div><div id="crstrip" class="crstrip"></div></div>
+    <div id="crresult" class="crresult hidden"></div>
+    <button class="bigbtn green hidden" id="crclaim">CLAIM</button>
   </div>
 </div>
 

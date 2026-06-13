@@ -4,6 +4,7 @@ let shake = 0, hitFlash = 0, hitstop = 0, tPrev = 0, elapsed = 0;
 
 const P = {}; // player
 let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[];
+let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) — avoids GC churn
 let wave=1, score=0, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let combo=0, comboT=0, waveGapT=0;   // waveGapT: countdown between a cleared wave and the next
 // One-time coin reset (2026-06-12): wipe every existing player's gold exactly once.
@@ -24,6 +25,17 @@ function dropOrb(x,y,tier,smin=90,smax=210){
 // global HP scale: enemies have 10x HP and the player does 10x damage, so the
 // numbers are big enough that % upgrades (e.g. +25%) visibly change the damage.
 const HP_MULT = 10;
+// ---- concurrency caps (perf + readability): keep specials few but make them buffy ----
+const MAX_ENEMIES  = IS_TOUCH ? 55 : 90;   // global hard cap on live actors (bosses are few, so this is ~enemies)
+const MAX_SHOOTERS = 14;                    // foes with any `shoot` attack
+const MAX_HAZARD   = 4;                     // "earthquake" types: ground AoE / geyser / debris
+const MAX_BURST    = 4;                     // burst shooters: ring volleys or 3+ aimed shots
+const SPECIAL_HP_BUFF = 1.6, SPECIAL_DMG_BUFF = 1.3;   // hazard/burst foes are rarer, so tankier & hit harder
+function foeIsShooter(d){ return !!d.shoot; }
+function foeIsHazard(d){ return !!d.aoe || (d.cast && (d.cast.kind==='geyser'||d.cast.kind==='debris')); }
+function foeIsBurst(d){ return !!d.shoot && (d.shoot.type==='ring' || (d.shoot.n||1)>=3); }
+function foeIsSpecial(d){ return foeIsHazard(d) || foeIsBurst(d); }
+function worldDmgMul(){ return curWorld().dmgMul||1; }   // per-world enemy damage multiplier
 // ---- enemy archetypes: the Italian Brainrot bestiary (ordered easy -> hard) ----
 const FOES_GRASS = [
   // Tier I — fodder
@@ -101,7 +113,7 @@ const BOSSES_DIRT = [
   { spr:'hotspot',   name:'POT HOTSPOT',              hp:230, r:60, pattern:'rings',  phased:true },
   { spr:'saturnita', name:'LA VACA SATURNO SATURNITA',hp:300, r:58, pattern:'chaos',  phased:true },
   { spr:'tralalero', name:'TRALALERO TRALALA 2.0',    hp:380, r:56, pattern:'spiral', phased:true, moveKey:'tralala2' },
-  { spr:'crocodilo', name:'BOMBARDIRO CROCODILO 2.0', hp:560, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
+  { spr:'orcalero', name:'ORCALERO ORCALA',           hp:560, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
   { spr:'madudung',  name:'MADUDUNGDUNG',             hp:680, r:62, pattern:'chaos',  bars:2, hp2:480, duo:'garamaraman' },
 ];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
@@ -110,7 +122,7 @@ const WORLDS = [
     theme:{ void:'#5b7d33', tile1:'#86c64a', tile2:'#7cbd43', tuft:'rgba(60,110,40,0.35)',
             wall:null, post:null, bg:'#6fae3d', tint:null, music:'game' },
     foes:FOES_GRASS, bosses:BOSSES_GRASS },
-  { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false, hpMul:1.25,   // tougher world: +25% enemy & boss HP
+  { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false, hpMul:0.7, dmgMul:1.5, enemyMul:0.6,   // easier but deadlier: -30% HP, +50% enemy damage, fewer enemies
     theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
             wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'dirt',
             debris:0.8, edgeDark:0.15 },
@@ -234,18 +246,32 @@ const UPGRADES = [
            {desc:'+1 shield charge.',f:()=>{P.shieldMax+=1;P.shield=P.shieldMax;}},
            {desc:'shield recharges faster.',f:()=>{P.shieldCdBase=Math.max(3.5,P.shieldCdBase-1.5);}}],
     evo:{name:'Aegis Fortress', icon:'gembig', desc:'EVOLVE — blocking erupts in a shockwave; +permanent damage reduction.', f:()=>{P.shieldMax+=1;P.shield=P.shieldMax;P.aegisEvo=true;P.shieldDR=0.85;}} },
-  { id:'blackhole', name:'Black Hole', icon:'octopus', rarity:'legendary',
+  { id:'blackhole', name:'Black Hole', icon:'octopus', rarity:'legendary', minWorld:1,
     steps:[{desc:'periodically spawn a black hole that pulls & grinds enemies.',f:()=>{P.bhole=true;}},
            {desc:'black hole strikes more often & hits harder.',f:()=>{P.bholeCdBase=Math.max(4,P.bholeCdBase-1.5);P.bholeDmg+=8;}},
            {desc:'black hole grows larger & stronger.',f:()=>{P.bholeR+=40;P.bholeDmg+=8;}},
            {desc:'black hole strikes more often & lingers.',f:()=>{P.bholeCdBase=Math.max(3,P.bholeCdBase-1.5);P.bholeLife+=0.6;}}],
     evo:{name:'Singularity', icon:'octopus', desc:'EVOLVE — bigger, longer, and devours enemy bullets.', f:()=>{P.bhole=true;P.bholeEvo=true;P.bholeR+=50;P.bholeDmg+=14;P.bholeLife+=0.8;}} },
-  { id:'phoenix', name:'Phoenix Heart', icon:'flamingo', rarity:'legendary',
+  { id:'phoenix', name:'Phoenix Heart', icon:'flamingo', rarity:'legendary', minWorld:1,
     steps:[{desc:'revive once on death in an explosive rebirth (recharges slowly).',f:()=>{P.phoenixMax+=1;P.phoenix=P.phoenixMax;}},
            {desc:'revive heals more & recharges faster.',f:()=>{P.phoenixHeal+=0.2;P.phoenixCdBase=Math.max(30,P.phoenixCdBase-10);}},
            {desc:'gain a burning aura that scorches nearby foes.',f:()=>{P.burnAura+=8;}},
            {desc:'revive recharges faster.',f:()=>{P.phoenixCdBase=Math.max(20,P.phoenixCdBase-10);}}],
     evo:{name:'Eternal Phoenix', icon:'flamingo', desc:'EVOLVE — full-HP rebirth, a huge nuke, and a permanent burn aura.', f:()=>{P.phoenixMax+=1;P.phoenix=P.phoenixMax;P.phoenixEvo=true;P.phoenixHeal=1;P.burnAura+=14;P.phoenixCdBase=Math.max(15,P.phoenixCdBase-8);}} },
+
+  // 🌍 WORLD-EXCLUSIVE abilities — only enter the draw from a given world onward (minWorld, 0-indexed)
+  { id:'tremor', name:'Tremor Rounds', icon:'crocodilo', rarity:'rare', cap:5, minWorld:1,
+    steps:[{desc:'WORLD 2+ — your bullet hits send out a small ground shock (+more per level).',f:()=>{P.tremor=(P.tremor||0)+1;}}] },
+  { id:'aftershock', name:'Aftershock', icon:'rhino', rarity:'epic', cap:5, minWorld:1,
+    steps:[{desc:'WORLD 2+ — kills have a chance to erupt a damaging quake zone (+chance per level).',f:()=>{P.aftershock=(P.aftershock||0)+1;}}] },
+  { id:'gravcrush', name:'Gravity Crush', icon:'octopus', rarity:'legendary', minWorld:2,
+    steps:[{desc:'WORLD 3+ — periodically implode a gravity well that yanks & grinds enemies.',f:()=>{P.gravcrush=true;}},
+           {desc:'crush strikes more often & hits harder.',f:()=>{P.gravCdBase=Math.max(4,P.gravCdBase-1.5);P.gravDmg+=10;}},
+           {desc:'crush grows larger & lingers.',f:()=>{P.gravR+=50;P.gravLife+=0.6;}},
+           {desc:'crush strikes more often.',f:()=>{P.gravCdBase=Math.max(3,P.gravCdBase-1);}}],
+    evo:{name:'Event Singularity', icon:'octopus', desc:'EVOLVE — huge crush that also devours enemy bullets.', f:()=>{P.gravcrush=true;P.gravEvo=true;P.gravR+=60;P.gravDmg+=18;P.gravLife+=0.8;}} },
+  { id:'abyssal', name:'Abyssal Pact', icon:'gembig', rarity:'epic', cap:5, minWorld:2,
+    steps:[{desc:'WORLD 3+ — +6% damage for every enemy near you (caps high). The swarm feeds you.',f:()=>{P.abyssal=(P.abyssal||0)+1;}}] },
 
   // ✨ SYNERGY cards — hidden until you own the prerequisite cards (req)
   { id:'frostfire', name:'Frostfire Core', icon:'gem', rarity:'epic', cap:1, req:['slow','nova'],
@@ -289,7 +315,10 @@ function resetPlayer(){
     bhole:false, bholeCd:0, bholeCdBase:7, bholeR:120, bholeDmg:18, bholeLife:2, bholeEvo:false,
     phoenix:0, phoenixMax:0, phoenixCd:0, phoenixCdBase:45, phoenixHeal:0.5, phoenixEvo:false, burnAura:0,
     armor:1, regen:0, bulletR:1, bulletSpd:1, goldMul:1, xpMul:1, spread:1,
-    frostfire:false, holeNova:false, critHeal:0, glassSafe:false, orbShoot:false, orbShootCd:0, overdrive:false, aegisNova:false
+    frostfire:false, holeNova:false, critHeal:0, glassSafe:false, orbShoot:false, orbShootCd:0, overdrive:false, aegisNova:false,
+    // world-exclusive abilities
+    tremor:0, aftershock:0, abyssal:0, abyssalMul:1,
+    gravcrush:false, gravCd:0, gravCdBase:7, gravR:130, gravDmg:20, gravLife:2, gravEvo:false
   });
 }
 
@@ -298,7 +327,9 @@ function startGame(idx){
   initAudio();
   playMusic(curTheme.music);
   resetPlayer();
-  if(typeof equippedDmgMult==='function') P.dmg *= equippedDmgMult();   // equipped gear boosts starting damage
+  if(typeof equippedDmgMult==='function')   P.dmg   *= equippedDmgMult();    // equipped gear boosts starting stats
+  if(typeof equippedSpeedMult==='function') P.speed *= equippedSpeedMult();
+  if(typeof equippedRangeMult==='function') P.range *= equippedRangeMult();
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[];
   wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0; waveGapT=0; arena=null; bossPending=0;
   state=ST.PLAY;
@@ -315,7 +346,7 @@ function startWave(){
   betweenWaves=false;
   $('wavetag').textContent = 'WAVE '+wave;
   if(wave % 5 === 0){ startBossArena(); waveEnemiesLeft = 0; }
-  else { waveEnemiesLeft = 7 + wave*3; spawnTimer = 0; sfx.wave(); }
+  else { waveEnemiesLeft = Math.max(4, Math.round((7 + wave*3) * (curWorld().enemyMul||1))); spawnTimer = 0; sfx.wave(); }
   bigText(wave%5===0 ? 'BOSS WAVE' : 'WAVE '+wave, wave%5===0?'#e54d4d':'#ffe08a');
 }
 
@@ -355,7 +386,7 @@ function spawnBoss(){
   if(def.duo){   // final-boss partner: own body + move cycle, shares the lead's HP pool
     const mate = {
       spr:def.duo, name:def.duo.toUpperCase(), mk:def.duo, partner:true, lead:boss,
-      x:clamp(p.x+110,WALL+def.r,WORLD.w-WALL-def.r), y:p.y, r:def.r,
+      x:clamp(p.x+200,WALL+def.r,WORLD.w-WALL-def.r), y:p.y, r:def.r,
       hp:1, maxHp:1, t:0, phase:0, isBoss:true, sp:46, xp:0, score:0, hitT:0, sq:0,
       mst:'recover', mt:1.6, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0,
       rollSpray:0, warpT:0, wd:null, gsweep:null, carpet:0, cbT:0, tether:0
@@ -373,14 +404,33 @@ function spawnBoss(){
   setTimeout(()=>bw.classList.add('hidden'), 1700);
 }
 
+// returns false when the global cap is hit (so the caller keeps the wave's spawn budget for later)
 function spawnEnemy(){
+  if(enemies.length >= MAX_ENEMIES) return false;     // global hard cap: defer this spawn
   const maxIdx = Math.min(curFoes.length-1, Math.floor(wave/2));
-  const def = curFoes[Math.floor(Math.random()*(maxIdx+1))];
+  // count live specials so we can keep them few (earthquake + burst shooters especially)
+  let nShoot=0, nHaz=0, nBurst=0;
+  for(const o of enemies){ if(o.isBoss) continue; if(o._shooter)nShoot++; if(o._hazard)nHaz++; if(o._burst)nBurst++; }
+  let def=null;
+  for(let tries=0; tries<6; tries++){
+    const c = curFoes[Math.floor(Math.random()*(maxIdx+1))];
+    if(foeIsHazard(c)  && nHaz   >= MAX_HAZARD)   continue;
+    if(foeIsBurst(c)   && nBurst >= MAX_BURST)    continue;
+    if(foeIsShooter(c) && nShoot >= MAX_SHOOTERS) continue;
+    def=c; break;
+  }
+  if(!def){                                            // all rolls were capped -> fall back to tier-I fodder
+    def = curFoes[Math.floor(Math.random()*Math.min(5,curFoes.length))];
+    if(foeIsShooter(def)) def = curFoes[0];
+  }
   const p = ringPos();
-  const hpMult = (1 + (wave-1)*0.16) * (curWorld().hpMul||1);
+  const special = foeIsSpecial(def);
+  const hpMult = (1 + (wave-1)*0.16) * (curWorld().hpMul||1) * (special?SPECIAL_HP_BUFF:1);
   enemies.push({
     spr:def.spr, name:def.name, x:p.x, y:p.y, r:def.r,
     hp:def.hp*HP_MULT*hpMult, maxHp:def.hp*HP_MULT*hpMult,
+    _shooter:foeIsShooter(def), _hazard:foeIsHazard(def), _burst:foeIsBurst(def),
+    dmgBuff: special?SPECIAL_DMG_BUFF:1,                // buffy specials also hit harder on contact
     sp:def.sp*(1+wave*0.02), xp:def.xp, score:def.score, range:def.range, shoot:def.shoot, death:def.death,
     aoe:def.aoe, aoeCd:rand(1.5,3),
     dash:def.dash, dst:'idle', dcd:rand(2,4), da:0, dwin:0, ddur:0,
@@ -452,6 +502,7 @@ function openLevelUp(){
   // candidates = every card with a remaining move whose synergy gate (req) is satisfied
   const cands = [];
   for(const u of UPGRADES){
+    if((u.minWorld||0) > worldIdx) continue;                      // world-locked ability (e.g. World 2/3 only)
     if(u.req && !u.req.every(id => (P.up[id]||0) > 0)) continue;   // synergy card still locked
     const m = nextMove(u); if(m) cands.push({u,m});
   }
@@ -534,6 +585,46 @@ function tryDash(){
   if(navigator.vibrate) navigator.vibrate(20);
 }
 
+// ============ SPATIAL HASH GRID (enemy separation + fast collision queries) ============
+const CELL = 64, GW = 8192;           // 64px cells; GW packs (cx,cy) into a single int key
+let egrid = new Map();
+function cellKey(cx,cy){ return cx*GW + cy; }
+// rebuild once per frame from current enemy positions (burrowed foes are untargetable -> skipped)
+function buildEnemyGrid(){
+  egrid.clear();
+  for(const e of enemies){ if(e.under) continue;
+    const k=cellKey(Math.floor(e.x/CELL), Math.floor(e.y/CELL));
+    let a=egrid.get(k); if(!a){ a=[]; egrid.set(k,a); } a.push(e);
+  }
+}
+// visit every enemy in a cell-block covering radius R around (x,y); cb does the exact hit test
+function forEnemiesNear(x,y,R,cb){
+  const span=Math.min(8, (R>0?Math.ceil(R/CELL):0)+1);
+  const gx=Math.floor(x/CELL), gy=Math.floor(y/CELL);
+  for(let ix=-span;ix<=span;ix++) for(let iy=-span;iy<=span;iy++){
+    const a=egrid.get(cellKey(gx+ix,gy+iy)); if(!a) continue;
+    for(const e of a) cb(e);
+  }
+}
+// push an enemy out of overlapping neighbours so the swarm flows around itself instead of stacking
+function separate(e){
+  if(e.isBoss || e.under || e.iv>0) return;
+  const gx=Math.floor(e.x/CELL), gy=Math.floor(e.y/CELL);
+  let sx=0, sy=0;
+  for(let ix=-1;ix<=1;ix++) for(let iy=-1;iy<=1;iy++){
+    const a=egrid.get(cellKey(gx+ix,gy+iy)); if(!a) continue;
+    for(const o of a){
+      if(o===e || o.under) continue;
+      let dx=e.x-o.x, dy=e.y-o.y; const rr=e.r+o.r, d2=dx*dx+dy*dy;
+      if(d2>=rr*rr) continue;
+      if(d2<0.01){ dx=rand(-1,1); dy=rand(-1,1); }     // perfectly stacked -> jitter apart
+      const d=Math.sqrt(dx*dx+dy*dy)||1, push=(rr-d)/d * (o.isBoss?0.9:0.5);  // bosses don't budge
+      sx+=dx*push; sy+=dy*push;
+    }
+  }
+  if(sx||sy){ e.x+=clamp(sx,-12,12); e.y+=clamp(sy,-12,12); }   // capped so nothing teleports
+}
+
 // ============ UPDATE ============
 function addCombo(){
   combo++; comboT=2.6;
@@ -575,6 +666,9 @@ function update(dt){
   // camera follows, clamped to world (zoom-aware)
   computeCamera();
 
+  // spatial grid for this frame: powers enemy separation + bullet/orb/aura collision
+  buildEnemyGrid();
+
   // --- auto-fire at nearest enemy within range ---
   P.fireCd -= dt;
   if(P.fireCd<=0 && enemies.length){
@@ -607,12 +701,10 @@ function update(dt){
     for(let i=0;i<P.orbs;i++){
       const a = P.orbA + i*(TAU/P.orbs);
       const ox = P.x + Math.cos(a)*58, oy = P.y + Math.sin(a)*58;
-      for(const e of enemies){
-        if(e.iv>0) continue;
-        if(dist2(ox,oy,e.x,e.y) < (e.r+10)*(e.r+10)){
-          e.hp -= 9*dt*P.dmg; e.hitT=Math.max(e.hitT,0.06);
-        }
-      }
+      forEnemiesNear(ox,oy,40,(e)=>{
+        if(e.iv>0 || e.lead) return;          // e.lead = duo partner: only bullets (routed) may hurt it
+        if(dist2(ox,oy,e.x,e.y) < (e.r+10)*(e.r+10)){ e.hp -= 9*dt*P.dmg; e.hitT=Math.max(e.hitT,0.06); }
+      });
       if(P.orbShield){                    // Sigma Squad: orbs eat enemy bullets
         for(let bi=ebullets.length-1;bi>=0;bi--){
           if(dist2(ox,oy,ebullets[bi].x,ebullets[bi].y) < 14*14) ebullets.splice(bi,1);
@@ -667,11 +759,11 @@ function update(dt){
 
   // --- Phoenix burn aura: enemies near you smoulder ---
   if(P.burnAura>0){
-    for(const e of enemies){
-      if(e.iv>0) continue;
+    forEnemiesNear(P.x,P.y,80,(e)=>{
+      if(e.iv>0 || e.lead) return;
       if(dist2(P.x,P.y,e.x,e.y) < 80*80){ e.hp -= P.burnAura*dt; e.hitT=Math.max(e.hitT,0.05);
         if(Math.random()<0.18) parts.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:0,vy:-rand(20,50),life:0.4,max:0.4,color:'#ff8a3a',r:rand(2,4)}); }
-    }
+    });
   }
 
   // --- Black Hole: spawn on cooldown, then pull + grind enemies ---
@@ -686,10 +778,28 @@ function update(dt){
       sfx.boss();
     }
   }
+  // --- Gravity Crush (World 3+): a black-hole-style implosion on its own cooldown ---
+  if(P.gravcrush){
+    P.gravCd -= dt;
+    if(P.gravCd<=0){
+      P.gravCd = P.gravCdBase;
+      let tx=P.x, ty=P.y, bd=Infinity;
+      for(const e of enemies){ if(e.lead) continue; const d=dist2(P.x,P.y,e.x,e.y); if(d<bd){bd=d;tx=e.x;ty=e.y;} }
+      if(bd===Infinity){ tx=P.x+Math.cos(P.face)*200; ty=P.y+Math.sin(P.face)*200; }
+      holes.push({x:tx,y:ty,r:P.gravR,life:P.gravLife,t:0,dmg:P.gravDmg,evo:P.gravEvo});
+      sfx.boss();
+    }
+  }
+  // --- Abyssal Pact (World 3+): damage scales with the size of the swarm around you ---
+  if(P.abyssal){
+    let c=0; forEnemiesNear(P.x,P.y,240,(o)=>{ if(!o.isBoss && !o.under && dist2(P.x,P.y,o.x,o.y)<240*240) c++; });
+    P.abyssalMul = 1 + Math.min(1.2, c*0.06*P.abyssal);
+  } else P.abyssalMul = 1;
+
   for(let i=holes.length-1;i>=0;i--){
     const h=holes[i]; h.t+=dt;
     for(const e of enemies){
-      if(e.iv>0) continue;
+      if(e.iv>0 || e.lead) continue;   // never grind the duo partner (hp:1) directly -> it routes via bullets only
       const d=Math.sqrt(dist2(h.x,h.y,e.x,e.y))||1;
       if(d<h.r){
         const a=Math.atan2(h.y-e.y,h.x-e.x);
@@ -708,18 +818,29 @@ function update(dt){
     b.x+=b.vx*dt; b.y+=b.vy*dt;
     if(b.dist<=0){ burst(b.x,b.y,'#fff6bf',3,55); bullets.splice(i,1); continue; }
     if(b.x<-20||b.x>WORLD.w+20||b.y<-20||b.y>WORLD.h+20){ bullets.splice(i,1); continue; }
-    for(const e of enemies){
-      if(b.hit.has(e) || e.iv>0) continue;
-      if(dist2(b.x,b.y,e.x,e.y) < (e.r+b.r)*(e.r+b.r)){
-        const critC = P.crit + (P.overdrive ? (P.frenzy||0)*0.001 : 0);   // Overdrive: frenzy stacks add crit
-        const isCrit = Math.random()<critC;
-        const dmg = P.dmg * (b.dmgMul||1) * (1 + (P.frenzy||0)*0.002) * (isCrit?(P.critMul||3):1);   // Killing Frenzy +0.2%/stack
-        b.hit.add(e);
-        hitSpark(b.x,b.y,isCrit?'#ffe14d':'#ff9f3a',isCrit);
-        damageEnemy(e,dmg,b.x,b.y,isCrit);
-        if(isCrit && P.critHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.critHeal);   // Blood Crit
-        if(b.pierce>0){ b.pierce--; } else { bullets.splice(i,1); }
-        break;
+    // grid-accelerated hit test: only check enemies in the bullet's cell block, one hit per frame
+    let hitDone=false;
+    const bgx=Math.floor(b.x/CELL), bgy=Math.floor(b.y/CELL);
+    for(let ix=-1;ix<=1 && !hitDone;ix++) for(let iy=-1;iy<=1 && !hitDone;iy++){
+      const arr=egrid.get(cellKey(bgx+ix,bgy+iy)); if(!arr) continue;
+      for(const e of arr){
+        if(b.hit.has(e) || e.iv>0) continue;
+        if(dist2(b.x,b.y,e.x,e.y) < (e.r+b.r)*(e.r+b.r)){
+          const critC = P.crit + (P.overdrive ? (P.frenzy||0)*0.001 : 0);   // Overdrive: frenzy stacks add crit
+          const isCrit = Math.random()<critC;
+          const dmg = P.dmg * (b.dmgMul||1) * (P.abyssalMul||1) * (1 + (P.frenzy||0)*0.002) * (isCrit?(P.critMul||3):1);   // Killing Frenzy +0.2%/stack; Abyssal Pact swarm bonus
+          b.hit.add(e);
+          hitSpark(b.x,b.y,isCrit?'#ffe14d':'#ff9f3a',isCrit);
+          damageEnemy(e,dmg,b.x,b.y,isCrit);
+          if(isCrit && P.critHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.critHeal);   // Blood Crit
+          if(P.tremor && Math.random() < 0.22+P.tremor*0.05){   // Tremor Rounds: ground shock splashes nearby foes
+            const R=34+P.tremor*7, sd=P.dmg*(0.3+P.tremor*0.12)*(P.abyssalMul||1);
+            forEnemiesNear(b.x,b.y,R,(o)=>{ if(o===e||o.iv>0||o.under||o.lead) return; if(dist2(b.x,b.y,o.x,o.y)<R*R){ o.hp-=sd; o.hitT=Math.max(o.hitT,0.05); } });
+            parts.push({x:b.x,y:b.y,vx:0,vy:0,life:0.18,max:0.18,color:'#caa15a',r:R,ring:true,gr:R*2.4});
+          }
+          if(b.pierce>0){ b.pierce--; } else { bullets.splice(i,1); }
+          hitDone=true; break;   // one enemy per frame (pierced bullets hit the next on later frames)
+        }
       }
     }
   }
@@ -728,7 +849,7 @@ function update(dt){
   spawnTimer -= dt;
   if(!betweenWaves && waveEnemiesLeft>0 && spawnTimer<=0){
     spawnTimer = Math.max(0.14, 0.85 - wave*0.04);
-    spawnEnemy(); waveEnemiesLeft--;
+    if(spawnEnemy() !== false) waveEnemiesLeft--;   // at the cap? keep the budget and retry next tick
   }
 
   // --- enemies ---
@@ -781,6 +902,7 @@ function update(dt){
         if(move){ e.x += Math.cos(a)*e.sp*fs*dt; e.y += Math.sin(a)*e.sp*fs*dt; }
         e.face = Math.cos(toP)>=0 ? 1 : -1;
       }
+      separate(e);   // resolve overlaps with nearby foes so the pack spreads + flows around
       e.x = clamp(e.x, WALL, WORLD.w-WALL); e.y = clamp(e.y, WALL, WORLD.h-WALL);
       if(arena){ e.x=clamp(e.x, arena.x+e.r, arena.x+arena.w-e.r); e.y=clamp(e.y, arena.y+e.r, arena.y+arena.h-e.r); }
       if(wave>=3 && e.iv<=0){
@@ -824,7 +946,7 @@ function update(dt){
     }
 
     if(!e.under && dist2(e.x,e.y,P.x,P.y) < (e.r+P.r)*(e.r+P.r)){
-      hurtPlayer(e.isBoss?20:10, e);
+      hurtPlayer((e.isBoss?20:10)*(e.dmgBuff||1), e);
       if(e.kb && e.dst==='dash'){   // charging boulder bowls the player back
         const a=Math.atan2(P.y-e.y,P.x-e.x);
         P.x=clamp(P.x+Math.cos(a)*120, WALL+P.r, WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*120, WALL+P.r, WORLD.h-WALL-P.r);
@@ -832,7 +954,7 @@ function update(dt){
       }
     }
 
-    if(e.hp<=0){
+    if(e.hp<=0 && !e.lead){   // duo partner (e.lead) is never killed on its own -> damage routes to the lead
       enemies.splice(i,1);
       kills++; addCombo();
       const gain = Math.round(e.score*comboMult());
@@ -840,6 +962,12 @@ function update(dt){
       sfx.hit();
       shake=Math.max(shake,e.isBoss?16:5); hitstop=Math.max(hitstop,e.isBoss?0.08:0.03);
       burst(e.x,e.y,'#ff9f3a',e.isBoss?60:14,e.isBoss?420:200);
+      if(P.aftershock && Math.random() < 0.12+P.aftershock*0.06){   // Aftershock: kills erupt a quake that damages nearby foes
+        const R=70+P.aftershock*10, qd=P.dmg*(2+P.aftershock)*(P.abyssalMul||1);
+        forEnemiesNear(e.x,e.y,R,(o)=>{ if(o.iv>0||o.under||o.lead) return; if(dist2(e.x,e.y,o.x,o.y)<R*R){ o.hp-=qd; o.hitT=Math.max(o.hitT,0.08); } });
+        parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.3,max:0.3,color:'#caa15a',r:R,ring:true,gr:R*2.5});
+        shake=Math.max(shake,4);
+      }
       if(P.vamp>0){ P.hp=Math.min(P.maxHp,P.hp+P.vamp); }
       if(P.frenzyGain>0) P.frenzy=Math.min(P.frenzyMax, P.frenzy+P.frenzyGain);
       if(P.frostfire && e.frz>0){          // Frostfire Core: frozen foes shatter into shards
@@ -928,7 +1056,7 @@ function update(dt){
   for(let i=zones.length-1;i>=0;i--){
     const z=zones[i]; z.t+=dt;
     if(z.t>=z.tele && z.t<z.tele+z.life && P.dashT<=0 && P.inv<=0 && dist2(z.x,z.y,P.x,P.y)<z.r*z.r){
-      P.hp -= z.dps*dt; hitFlash=Math.max(hitFlash,0.3);
+      P.hp -= z.dps*dt*worldDmgMul(); hitFlash=Math.max(hitFlash,0.3);
       if(z.slow) P.slowT=Math.max(P.slowT,0.4);
       if(P.hp<=0){ gameOver(); }
     }
@@ -1131,7 +1259,7 @@ function execMove(e){
     case 'BROOD_BURST':   summonAdds(e,'golubiro',4,8); mRing(e,20,160,'#d2a0ff'); mRing(e,16,110,'#b06ff0'); return 0.4;
     case 'DEVOUR':        e.pull=1.4; e.pullStr=150; mRing(e,20,160,'#d2a0ff'); mRing(e,20,110,'#b06ff0'); return 1.2;
     // ---- original signature attacks ----
-    case 'RICOCHET':      e.wd={ n:6, ang:Math.atan2(P.y-e.y,P.x-e.x), spd:e.enraged?640:560, tT:0 }; sfx.warn(); burst(e.x,e.y,'#7ec8ff',20,320); return 2.8;
+    case 'RICOCHET':      e.wd={ n:3, ang:Math.atan2(P.y-e.y,P.x-e.x), spd:e.enraged?500:430, tT:0, life:2.4 }; sfx.warn(); burst(e.x,e.y,'#7ec8ff',20,320); return 2.4;
     case 'DRUM_MARCH':    { const a=Math.atan2(P.y-e.y,P.x-e.x); for(let k=1;k<=5;k++) addZone(e.x+Math.cos(a)*92*k, e.y+Math.sin(a)*92*k, 70, {tele:0.3+k*0.22, life:0.45, dps:20, col:'#a9763e'}); sfx.hit(); return 0.7; }
     case 'GEYSER_SWEEP':  e.gsweep={ t:1.8, ang:Math.atan2(P.y-e.y,P.x-e.x), dir:Math.random()<0.5?1:-1, dropT:0 }; return 1.8;
     case 'SATURN_RING':   { const N=18, off=rand(0,TAU), dir=Math.random()<0.5?1:-1; for(let k=0;k<N;k++) fireEB(e.x,e.y,0,0,'#ffd24a',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/N,rad:42,angV:dir*1.8,radV:58}}); muzzleFlash(e.x,e.y,'#ffd24a'); return 0.4; }
@@ -1193,6 +1321,7 @@ function updateBoss(e,dt){
   // RICOCHET (Tralalero 2.0 only): rockets across the arena bouncing off the walls, trailing wake
   if(e.wd){
     dashing=true;
+    e.wd.life-=dt;
     e.x += Math.cos(e.wd.ang)*e.wd.spd*dt; e.y += Math.sin(e.wd.ang)*e.wd.spd*dt;
     const minX=(arena?arena.x:WALL)+e.r, maxX=(arena?arena.x+arena.w:WORLD.w-WALL)-e.r;
     const minY=(arena?arena.y:WALL)+e.r, maxY=(arena?arena.y+arena.h:WORLD.h-WALL)-e.r;
@@ -1203,7 +1332,10 @@ function updateBoss(e,dt){
     else if(e.y>maxY){ e.y=maxY; e.wd.ang=-e.wd.ang; bounced=true; }
     if(bounced){ e.wd.n--; shake=Math.max(shake,9); sfx.hit(); burst(e.x,e.y,'#7ec8ff',16,300); mRing(e,10,150,'#7ec8ff'); }
     e.wd.tT-=dt; if(e.wd.tT<=0){ e.wd.tT=0.04; parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.4,max:0.4,color:'#7ec8ff',r:e.r*0.85}); }
-    if(e.wd.n<=0) e.wd=null;
+    if(e.wd.n<=0 || e.wd.life<=0){   // done bouncing -> stand still & vulnerable for a beat
+      e.wd=null; e.stun=2.6; e.mst='recover'; e.mt=2.6;
+      burst(e.x,e.y,'#7ec8ff',24,260); shake=Math.max(shake,6); sfx.hit();
+    }
   }
   // GEYSER_SWEEP (Pot Hotspot): a rotating clock-hand of erupting geyser lines
   if(e.gsweep){
@@ -1220,19 +1352,24 @@ function updateBoss(e,dt){
   }
 
   // ---- telegraphed move cycle: recover -> wind -> fire -> recover ----
+  if(e.stun>0) e.stun-=dt;                 // post-ricochet standstill: vulnerable, no new attacks
   const enr = e.enraged?0.65:1;
   e.mt -= dt;
-  if(e.mt<=0){
+  if(e.mt<=0 && !(e.stun>0)){
     if(e.mst==='recover'){ e.mst='wind'; e.mt=0.5; e.mv=pickMove(e); e.tellCol=MOVE_COL[e.mv]||'#fff'; sfx.warn(); }
     else if(e.mst==='wind'){ e.mst='fire'; e.mt=execMove(e); }
     else { e.mst='recover'; e.mt=(e.spr==='vaca'&&e.vph>=3?0.7:1.1)*enr; }
   }
 
-  // anchor drift toward the player (unless mid-dash)
-  if(!dashing){
+  // anchor drift toward the player (unless mid-dash or standing stunned)
+  if(!dashing && !(e.stun>0)){
     const tx = clamp(P.x + Math.sin(e.t*0.5)*260, WALL+e.r, WORLD.w-WALL-e.r);
     const ty = clamp(P.y - 220 + Math.cos(e.t*0.4)*60, WALL+e.r, WORLD.h-WALL-e.r);
     e.x += (tx-e.x)*0.9*dt; e.y += (ty-e.y)*0.9*dt;
+  }
+  if(e.mate){   // duo: keep the two titans from drifting into the same spot
+    const m=e.mate, min=e.r+m.r+20; let dx=e.x-m.x, dy=e.y-m.y, d=Math.hypot(dx,dy);
+    if(d<min){ if(d<0.01){ dx=1; dy=0; d=1; } const push=(min-d)/2; e.x+=dx/d*push; m.x-=dx/d*push; e.y+=dy/d*push; m.y-=dy/d*push; }
   }
   e.x = clamp(e.x, WALL+e.r, WORLD.w-WALL-e.r); e.y = clamp(e.y, WALL+e.r, WORLD.h-WALL-e.r);
   if(arena){ e.x=clamp(e.x, arena.x+e.r, arena.x+arena.w-e.r); e.y=clamp(e.y, arena.y+e.r, arena.y+arena.h-e.r); }
@@ -1253,7 +1390,7 @@ function hurtPlayer(dmg, src){
     if(P.aegisNova) novaBlast(P.x,P.y,P.novaEvo?280:190,(P.novaEvo?40:28)*P.dmg*P.novaPow);   // Aegis Nova synergy
     return;
   }
-  P.hp -= dmg*(P.shieldDR||1)*(P.armor||1); P.inv = 0.8;
+  P.hp -= dmg*(P.shieldDR||1)*(P.armor||1)*worldDmgMul(); P.inv = 0.8;
   shake = Math.max(shake,10); hitFlash = 1; hitstop=Math.max(hitstop,0.04);
   sfx.hurt(); burst(P.x,P.y,'#e54d4d',12,200);
   if(navigator.vibrate) navigator.vibrate(60);
@@ -1409,8 +1546,10 @@ function render(){
   }
 
   // --- enemies (sorted by y for depth) ---
-  const vis = enemies.filter(e=> e.x>vx0-60&&e.x<vx1+60&&e.y>vy0-60&&e.y<vy1+60).sort((a,b)=>a.y-b.y);
-  for(const e of vis){
+  _vis.length=0;   // reuse a scratch array instead of allocating filter()+sort() every frame
+  for(const e of enemies){ if(e.x>vx0-60&&e.x<vx1+60&&e.y>vy0-60&&e.y<vy1+60) _vis.push(e); }
+  _vis.sort((a,b)=>a.y-b.y);
+  for(const e of _vis){
     if(e.under){   // burrowed: just a heaving dirt mound that tracks the player
         const w=e.r*1.1+Math.sin(e.t*10)*3;
         cx.fillStyle='#5a3d28'; cx.beginPath(); cx.ellipse(e.x,e.y,w,w*0.5,0,Math.PI,TAU); cx.fill();

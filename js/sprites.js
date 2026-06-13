@@ -650,6 +650,19 @@ makeSprite('garamaraman', 138, (g,u)=>{ // GARAMARAMAN: horned magma titan
   dot(g,-9*u,-6*u,4.4*u,'#ffe08a'); dot(g,9*u,-6*u,4.4*u,'#ffe08a'); // eyes
   sh(g,'#ff7a2a',2.6*u,(g)=>{ g.moveTo(-12*u,12*u); g.lineTo(-6*u,18*u); g.lineTo(0,12*u); g.lineTo(6*u,18*u); g.lineTo(12*u,12*u); }); // fiery grin
 });
+makeSprite('orcalero', 120, (g,u)=>{   // ORCALERO ORCALA: armoured killer-whale brute
+  sh(g,'#1f2a33',3*u,(g)=>{ g.moveTo(-30*u,-2*u); g.lineTo(-46*u,-14*u); g.lineTo(-40*u,2*u); g.lineTo(-46*u,16*u); g.closePath(); }); // tail fluke
+  sh(g,'#1f2a33',3*u,(g)=>{ g.moveTo(-6*u,-18*u); g.lineTo(2*u,-34*u); g.lineTo(12*u,-18*u); g.closePath(); }); // dorsal fin
+  sh(g,'#222d36',3.6*u,(g)=>{ g.ellipse(0,0,34*u,21*u,0,0,TAU); }); // body
+  sh(g,'#eef4f7',0,(g)=>{ g.ellipse(2*u,9*u,26*u,9*u,0,0,Math.PI); }); // white belly
+  sh(g,'#eef4f7',0,(g)=>{ g.ellipse(-18*u,4*u,8*u,6*u,0,0,TAU); }); // flank patch
+  sh(g,'#1f2a33',2.4*u,(g)=>{ g.moveTo(6*u,12*u); g.lineTo(2*u,26*u); g.lineTo(16*u,16*u); g.closePath(); }); // pectoral fin
+  sh(g,'#eef4f7',0,(g)=>{ g.ellipse(20*u,-8*u,7*u,5*u,0.2,0,TAU); }); // eye patch
+  sh(g,'#222d36',2.6*u,(g)=>{ g.moveTo(30*u,-2*u); g.lineTo(40*u,2*u); }); // snout tip
+  g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.moveTo(22*u,6*u); g.lineTo(38*u,6*u); g.stroke(); // mouth line
+  for(let i=0;i<4;i++){ sh(g,'#fff',0,(g)=>{ g.moveTo(24*u+i*4*u,6*u); g.lineTo(26*u+i*4*u,10*u); g.lineTo(28*u+i*4*u,6*u); g.closePath(); }); } // teeth
+  eyes(g,u,20*u,-8*u,4.5*u,2.8*u);
+});
 
 // ---- pickups ----
 makeSprite('gem', 56, (g,u)=>{
