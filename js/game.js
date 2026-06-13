@@ -1887,13 +1887,27 @@ function quitToMenu(){
 $('pausebtn').addEventListener('click', pauseGame);
 $('resumebtn').addEventListener('click', resumeGame);
 $('quitbtn').addEventListener('click', quitToMenu);
+// when the page is tabbed away / minimized: stop music + pause; resume on return
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    stopMusic(); if(AC){ try{ AC.suspend(); }catch(e){} }
+    if(state===ST.PLAY) pauseGame();
+  } else {
+    if(AC){ try{ AC.resume(); }catch(e){} }
+    if(!muted) playMusic(currentTrack());
+    tPrev = performance.now();   // avoid a huge dt spike on the first frame back
+  }
+});
 setInterval(()=>{
   if(state===ST.MENU && enemies.length<6){ spawnEnemy(); const e=enemies[enemies.length-1]; e.sp=0; }
 }, 700);
 
 requestAnimationFrame(loop);
 
-$('startbtn').addEventListener('click', ()=>startGame(selWorld));
+$('startbtn').addEventListener('click', ()=>{
+  const m=$('menu'); m.classList.add('leaving');
+  setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);   // fade the menu out, then drop into play
+});
 $('wprev').addEventListener('click', ()=>{ if(selWorld>0){ selWorld--; refreshWorldSel(); sfx.pick(); } });
 $('wnext').addEventListener('click', ()=>{ if(selWorld<unlockedMax){ selWorld++; refreshWorldSel(); sfx.pick(); } });
 refreshWorldSel();
