@@ -11,14 +11,13 @@ let _lastSec=-1;    // throttles the survival-timer DOM update to once per secon
 function setCoinHUD(){ const c=$('coincount'); if(c){ const s=c.querySelector('span'); if(s) s.textContent=worldCoins; } }
 function setKillHUD(){ const k=$('killtag'); if(k && k.lastElementChild) k.lastElementChild.textContent=kills; }
 function fmtTime(s){ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), q=s%60; return (m<10?'0':'')+m+':'+(q<10?'0':'')+q; }
-function hideCombo(){ const ct=$('combotag'); if(ct) ct.style.opacity='0'; }
 // re-sync the whole in-game HUD to current state (called on start so nothing shows a stale value)
 function refreshHUD(){
   const lb=$('lvbadge'); if(lb) lb.textContent=P.lv;
   const tt=$('timetag'); if(tt) tt.textContent=fmtTime(elapsed);
-  _lastSec=-1; setKillHUD(); setCoinHUD(); hideCombo();
+  _lastSec=-1; setKillHUD(); setCoinHUD();
 }
-let combo=0, comboT=0, waveGapT=0;   // waveGapT: countdown between a cleared wave and the next
+let waveGapT=0;   // countdown between a cleared wave and the next
 // One-time coin reset (2026-06-12): wipe every existing player's gold exactly once.
 if(!localStorage.getItem('br_reset_20260612')){ localStorage.setItem('br_gold','0'); localStorage.setItem('br_reset_20260612','1'); }
 let gold = +(localStorage.getItem('br_gold')||0);   // persistent currency (saved)
@@ -345,10 +344,10 @@ function startGame(idx){
   if(typeof equippedSpeedMult==='function') P.speed *= equippedSpeedMult();
   if(typeof equippedRangeMult==='function') P.range *= equippedRangeMult();
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[];
-  wave=1; kills=0; elapsed=0; boss=null; combo=0; comboT=0; waveGapT=0; arena=null; bossPending=0;
+  wave=1; kills=0; elapsed=0; boss=null; waveGapT=0; arena=null; bossPending=0;
   worldCoins=0;
   { const ci=$('coincount'); if(ci){ const img=ci.querySelector('img'); if(img && !img.getAttribute('src')) img.src=SP['coin'].toDataURL(); } }
-  refreshHUD();   // reset level badge / kills / timer / coins / combo so nothing shows last run's value
+  refreshHUD();   // reset level badge / kills / timer / coins so nothing shows last run's value
   state=ST.PLAY;
   $('menu').classList.add('hidden');
   $('gameover').classList.add('hidden');
@@ -580,7 +579,6 @@ function openLevelUp(){
 function gameOver(){
   state = ST.OVER;
   arena=null; bossPending=0;
-  combo=0; comboT=0; hideCombo();
   stopMusic();
   sfx.die();
   shake = 22; hitstop = 0.12;
@@ -654,16 +652,8 @@ function separate(e){
 }
 
 // ============ UPDATE ============
-function addCombo(){
-  combo++; comboT=2.6;
-  if(combo>=3){
-    const ct=$('combotag'); ct.textContent='COMBO x'+combo; ct.style.opacity='1';
-  }
-}
-
 function update(dt){
   elapsed += dt;
-  if(comboT>0){ comboT-=dt; if(comboT<=0){ combo=0; $('combotag').style.opacity='0'; } }
   if(bossPending>0){ bossPending-=dt; if(bossPending<=0){ bossPending=0; spawnBoss(); } }
 
   // --- player move ---
@@ -983,7 +973,7 @@ function update(dt){
 
     if(e.hp<=0 && !e.lead){   // duo partner (e.lead) is never killed on its own -> damage routes to the lead
       enemies.splice(i,1);
-      kills++; addCombo(); setKillHUD();
+      kills++; setKillHUD();
       sfx.hit();
       shake=Math.max(shake,e.isBoss?16:5); hitstop=Math.max(hitstop,e.isBoss?0.08:0.03);
       burst(e.x,e.y,'#ff9f3a',e.isBoss?60:14,e.isBoss?420:200);
@@ -1071,7 +1061,7 @@ function update(dt){
       gems.splice(i,1);
       if(g.heart){ P.hp=Math.min(P.maxHp,P.hp+25); floatText(P.x,P.y-24,'+25','#e8556a',16); burst(P.x,P.y,'#ff97a6',8,120); sfx.coin(); }
       else if(g.coin){ const v=Math.round(5*(P.goldMul||1)); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
-      else { gainXp(g.v); sfx.gem(Math.min(combo,8)); }
+      else { gainXp(g.v); sfx.gem(2); }
     }
   }
 
@@ -1873,7 +1863,6 @@ function togglePause(){ if(state===ST.PLAY) pauseGame(); else if(state===ST.PAUS
 function quitToMenu(){
   state=ST.MENU; arena=null; bossPending=0; boss=null;
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[];
-  combo=0; comboT=0; hideCombo();   // clear the COMBO tag so it doesn't linger on the menu
   resetPlayer(); computeCamera();
   $('pause').classList.add('hidden');
   $('hud').classList.add('hidden');
