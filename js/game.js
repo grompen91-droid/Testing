@@ -6,6 +6,8 @@ const P = {}; // player
 let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[];
 let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) — avoids GC churn
 let wave=1, score=0, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
+let worldCoins=0;   // coins collected during the CURRENT world run (in-game HUD display; total still banked in `gold`)
+function setCoinHUD(){ const c=$('coincount'); if(c){ const s=c.querySelector('span'); if(s) s.textContent=worldCoins; } }
 let combo=0, comboT=0, waveGapT=0;   // waveGapT: countdown between a cleared wave and the next
 // One-time coin reset (2026-06-12): wipe every existing player's gold exactly once.
 if(!localStorage.getItem('br_reset_20260612')){ localStorage.setItem('br_gold','0'); localStorage.setItem('br_reset_20260612','1'); }
@@ -334,6 +336,9 @@ function startGame(idx){
   if(typeof equippedRangeMult==='function') P.range *= equippedRangeMult();
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[];
   wave=1; score=0; kills=0; elapsed=0; boss=null; combo=0; comboT=0; waveGapT=0; arena=null; bossPending=0;
+  worldCoins=0;
+  { const ci=$('coincount'); if(ci){ const img=ci.querySelector('img'); if(img && !img.getAttribute('src')) img.src=SP['coin'].toDataURL(); } }
+  setCoinHUD();
   state=ST.PLAY;
   $('menu').classList.add('hidden');
   $('gameover').classList.add('hidden');
@@ -1053,7 +1058,7 @@ function update(dt){
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
       if(g.heart){ P.hp=Math.min(P.maxHp,P.hp+25); floatText(P.x,P.y-24,'+25','#e8556a',16); burst(P.x,P.y,'#ff97a6',8,120); sfx.coin(); }
-      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)); score+=v; gold+=v; localStorage.setItem('br_gold',gold); $('scoretag').textContent='★ '+score; floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
+      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)); score+=v; gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); $('scoretag').textContent='★ '+score; setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else { gainXp(g.v); sfx.gem(Math.min(combo,8)); }
     }
   }
@@ -1685,7 +1690,7 @@ function render(){
   }
 
   // minimap (screen space)
-  if(state!==ST.MENU) drawMinimap();
+  if(state!==ST.MENU && !IS_TOUCH) drawMinimap();   // minimap is PC-only
 
   // hurt vignette
   if(hitFlash>0){ cx.fillStyle=`rgba(220,40,40,${hitFlash*0.22})`; cx.fillRect(0,0,W,H); }
@@ -1773,13 +1778,13 @@ function renderZones(){
 }
 
 function drawMinimap(){
-  // mobile keeps the compact map; PC scales it up and stays responsive to window size
-  const ms = IS_TOUCH ? 104 : Math.round(clamp(Math.min(W,H)*0.2, 150, 240));
-  const pad = IS_TOUCH ? 12 : 18;
+  // PC only (hidden on mobile). Frame + playfield colors follow the world theme.
+  const ms = Math.round(clamp(Math.min(W,H)*0.2, 150, 240));
+  const pad = 18;
   const mx=pad, my=H-ms-pad;
   cx.globalAlpha=0.9;
-  cx.fillStyle='#3a2d22'; cx.fillRect(mx-3,my-3,ms+6,ms+6);
-  cx.fillStyle='#6fae3d'; cx.fillRect(mx,my,ms,ms);
+  cx.fillStyle=curTheme.void||'#3a2d22'; cx.fillRect(mx-3,my-3,ms+6,ms+6);   // frame = world's dark/void tone
+  cx.fillStyle=curTheme.tile1||'#6fae3d'; cx.fillRect(mx,my,ms,ms);          // playfield = world's ground tone
   const sxk=ms/WORLD.w, syk=ms/WORLD.h;
   cx.fillStyle='#e54d4d';
   for(const e of enemies){ cx.fillRect(mx+e.x*sxk-1, my+e.y*syk-1, e.isBoss?4:2, e.isBoss?4:2); }

@@ -247,6 +247,14 @@ button.gbuy.poor { background:#d8cdae; color:#8a7a5a; box-shadow:0 4px 0 #b3a98c
 #xpfill { height:100%; width:0%; background:#4aa3df; transition:width .12s; }
 #hudrow { display:flex; justify-content:space-between; font-weight:900; color:#fff; font-size:clamp(15px,2.5vmin,24px); -webkit-text-stroke:.5px #3a2d22; text-shadow:0 2px 0 rgba(58,45,34,0.6); }
 #wavetag { color:#ffe08a; }
+/* in-game coin counter (coins collected THIS world). PC: under the wave row. Mobile: bottom-left. */
+#coincount { display:inline-flex; align-items:center; gap:6px; margin-top:7px;
+  background:rgba(40,30,20,0.5); border:2px solid rgba(255,255,255,0.22); border-radius:18px;
+  padding:4px 12px; color:#fff; font-weight:900; font-size:clamp(15px,2.5vmin,22px);
+  -webkit-text-stroke:.5px #3a2d22; text-shadow:0 2px 0 rgba(58,45,34,0.5); }
+#coincount img { width:1.25em; height:1.25em; }
+body.is-touch #coincount { position:fixed; margin:0; z-index:6;
+  left:max(12px,env(safe-area-inset-left)); bottom:max(14px,env(safe-area-inset-bottom)); }
 #bossbar { margin-top:7px; pointer-events:none; }
 #bossname { text-align:center; font-weight:900; color:#fff; -webkit-text-stroke:.5px #3a2d22; text-shadow:0 2px 0 rgba(58,45,34,0.6); font-size:clamp(13px,2.5vmin,23px); margin-bottom:3px; letter-spacing:.5px; }
 #bossbar .bar { border-color:#7a1f1f; }
