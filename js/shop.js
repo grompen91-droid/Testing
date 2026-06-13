@@ -109,17 +109,18 @@ function gearIconURL(id){
 function drawPlayerGear(x,y,size,rot,flip){
   for(const c of GEAR_CATS){ const id=gearEquip[c]; if(id) drawSprite('gear_'+c, x,y,size,rot,0,0,flip, RAR[itemRar(id)].color); }
 }
-// ---- recomposite the menu character image with equipped gear ----
-function refreshMenuChar(){
-  const base = SP['player']; if(!base) return;
+// ---- composite the player sprite + equipped gear into a data-URL (menu + equipment screens) ----
+function compositeCharURL(){
+  const base = SP['player']; if(!base) return '';
   const c = document.createElement('canvas'); c.width=base.width; c.height=base.height;
   const g = c.getContext('2d'); g.drawImage(base,0,0);
   for(const cat of GEAR_CATS){ const id=gearEquip[cat]; if(!id) continue;
     const spr = (typeof tintedSprite==='function' && tintedSprite('gear_'+cat, RAR[itemRar(id)].color)) || SP['gear_'+cat];
     if(spr) g.drawImage(spr,0,0);
   }
-  const img=$('charimg'); if(img) img.src=c.toDataURL();
+  return c.toDataURL();
 }
+function refreshMenuChar(){ const img=$('charimg'); if(img){ const u=compositeCharURL(); if(u) img.src=u; } }
 
 // ---- gold display + coin chip ----
 function refreshGoldUI(){ const t=$('goldtxt'); if(t) t.textContent=gold; }
@@ -140,36 +141,38 @@ function buyItem(id, price){
 }
 
 // ============ SHOP RENDER ============
-function itemCardHTML(id, priceOverride){
+// vertical ribboned card used in the Daily Shop grid
+function shopCardHTML(id, price){
   const rar=itemRar(id), owned=gearOwned.has(id);
-  const price = priceOverride!=null ? priceOverride : itemPrice(id);
-  const buy = owned ? '<div class="gbuy ownedtag">OWNED</div>'
-                    : '<button class="gbuy'+(gold<price?' poor':'')+'" data-id="'+id+'" data-price="'+price+'">'+coinTag()+price+'</button>';
-  return '<div class="gcard r-'+rar+(owned?' owned':'')+'">'+
-    '<img class="gicon" src="'+gearIconURL(id)+'" alt="">'+
-    '<div class="gmeta"><div class="gname">'+itemName(id)+'</div>'+
-      rtagHTML(rar)+statTag(itemStat(id))+
-      '<div class="gbonus">'+itemBonusTxt(id)+' · '+CAT_LABEL[itemCat(id)]+'</div></div>'+
-    buy+'</div>';
+  const off = Math.round((1 - price/itemPrice(id))*100);
+  const ribbon = off>0 ? '<div class="sribbon'+(off>=40?' big':'')+'">-'+off+'%</div>' : '';
+  const action = owned ? '<div class="scheck">✓</div>'
+    : '<button class="sbuy'+(gold<price?' poor':'')+'" data-id="'+id+'" data-price="'+price+'">'+coinTag()+price+'</button>';
+  return '<div class="scard r-'+rar+(owned?' owned':'')+'">'+ribbon+
+    '<div class="sname">'+itemName(id)+'</div>'+
+    '<div class="sicon"><img src="'+gearIconURL(id)+'" alt=""></div>'+
+    '<div class="stagrow">'+rtagHTML(rar)+statTag(itemStat(id))+'</div>'+
+    action+'</div>';
 }
 
 function renderShop(){
   const grid=$('shopgrid'); if(!grid) return;
+  // ---- DAILY SHOP (rotating, discounted) ----
+  let html = '<div class="banner"><span>DAILY SHOP</span></div><div class="shopsub">Resets at midnight (UTC) · up to -25%</div>';
+  html += '<div class="ggrid">';
+  for(const id of dailyShop(6)) html += shopCardHTML(id, featuredPrice(id));
+  html += '</div>';
   // ---- CASES ----
-  let html = '<div class="shopsec"><h3 class="secttl">📦 CASES</h3><div class="crates">';
+  html += '<div class="banner"><span>CASES</span></div><div class="crates">';
   for(const key of CRATE_ORDER){ const cr=CRATES[key]; const poor=gold<cr.price;
     html += '<div class="crate c-'+key+'" style="--glow:'+cr.glow+'">'+
       '<div class="cratebox">📦</div><div class="cratename">'+cr.name+'</div>'+
-      '<button class="gbuy cratebuy'+(poor?' poor':'')+'" data-crate="'+key+'">'+coinTag()+cr.price+'</button></div>';
+      '<button class="sbuy cratebuy'+(poor?' poor':'')+'" data-crate="'+key+'">'+coinTag()+cr.price+'</button></div>';
   }
-  html += '</div></div>';
-  // ---- FEATURED (rotating daily) ----
-  html += '<div class="shopsec"><h3 class="secttl">⭐ FEATURED · resets daily (UTC) <span class="offtag">-25%</span></h3><div class="glist" id="featlist">';
-  for(const id of dailyShop(6)) html += itemCardHTML(id, featuredPrice(id));
-  html += '</div></div>';
+  html += '</div>';
   grid.innerHTML = html;
 
-  grid.querySelectorAll('button.gbuy[data-id]').forEach(b=>b.addEventListener('click',()=>buyItem(b.dataset.id, +b.dataset.price)));
+  grid.querySelectorAll('button.sbuy[data-id]').forEach(b=>b.addEventListener('click',()=>buyItem(b.dataset.id, +b.dataset.price)));
   grid.querySelectorAll('button[data-crate]').forEach(b=>b.addEventListener('click',()=>openCrate(b.dataset.crate)));
 }
 
@@ -221,35 +224,38 @@ function openCrate(key){
 }
 function closeCrate(){ const ov=$('crate'); if(ov) ov.classList.add('hidden'); renderShop(); renderInventory(); }
 
-// ============ INVENTORY ============
+// ============ EQUIPMENT ============
+function eqSlotHTML(cat){
+  const id=gearEquip[cat];
+  if(id) return '<div class="eqslot r-'+itemRar(id)+'" data-cat="'+cat+'"><span class="eqlv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
+  return '<div class="eqslot" data-cat="'+cat+'"><span class="eqlv">'+CAT_LABEL[cat]+'</span><span class="eqempty">+</span></div>';
+}
 function renderInventory(){
-  const slots=$('invslots'); const owned=$('invowned'); if(!slots||!owned) return;
-  slots.innerHTML='';
-  for(const cat of GEAR_CATS){
-    const id=gearEquip[cat];
-    const slot=document.createElement('div');
-    slot.className='slot'+(id?(' filled r-'+itemRar(id)):'');
-    slot.innerHTML='<div class="slotlabel">'+CAT_LABEL[cat]+'</div>'+
-      (id ? '<img class="gicon" src="'+gearIconURL(id)+'" alt=""><div class="sname">'+itemName(id)+'</div><div class="sbonus">'+statTag(itemStat(id))+'</div>'
-          : '<div class="empty">—</div>');
-    if(id) slot.addEventListener('click',()=>{ gearEquip[cat]=null; saveEquip(); afterEquipChange(); });
-    slots.appendChild(slot);
-  }
-  owned.innerHTML='';
+  const stage=$('eqstage'); const owned=$('invowned'); if(!stage||!owned) return;
+  const pct=(stat)=>Math.round((equippedStatMult(stat)-1)*100);
+  stage.innerHTML =
+    '<div class="eqside left">'+eqSlotHTML('helmet')+eqSlotHTML('chest')+'</div>'+
+    '<div class="eqmid"><img class="eqchar" src="'+compositeCharURL()+'" alt="">'+
+      '<div class="eqstats">'+
+        '<span class="eqstat"><span class="ei">⚔️</span>+'+pct('dmg')+'%</span>'+
+        '<span class="eqstat"><span class="ei">👟</span>+'+pct('speed')+'%</span>'+
+        '<span class="eqstat"><span class="ei">🎯</span>+'+pct('range')+'%</span>'+
+      '</div></div>'+
+    '<div class="eqside right">'+eqSlotHTML('pants')+eqSlotHTML('shoes')+'</div>';
+  stage.querySelectorAll('.eqslot[data-cat]').forEach(el=>el.addEventListener('click',()=>{
+    const c=el.dataset.cat; if(gearEquip[c]){ gearEquip[c]=null; saveEquip(); afterEquipChange(); } }));
+
   const list=GEAR_CATALOG.filter(id=>gearOwned.has(id))
                          .sort((a,b)=> RAR_ORDER.indexOf(itemRar(b))-RAR_ORDER.indexOf(itemRar(a)));
   if(!list.length){ owned.innerHTML='<div class="invhint">Open a Case or buy gear in the Shop to fill your slots.</div>'; return; }
-  for(const id of list){
-    const cat=itemCat(id), rar=itemRar(id), equipped=gearEquip[cat]===id;
-    const card=document.createElement('div');
-    card.className='gcard r-'+rar+(equipped?' equipped':'');
-    card.innerHTML='<img class="gicon" src="'+gearIconURL(id)+'" alt="">'+
-      '<div class="gmeta"><div class="gname">'+itemName(id)+'</div>'+rtagHTML(rar)+statTag(itemStat(id))+
-        '<div class="gbonus">'+itemBonusTxt(id)+' · '+CAT_LABEL[cat]+'</div></div>'+
-      '<div class="gbuy '+(equipped?'equiptag':'equipbtn')+'">'+(equipped?'EQUIPPED':'Equip')+'</div>';
-    card.addEventListener('click',()=>{ gearEquip[cat]=(equipped?null:id); saveEquip(); afterEquipChange(); });
-    owned.appendChild(card);
+  let html='';
+  for(const id of list){ const equipped=gearEquip[itemCat(id)]===id;
+    html += '<div class="itile r-'+itemRar(id)+(equipped?' equipped':'')+'" data-id="'+id+'" title="'+itemName(id)+'">'+
+      '<span class="ilv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
   }
+  owned.innerHTML=html;
+  owned.querySelectorAll('.itile[data-id]').forEach(el=>el.addEventListener('click',()=>{
+    const id=el.dataset.id, cat=itemCat(id); gearEquip[cat]=(gearEquip[cat]===id?null:id); saveEquip(); afterEquipChange(); }));
 }
 function afterEquipChange(){ if(typeof sfx!=='undefined') sfx.pick(); refreshMenuChar(); renderInventory(); }
 
@@ -257,6 +263,7 @@ function afterEquipChange(){ if(typeof sfx!=='undefined') sfx.pick(); refreshMen
 function showTab(name){
   for(const t of ['battle','shop','inventory']){ const p=$('tab-'+t); if(p) p.classList.toggle('hidden', t!==name); }
   document.querySelectorAll('#tabbar .tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  const menu=$('menu'); if(menu) menu.setAttribute('data-tab', name);   // per-tab background tint
   if(name==='shop') renderShop();
   if(name==='inventory'){ gearSeen=new Set(gearOwned); saveSeen(); updateInvBadge(); renderInventory(); }   // mark all seen -> clear badge
 }

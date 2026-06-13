@@ -50,58 +50,52 @@
   <button id="zoomout" type="button">&minus;</button>
 </div>
 
-<div id="menu" class="overlay">
-  <div id="menutop">
-    <div class="curpill"><img id="goldicon" draggable="false" alt=""><span id="goldtxt">0</span></div>
-    <button id="mutebtn" class="curpill" type="button">🔊</button>
+<div id="menu" class="overlay" data-tab="battle">
+  <!-- TOP RESOURCE BAR -->
+  <div id="topbar">
+    <div id="topbadge"><span id="topLvl">1</span></div>
+    <div id="topxp"><div id="topxpfill"></div></div>
+    <div class="respill"><img id="goldicon" draggable="false" alt=""><span id="goldtxt">0</span><b class="resplus">+</b></div>
+    <button id="mutebtn" class="iconbtn" type="button">🔊</button>
   </div>
 
   <div id="tabview">
     <!-- BATTLE -->
     <div id="tab-battle" class="tabpanel">
-      <div id="menumid">
-        <div class="title">BRAINROT<br>RUMBLE</div>
-        <div class="subtitle">the italian invasion</div>
-        <div id="charwrap">
-          <div id="charplat"></div>
-          <img id="charimg" draggable="false" alt="">
-        </div>
-        <div id="worldsel">
-          <button id="wprev" type="button" aria-label="Previous world">◀</button>
-          <span id="wname">WORLD 1 · GRASSLANDS</span>
-          <button id="wnext" type="button" aria-label="Next world">▶</button>
-        </div>
+      <div id="worldsel">
+        <button id="wprev" type="button" aria-label="Previous world">◀</button>
+        <span id="wname">WORLD 1 · GRASSLANDS</span>
+        <button id="wnext" type="button" aria-label="Next world">▶</button>
+      </div>
+      <div class="worldsub">the italian invasion</div>
+      <div id="stage">
+        <div id="charplat"></div>
+        <img id="charimg" draggable="false" alt="">
       </div>
       <div id="menubot">
-        <button class="bigbtn green" id="startbtn">PLAY</button>
+        <button class="startbtn" id="startbtn"><span class="startlbl">START</span></button>
         <div class="hint">drag to move • auto-fire • survive the waves</div>
       </div>
     </div>
 
     <!-- SHOP -->
     <div id="tab-shop" class="tabpanel hidden">
-      <div class="tabhead">
-        <h2 class="tabtitle">SHOP</h2>
-        <div class="tabsub">Daily rotation • resets at midnight (UTC)</div>
-      </div>
-      <div id="shopgrid" class="glist"></div>
+      <div id="shopgrid"></div>
     </div>
 
-    <!-- INVENTORY -->
+    <!-- EQUIPMENT -->
     <div id="tab-inventory" class="tabpanel hidden">
-      <div class="tabhead">
-        <h2 class="tabtitle">INVENTORY</h2>
-        <div class="tabsub">Equip a piece in each slot to boost starting damage</div>
-      </div>
-      <div id="invslots"></div>
-      <div id="invowned" class="glist"></div>
+      <div id="eqstage"></div>
+      <div class="banner"><span>MY EQUIPMENT</span></div>
+      <div id="invowned" class="ggrid"></div>
     </div>
   </div>
 
+  <!-- BOTTOM TAB BAR (connected, raised center) -->
   <div id="tabbar">
-    <button class="tabbtn active" type="button" data-tab="battle"><span class="tabico">⚔️</span>Battle</button>
-    <button class="tabbtn" type="button" data-tab="shop"><span class="tabico">🛒</span>Shop</button>
-    <button class="tabbtn" type="button" data-tab="inventory"><span class="tabico">🎒</span>Inventory<span class="tabbadge hidden" id="invbadge">0</span></button>
+    <button class="tabbtn" type="button" data-tab="shop"><span class="tabico">🛒</span><span class="tablbl">Shop</span><span class="tabbadge hidden" id="shopbadge">!</span></button>
+    <button class="tabbtn center active" type="button" data-tab="battle"><span class="tabico">⚔️</span><span class="tablbl">Battle</span></button>
+    <button class="tabbtn" type="button" data-tab="inventory"><span class="tabico">🎒</span><span class="tablbl">Bag</span><span class="tabbadge hidden" id="invbadge">0</span></button>
   </div>
 </div>
 
