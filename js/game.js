@@ -214,7 +214,7 @@ const RARITY = {
 // ---- card pool: passives level to a cap; abilities take 4 levels, then EVOLVE on the 5th pick ----
 // rarity: tier (appearance + draw odds). req:[ids] = synergy card, hidden until those cards are owned.
 const UPGRADES = [
-  // ⚔️ passives
+  // passives
   { id:'dmg',    name:'Brute Force',     icon:'coin',     rarity:'common', cap:5, steps:[{desc:'+25% damage.',          f:()=>P.dmg*=1.25}] },
   { id:'rate',   name:'Adrenaline Rush', icon:'gem',      rarity:'common', cap:5, steps:[{desc:'+18% attack speed.',    f:()=>P.fireRate*=0.82}] },
   { id:'speed',  name:'Fleet Footed',    icon:'heart',    rarity:'common', cap:5, steps:[{desc:'+12% movement speed.',  f:()=>P.speed*=1.12}] },
@@ -1843,6 +1843,8 @@ function refreshTopbar(){
   const gt=$('goldtxt'); if(gt) gt.textContent = gold;
 }
 refreshTopbar();
+// wire house-drawn icons into static markup (tab bar, kill counter, ...)
+document.querySelectorAll('img[data-ic]').forEach(im=>{ const s=SP[im.dataset.ic]; if(s) im.src=s.toDataURL(); });
 // ---- music mute (SFX always on); shared by the menu + pause buttons ----
 function currentTrack(){
   if(state===ST.MENU) return 'menu';
@@ -1850,8 +1852,8 @@ function currentTrack(){
   return curTheme.music || 'game';
 }
 function refreshMute(){
-  $('mutebtn').textContent  = muted ? '🔇' : '🎵';
-  $('pausemute').textContent = muted ? '🔇 Music Off' : '🎵 Music On';
+  const mi=$('muteic'); if(mi){ const s=SP[muted?'ic_mute':'ic_snd']; if(s) mi.src=s.toDataURL(); }
+  $('pausemute').textContent = muted ? 'Music: Off' : 'Music: On';
 }
 function setMusicMuted(v){
   initAudio();
