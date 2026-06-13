@@ -249,7 +249,8 @@ function autoEquipBest(){   // fill every slot with its rarest owned piece — o
 
 function eqSlotHTML(cat){
   const id=gearEquip[cat];
-  if(id) return '<div class="eqslot r-'+itemRar(id)+'" data-cat="'+cat+'"><span class="eqlv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
+  if(id) return '<div class="eqslot r-'+itemRar(id)+'" data-cat="'+cat+'"><span class="eqlv">'+STAT[itemStat(id)].short+'</span>'+
+    '<img src="'+gearIconURL(id)+'"><span class="eqpct">+'+Math.round(itemBonus(id)*100)+'%</span></div>';
   return '<div class="eqslot" data-cat="'+cat+'"><span class="eqlv">'+CAT_LABEL[cat]+'</span><span class="eqempty">+</span></div>';
 }
 function renderInventory(){
