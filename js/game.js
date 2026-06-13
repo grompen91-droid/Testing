@@ -48,8 +48,8 @@ function foeIsHazard(d){ return !!d.aoe || (d.cast && (d.cast.kind==='geyser'||d
 function foeIsBurst(d){ return !!d.shoot && (d.shoot.type==='ring' || (d.shoot.n||1)>=3); }
 function foeIsSpecial(d){ return foeIsHazard(d) || foeIsBurst(d); }
 function worldDmgMul(){ return curWorld().dmgMul||1; }   // per-world enemy damage multiplier
-// coins are scarce early; from wave 20 on they pay out progressively more (later worlds reach higher waves)
-function coinMult(){ return wave < 20 ? 1 : 1 + (wave-19)*0.3; }
+// coins are scarce early; from wave 20 on they pay out a little more (capped at 3x)
+function coinMult(){ return Math.min(3, wave < 20 ? 1 : 1 + (wave-19)*0.1); }
 // ---- enemy archetypes: the Italian Brainrot bestiary (ordered easy -> hard) ----
 const FOES_GRASS = [
   // Tier I — fodder
