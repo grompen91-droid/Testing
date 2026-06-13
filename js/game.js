@@ -7,7 +7,17 @@ let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], 
 let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) — avoids GC churn
 let wave=1, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let worldCoins=0;   // coins collected during the CURRENT world run (in-game HUD display; total still banked in `gold`)
+let _lastSec=-1;    // throttles the survival-timer DOM update to once per second
 function setCoinHUD(){ const c=$('coincount'); if(c){ const s=c.querySelector('span'); if(s) s.textContent=worldCoins; } }
+function setKillHUD(){ const k=$('killtag'); if(k && k.lastElementChild) k.lastElementChild.textContent=kills; }
+function fmtTime(s){ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), q=s%60; return (m<10?'0':'')+m+':'+(q<10?'0':'')+q; }
+function hideCombo(){ const ct=$('combotag'); if(ct) ct.style.opacity='0'; }
+// re-sync the whole in-game HUD to current state (called on start so nothing shows a stale value)
+function refreshHUD(){
+  const lb=$('lvbadge'); if(lb) lb.textContent=P.lv;
+  const tt=$('timetag'); if(tt) tt.textContent=fmtTime(elapsed);
+  _lastSec=-1; setKillHUD(); setCoinHUD(); hideCombo();
+}
 let combo=0, comboT=0, waveGapT=0;   // waveGapT: countdown between a cleared wave and the next
 // One-time coin reset (2026-06-12): wipe every existing player's gold exactly once.
 if(!localStorage.getItem('br_reset_20260612')){ localStorage.setItem('br_gold','0'); localStorage.setItem('br_reset_20260612','1'); }
@@ -338,7 +348,7 @@ function startGame(idx){
   wave=1; kills=0; elapsed=0; boss=null; combo=0; comboT=0; waveGapT=0; arena=null; bossPending=0;
   worldCoins=0;
   { const ci=$('coincount'); if(ci){ const img=ci.querySelector('img'); if(img && !img.getAttribute('src')) img.src=SP['coin'].toDataURL(); } }
-  setCoinHUD();
+  refreshHUD();   // reset level badge / kills / timer / coins / combo so nothing shows last run's value
   state=ST.PLAY;
   $('menu').classList.add('hidden');
   $('gameover').classList.add('hidden');
@@ -504,7 +514,7 @@ function gainXp(n){
     P.xpNext = Math.floor(4 + P.lv*2.6 + P.lv*P.lv*0.4);
     openLevelUp();
   }
-  $('leveltag').textContent = 'LV '+P.lv;
+  const lb=$('lvbadge'); if(lb) lb.textContent = P.lv;
 }
 
 function openLevelUp(){
@@ -526,28 +536,34 @@ function openLevelUp(){
     while(idx<w.length-1 && (r-=w[idx])>0) idx++;
     opts.push(bag.splice(idx,1)[0]);
   }
+  // owned-skills strip: icons of upgrades already taken (filled slots), padded with empties
+  const strip = $('skillstrip');
+  if(strip){
+    const ownedUps = UPGRADES.filter(u => (P.up[u.id]||0) > 0);
+    const slots = Math.max(8, ownedUps.length);
+    let sh='';
+    for(let i=0;i<slots;i++){
+      const u = ownedUps[i];
+      if(u){ const ic = SP[u.icon] ? SP[u.icon].toDataURL() : ''; sh += `<div class="sslot"><img draggable="false" src="${ic}"></div>`; }
+      else sh += `<div class="sslot empty"></div>`;
+    }
+    strip.innerHTML = sh;
+  }
+
   const wrap = $('cards'); wrap.innerHTML='';
   opts.forEach(({u,m})=>{
     const d=document.createElement('button');
     const tier = u.rarity||'common';
     d.className = 'card r-'+tier + (m.evolve ? ' evolve' : '') + (u.req ? ' synergy' : '');
     const ic = SP[m.icon] ? SP[m.icon].toDataURL() : '';
-    const rtag = u.req ? '<span class="rtag syn">SYNERGY</span>' : '<span class="rtag r-'+tier+'">'+(RARITY[tier]||RARITY.common).label+'</span>';
-    const badge = m.evolve ? '<span class="evobadge">EVOLVE!</span>' : '<span class="lvtag">'+m.label+'</span>';
-    // evolution progress (Survivor.io-style pips + "N more to evolve")
     const owned = P.up[u.id]||0;
-    let pips='', ptxt='', pevo='';
-    if(u.evo){
-      const slots = u.steps.length;
-      for(let i=0;i<slots;i++) pips += `<span class="pip ${i<owned?'on':(i===owned?'next':'')}"></span>`;
-      pips += `<span class="pip evo ${owned>=slots?'on':(owned===slots?'next':'')}"></span>`;
-      if(m.evolve){ ptxt='EVOLUTION READY!'; pevo='evo'; } else ptxt=(slots-owned)+' more to evolve';
-    } else {
-      const cap = u.cap||5;
-      for(let i=0;i<cap;i++) pips += `<span class="pip ${i<owned?'on':(i===owned?'next':'')}"></span>`;
-      ptxt = 'Lv '+(owned+1)+' / '+cap;
-    }
-    d.innerHTML = `<img class="cicon" draggable="false" src="${ic}"><div class="cbody">${rtag}<div class="cname">${m.name}${badge}</div><div class="cdesc">${m.desc}</div><div class="cprog">${pips}<span class="ptxt ${pevo}">${ptxt}</span></div></div>`;
+    // 5-star rating row (filled = the level you'd reach by picking it)
+    const total = u.evo ? 5 : (u.cap||5);
+    let stars=''; for(let i=0;i<total;i++) stars += `<span class="cstar${i < owned+1 ? ' on' : ''}">★</span>`;
+    const tag = m.evolve ? 'EVO!' : (owned===0 ? 'New!' : m.label);
+    d.innerHTML = `<div class="chead"><span class="cnew">${tag}</span>${m.name}</div>`+
+                  `<div class="cmid"><img class="cicon" draggable="false" src="${ic}"><div class="cdesc">${m.desc}</div></div>`+
+                  `<div class="cstars">${stars}</div>`;
     d.onclick = ()=>{
       m.evolve ? sfx.evolve() : sfx.pick();
       m.apply(); P.up[u.id] = (P.up[u.id]||0)+1;
@@ -564,6 +580,7 @@ function openLevelUp(){
 function gameOver(){
   state = ST.OVER;
   arena=null; bossPending=0;
+  combo=0; comboT=0; hideCombo();
   stopMusic();
   sfx.die();
   shake = 22; hitstop = 0.12;
@@ -966,7 +983,7 @@ function update(dt){
 
     if(e.hp<=0 && !e.lead){   // duo partner (e.lead) is never killed on its own -> damage routes to the lead
       enemies.splice(i,1);
-      kills++; addCombo();
+      kills++; addCombo(); setKillHUD();
       sfx.hit();
       shake=Math.max(shake,e.isBoss?16:5); hitstop=Math.max(hitstop,e.isBoss?0.08:0.03);
       burst(e.x,e.y,'#ff9f3a',e.isBoss?60:14,e.isBoss?420:200);
@@ -1085,8 +1102,8 @@ function update(dt){
   if(shake>0) shake = Math.max(0, shake - dt*40);
   if(hitFlash>0) hitFlash -= dt*3;
 
-  $('hpfill').style.width = Math.max(0,(P.hp/P.maxHp)*100)+'%';
   $('xpfill').style.width = (P.xp/P.xpNext)*100+'%';
+  { const sec=Math.floor(elapsed); if(sec!==_lastSec){ _lastSec=sec; const tt=$('timetag'); if(tt) tt.textContent=fmtTime(elapsed); } }
   if(boss){
     if(boss.bars===2){
       $('bossfill').style.width  = clamp((boss.hp-boss.bar2)/boss.bar1,0,1)*100+'%';
@@ -1643,6 +1660,11 @@ function render(){
       }
       cx.globalAlpha=1;
     }
+    // player HP bar under the character (HP lives on the player now, not the top HUD)
+    { const frac=Math.max(0,P.hp/P.maxHp), w=P.r*2.0, hx=P.x-w/2, hy=P.y+P.r*1.15;
+      cx.fillStyle='rgba(0,0,0,0.5)'; cx.fillRect(hx-1.5,hy-1.5,w+3,7);
+      cx.fillStyle = frac>0.3 ? '#f4d03f' : '#e54d4d';
+      cx.fillRect(hx,hy,w*frac,4); }
   }
 
   // --- particles ---
@@ -1842,6 +1864,7 @@ function togglePause(){ if(state===ST.PLAY) pauseGame(); else if(state===ST.PAUS
 function quitToMenu(){
   state=ST.MENU; arena=null; bossPending=0; boss=null;
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[];
+  combo=0; comboT=0; hideCombo();   // clear the COMBO tag so it doesn't linger on the menu
   resetPlayer(); computeCamera();
   $('pause').classList.add('hidden');
   $('hud').classList.add('hidden');

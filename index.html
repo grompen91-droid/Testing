@@ -22,12 +22,19 @@
 
 <div id="hud" class="hidden">
   <button id="pausebtn" type="button" aria-label="Pause">II</button>
-  <div class="bar"><div id="hpfill"></div></div>
-  <div class="bar"><div id="xpfill"></div></div>
-  <div id="hudrow">
-    <span id="wavetag">WAVE 1</span>
-    <span id="leveltag">LV 1</span>
-    <span id="coincount"><img draggable="false" alt=""><span>0</span></span>
+  <div id="hudtop">
+    <div id="timeblock">
+      <div id="timetag">00:00</div>
+      <div id="wavetag">WAVE 1</div>
+    </div>
+    <div id="hudstats">
+      <span id="coincount" class="hudpill"><img draggable="false" alt=""><span>0</span></span>
+      <span id="killtag" class="hudpill"><span class="kico">💀</span><span>0</span></span>
+    </div>
+  </div>
+  <div id="xprow">
+    <div class="xpbar"><div id="xpfill"></div></div>
+    <div id="lvbadge">1</div>
   </div>
   <div id="bossbar" class="hidden">
     <div id="bossname">BOSS</div>
@@ -108,9 +115,11 @@
 </div>
 
 <div id="levelup" class="overlay hidden">
-  <div class="panel">
-    <h2>LEVEL UP!</h2>
+  <div class="panel lvpanel">
+    <h2 class="skillbanner">SKILL CHOICE</h2>
+    <div id="skillstrip"></div>
     <div class="cards" id="cards"></div>
+    <div class="lvhint">Select a skill to learn</div>
   </div>
 </div>
 
