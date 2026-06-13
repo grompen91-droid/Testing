@@ -251,7 +251,10 @@ button.gbuy.poor { background:#d8cdae; color:#8a7a5a; box-shadow:0 4px 0 #b3a98c
 .hudpill .kico { font-size:1.05em; }
 #xprow { display:flex; align-items:center; gap:8px; margin-top:6px; }
 .xpbar { flex:1; height:clamp(16px,2.6vmin,24px); border-radius:11px; background:#2a2016; overflow:hidden; border:3px solid #3a2d22; }
-#xpfill { height:100%; width:0%; background:linear-gradient(#8be24f,#4caf3a); transition:width .12s; }
+#xpfill { height:100%; width:0%; transition:width .12s;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.28) 0 7px, rgba(255,255,255,0) 7px 16px),
+    linear-gradient(#5fb6ff,#2f7fd6); }
 #lvbadge { flex:0 0 auto; min-width:clamp(30px,5.4vmin,44px); height:clamp(26px,4.6vmin,38px); padding:0 8px;
   display:flex; align-items:center; justify-content:center; background:#fbf3df; border:3px solid #3a2d22; border-radius:11px;
   color:#3a2d22; font-weight:900; font-size:clamp(15px,2.7vmin,23px); box-shadow:0 3px 0 rgba(58,45,34,0.3); }

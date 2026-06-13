@@ -1663,7 +1663,7 @@ function render(){
     // player HP bar under the character (HP lives on the player now, not the top HUD)
     { const frac=Math.max(0,P.hp/P.maxHp), w=P.r*2.0, hx=P.x-w/2, hy=P.y+P.r*1.15;
       cx.fillStyle='rgba(0,0,0,0.5)'; cx.fillRect(hx-1.5,hy-1.5,w+3,7);
-      cx.fillStyle = frac>0.3 ? '#f4d03f' : '#e54d4d';
+      cx.fillStyle = '#e54d4d';   // HP bar is always red
       cx.fillRect(hx,hy,w*frac,4); }
   }
 
