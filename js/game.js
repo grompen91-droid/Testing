@@ -274,17 +274,17 @@ const UPGRADES = [
 
   // 🌍 WORLD-EXCLUSIVE abilities — only enter the draw from a given world onward (minWorld, 0-indexed)
   { id:'tremor', name:'Tremor Rounds', icon:'crocodilo', rarity:'rare', cap:5, minWorld:1,
-    steps:[{desc:'WORLD 2+ — your bullet hits send out a small ground shock (+more per level).',f:()=>{P.tremor=(P.tremor||0)+1;}}] },
+    steps:[{desc:'your bullet hits send out a small ground shock (+more per level).',f:()=>{P.tremor=(P.tremor||0)+1;}}] },
   { id:'aftershock', name:'Aftershock', icon:'rhino', rarity:'epic', cap:5, minWorld:1,
-    steps:[{desc:'WORLD 2+ — kills have a chance to erupt a damaging quake zone (+chance per level).',f:()=>{P.aftershock=(P.aftershock||0)+1;}}] },
+    steps:[{desc:'kills have a chance to erupt a damaging quake zone (+chance per level).',f:()=>{P.aftershock=(P.aftershock||0)+1;}}] },
   { id:'gravcrush', name:'Gravity Crush', icon:'octopus', rarity:'legendary', minWorld:2,
-    steps:[{desc:'WORLD 3+ — periodically implode a gravity well that yanks & grinds enemies.',f:()=>{P.gravcrush=true;}},
+    steps:[{desc:'periodically implode a gravity well that yanks & grinds enemies.',f:()=>{P.gravcrush=true;}},
            {desc:'crush strikes more often & hits harder.',f:()=>{P.gravCdBase=Math.max(4,P.gravCdBase-1.5);P.gravDmg+=10;}},
            {desc:'crush grows larger & lingers.',f:()=>{P.gravR+=50;P.gravLife+=0.6;}},
            {desc:'crush strikes more often.',f:()=>{P.gravCdBase=Math.max(3,P.gravCdBase-1);}}],
     evo:{name:'Event Singularity', icon:'octopus', desc:'EVOLVE — huge crush that also devours enemy bullets.', f:()=>{P.gravcrush=true;P.gravEvo=true;P.gravR+=60;P.gravDmg+=18;P.gravLife+=0.8;}} },
   { id:'abyssal', name:'Abyssal Pact', icon:'gembig', rarity:'epic', cap:5, minWorld:2,
-    steps:[{desc:'WORLD 3+ — +6% damage for every enemy near you (caps high). The swarm feeds you.',f:()=>{P.abyssal=(P.abyssal||0)+1;}}] },
+    steps:[{desc:'+6% damage for every enemy near you (caps high). The swarm feeds you.',f:()=>{P.abyssal=(P.abyssal||0)+1;}}] },
 
   // ✨ SYNERGY cards — hidden until you own the prerequisite cards (req)
   { id:'frostfire', name:'Frostfire Core', icon:'gem', rarity:'epic', cap:1, req:['slow','nova'],
@@ -302,6 +302,8 @@ const UPGRADES = [
   { id:'aegisnova', name:'Aegis Nova', icon:'gembig', rarity:'epic', cap:1, req:['aegis','nova'],
     steps:[{desc:'SYNERGY — blocking a hit also unleashes your Nova.',f:()=>P.aegisNova=true}] },
 ];
+// give every upgrade (and its evolved form) its own custom icon sprite (ab_<id>)
+for(const u of UPGRADES){ const ic='ab_'+u.id; if(SP[ic]){ u.icon=ic; if(u.evo) u.evo.icon=ic; } }
 // returns the next card "move" for an upgrade, or null if exhausted
 function nextMove(u){
   const lvl = P.up[u.id]||0;
