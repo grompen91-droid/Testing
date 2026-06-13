@@ -1836,6 +1836,13 @@ document.body.style.background = curTheme.bg;
 $('charimg').src = SP['player'].toDataURL();
 $('goldicon').src = SP['coin'].toDataURL();
 $('goldtxt').textContent = gold;
+// top resource bar: a "player level" badge from worlds unlocked + a progress fill + gold
+function refreshTopbar(){
+  const lv=$('topLvl'); if(lv) lv.textContent = unlockedMax+1;
+  const xf=$('topxpfill'); if(xf) xf.style.width = Math.round(((unlockedMax+1)/WORLDS.length)*100)+'%';
+  const gt=$('goldtxt'); if(gt) gt.textContent = gold;
+}
+refreshTopbar();
 // ---- music mute (SFX always on); shared by the menu + pause buttons ----
 function currentTrack(){
   if(state===ST.MENU) return 'menu';
@@ -1872,7 +1879,7 @@ function quitToMenu(){
   $('zoomctl').classList.add('hidden');
   $('bossbar').classList.add('hidden');
   $('menu').classList.remove('hidden');
-  $('goldtxt').textContent = gold;
+  refreshTopbar();
   playMusic(muted ? null : 'menu');
 }
 $('pausebtn').addEventListener('click', pauseGame);
