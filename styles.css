@@ -66,7 +66,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .respill .resplus { display:flex; align-items:center; justify-content:center; width:1.15em; height:1.15em; margin-left:2px;
   background:#5fbf52; border:2px solid #2a1c10; border-radius:50%; color:#fff; font-size:.85em; line-height:1; }
 .iconbtn { flex:0 0 auto; width:clamp(34px,6vmin,46px); height:clamp(34px,6vmin,46px); border-radius:10px; border:3px solid #2a1c10;
-  background:#fbf3df; color:#2a1c10; font-size:clamp(15px,2.6vmin,22px); cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+  background:#fbf3df; color:#2a1c10; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.3);
+  display:flex; align-items:center; justify-content:center; padding:0; overflow:hidden; }
+.iconbtn img { width:72%; height:72%; object-fit:contain; }
 .iconbtn:active { transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.3); }
 
 /* TAB VIEW */

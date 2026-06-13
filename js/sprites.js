@@ -753,11 +753,13 @@ makeSprite('ic_bolt', 64, (g,u)=>{
 });
 function _spk(g,u){ sh(g,'#fbf3df',3*u,(g)=>{ g.moveTo(-20*u,-9*u); g.lineTo(-7*u,-9*u); g.lineTo(7*u,-22*u); g.lineTo(7*u,22*u); g.lineTo(-7*u,9*u); g.lineTo(-20*u,9*u); g.closePath(); }); }
 makeSprite('ic_snd', 64, (g,u)=>{
+  g.translate(-7*u,0);   // content spans -20..33 -> shift left so it sits centred in the canvas
   _spk(g,u); g.strokeStyle=OUT; g.lineWidth=3*u; g.lineCap='round';
   g.beginPath(); g.arc(8*u,0,15*u,-0.7,0.7); g.stroke();
   g.beginPath(); g.arc(8*u,0,25*u,-0.7,0.7); g.stroke(); g.lineCap='butt';
 });
 makeSprite('ic_mute', 64, (g,u)=>{
+  g.translate(-7*u,0);
   _spk(g,u); g.strokeStyle='#e0392e'; g.lineWidth=3.6*u; g.lineCap='round';
   g.beginPath(); g.moveTo(16*u,-12*u); g.lineTo(31*u,12*u); g.moveTo(31*u,-12*u); g.lineTo(16*u,12*u); g.stroke(); g.lineCap='butt';
 });
