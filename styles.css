@@ -147,8 +147,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .eqstat { display:flex; align-items:center; gap:5px; color:#fff; font-weight:900; font-size:clamp(13px,2.4vmin,20px); -webkit-text-stroke:.4px #2a1c10; text-shadow:0 2px 0 rgba(0,0,0,.3); }
 .eqstat .ei { width:1.4em; height:1.4em; vertical-align:-0.3em; }
 .eqslot { position:relative; width:clamp(48px,9.5vmin,78px); height:clamp(48px,9.5vmin,78px); border-radius:13px; border:3px solid #2a3550;
-  background:linear-gradient(#5a6b86,#46566f); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.3); }
-.eqslot img { width:80%; height:80%; }
+  background:linear-gradient(#5a6b86,#46566f); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+.eqslot img { width:66%; height:66%; }
+.eqpct { font-weight:900; font-size:clamp(8.5px,1.6vmin,12px); color:#fff; line-height:1; text-shadow:0 1px 0 rgba(0,0,0,.55); margin-top:1px; }
 .eqslot .eqlv { position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:#fbf3df; border:2px solid #2a1c10; border-radius:8px;
   font-size:clamp(8px,1.5vmin,12px); font-weight:900; color:#2a1c10; padding:0 5px; white-space:nowrap; }
 .eqslot .eqempty { font-size:clamp(20px,4vmin,32px); color:rgba(255,255,255,.5); }
