@@ -126,6 +126,9 @@ function refreshMenuChar(){ const img=$('charimg'); if(img){ const u=compositeCh
 function refreshGoldUI(){ const t=$('goldtxt'); if(t) t.textContent=gold; }
 let _coinURL='';
 function coinTag(){ if(!_coinURL && SP['coin']) _coinURL=SP['coin'].toDataURL(); return '<img class="coinico" src="'+_coinURL+'" alt="">'; }
+const _ICURL={};   // cached data-URLs for the house-drawn UI icons
+function icURL(n){ if(!_ICURL[n] && SP[n]) _ICURL[n]=SP[n].toDataURL(); return _ICURL[n]||''; }
+const STAT_IC = { dmg:'ic_dmg', speed:'ic_spd', range:'ic_rng' };
 function rtagHTML(rar){ return '<span class="rtag r-'+rar+'">'+RAR[rar].name+'</span>'; }
 function statTag(stat){ return '<span class="stag s-'+stat+'">'+STAT[stat].short+'</span>'; }
 
@@ -166,7 +169,7 @@ function renderShop(){
   html += '<div class="banner"><span>CASES</span></div><div class="crates">';
   for(const key of CRATE_ORDER){ const cr=CRATES[key]; const poor=gold<cr.price;
     html += '<div class="crate c-'+key+'" style="--glow:'+cr.glow+'">'+
-      '<div class="cratebox">📦</div><div class="cratename">'+cr.name+'</div>'+
+      '<div class="cratebox"><img src="'+icURL('ic_crate')+'" alt=""></div><div class="cratename">'+cr.name+'</div>'+
       '<button class="sbuy cratebuy'+(poor?' poor':'')+'" data-crate="'+key+'">'+coinTag()+cr.price+'</button></div>';
   }
   html += '</div>';
@@ -256,9 +259,9 @@ function renderInventory(){
     '<div class="eqside left">'+eqSlotHTML('helmet')+eqSlotHTML('chest')+'</div>'+
     '<div class="eqmid"><img class="eqchar" src="'+compositeCharURL()+'" alt="">'+
       '<div class="eqstats">'+
-        '<span class="eqstat"><span class="ei">⚔️</span>+'+pct('dmg')+'%</span>'+
-        '<span class="eqstat"><span class="ei">👟</span>+'+pct('speed')+'%</span>'+
-        '<span class="eqstat"><span class="ei">🎯</span>+'+pct('range')+'%</span>'+
+        '<span class="eqstat"><img class="ei" src="'+icURL('ic_dmg')+'">+'+pct('dmg')+'%</span>'+
+        '<span class="eqstat"><img class="ei" src="'+icURL('ic_spd')+'">+'+pct('speed')+'%</span>'+
+        '<span class="eqstat"><img class="ei" src="'+icURL('ic_rng')+'">+'+pct('range')+'%</span>'+
       '</div></div>'+
     '<div class="eqside right">'+eqSlotHTML('pants')+eqSlotHTML('shoes')+'</div>';
   stage.querySelectorAll('.eqslot[data-cat]').forEach(el=>el.addEventListener('click',()=>{
@@ -269,7 +272,7 @@ function renderInventory(){
   if(ctl){
     ctl.innerHTML = '<span class="sortlbl">Sort</span>'+
       ['rarity','stat','slot'].map(s=>'<button class="chip2'+(invSort===s?' on':'')+'" data-sort="'+s+'">'+SORT_LABEL[s]+'</button>').join('')+
-      '<button class="chip2 auto" id="autoeq">⚡ Auto-Equip</button>';
+      '<button class="chip2 auto" id="autoeq"><img class="cic" src="'+icURL('ic_bolt')+'">Auto-Equip</button>';
     ctl.querySelectorAll('[data-sort]').forEach(b=>b.addEventListener('click',()=>{ invSort=b.dataset.sort; if(typeof sfx!=='undefined') sfx.pick(); renderInventory(); }));
     const ae=$('autoeq'); if(ae) ae.addEventListener('click', autoEquipBest);
   }
@@ -279,7 +282,8 @@ function renderInventory(){
   let html='';
   for(const id of list){ const equipped=gearEquip[itemCat(id)]===id;
     html += '<div class="itile r-'+itemRar(id)+(equipped?' equipped':'')+'" data-id="'+id+'" title="'+itemName(id)+'">'+
-      (equipped?'<span class="ieq">✓</span>':'')+'<span class="ilv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
+      (equipped?'<span class="ieq">✓</span>':'')+'<span class="ilv">'+STAT[itemStat(id)].short+'</span>'+
+      '<img src="'+gearIconURL(id)+'"><span class="ipct">+'+Math.round(itemBonus(id)*100)+'%</span></div>';
   }
   owned.innerHTML=html;
   owned.querySelectorAll('.itile[data-id]').forEach(el=>el.addEventListener('click',()=>openItemPop(el.dataset.id)));

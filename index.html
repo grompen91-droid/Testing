@@ -29,7 +29,7 @@
     </div>
     <div id="hudstats">
       <span id="coincount" class="hudpill"><img draggable="false" alt=""><span>0</span></span>
-      <span id="killtag" class="hudpill"><span class="kico">💀</span><span>0</span></span>
+      <span id="killtag" class="hudpill"><img class="kico" data-ic="ic_skull" alt=""><span>0</span></span>
     </div>
   </div>
   <div id="xprow">
@@ -56,7 +56,7 @@
     <div id="topbadge"><span id="topLvl">1</span></div>
     <div id="topxp"><div id="topxpfill"></div></div>
     <div class="respill"><img id="goldicon" draggable="false" alt=""><span id="goldtxt">0</span><b class="resplus">+</b></div>
-    <button id="mutebtn" class="iconbtn" type="button">🔊</button>
+    <button id="mutebtn" class="iconbtn" type="button"><img id="muteic" alt=""></button>
   </div>
 
   <div id="tabview">
@@ -94,9 +94,9 @@
 
   <!-- BOTTOM TAB BAR (connected, raised center) -->
   <div id="tabbar">
-    <button class="tabbtn" type="button" data-tab="shop"><span class="tabico">🛒</span><span class="tablbl">Shop</span><span class="tabbadge hidden" id="shopbadge">!</span></button>
-    <button class="tabbtn center active" type="button" data-tab="battle"><span class="tabico">⚔️</span><span class="tablbl">Battle</span></button>
-    <button class="tabbtn" type="button" data-tab="inventory"><span class="tabico">🎒</span><span class="tablbl">Bag</span><span class="tabbadge hidden" id="invbadge">0</span></button>
+    <button class="tabbtn" type="button" data-tab="shop"><img class="tabico" data-ic="ic_shop" alt=""><span class="tablbl">Shop</span><span class="tabbadge hidden" id="shopbadge">!</span></button>
+    <button class="tabbtn center active" type="button" data-tab="battle"><img class="tabico" data-ic="ic_battle" alt=""><span class="tablbl">Battle</span></button>
+    <button class="tabbtn" type="button" data-tab="inventory"><img class="tabico" data-ic="ic_bag" alt=""><span class="tablbl">Bag</span><span class="tabbadge hidden" id="invbadge">0</span></button>
   </div>
 </div>
 
@@ -136,7 +136,7 @@
   <div class="panel">
     <h2 class="ptitle">PAUSED</h2>
     <button class="bigbtn green" id="resumebtn">RESUME</button>
-    <button class="bigbtn" id="pausemute">🎵 Music</button>
+    <button class="bigbtn" id="pausemute">Music</button>
     <button class="bigbtn quit" id="quitbtn">Quit to Menu</button>
   </div>
 </div>
