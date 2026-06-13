@@ -225,6 +225,25 @@ function openCrate(key){
 function closeCrate(){ const ov=$('crate'); if(ov) ov.classList.add('hidden'); renderShop(); renderInventory(); }
 
 // ============ EQUIPMENT ============
+let invSort='rarity';
+const SORT_LABEL = { rarity:'Rarity', stat:'Stat', slot:'Slot' };
+const rarRank = id => RAR_ORDER.indexOf(itemRar(id));     // higher = rarer
+function sortedOwned(){
+  const list = GEAR_CATALOG.filter(id=>gearOwned.has(id));
+  if(invSort==='stat') return list.sort((a,b)=> STAT_ORDER.indexOf(itemStat(a))-STAT_ORDER.indexOf(itemStat(b)) || rarRank(b)-rarRank(a));
+  if(invSort==='slot') return list.sort((a,b)=> GEAR_CATS.indexOf(itemCat(a))-GEAR_CATS.indexOf(itemCat(b)) || rarRank(b)-rarRank(a));
+  return list.sort((a,b)=> rarRank(b)-rarRank(a) || itemBonus(b)-itemBonus(a));   // by rarity (default)
+}
+function equipToggle(id){ const cat=itemCat(id); gearEquip[cat]=(gearEquip[cat]===id?null:id); saveEquip(); afterEquipChange(); }
+function autoEquipBest(){   // fill every slot with its rarest owned piece — one-tap loadout
+  for(const cat of GEAR_CATS){
+    const best = GEAR_CATALOG.filter(id=>gearOwned.has(id) && itemCat(id)===cat)
+      .sort((a,b)=> rarRank(b)-rarRank(a) || itemBonus(b)-itemBonus(a))[0];
+    if(best) gearEquip[cat]=best;
+  }
+  saveEquip(); if(typeof sfx!=='undefined') sfx.evolve(); afterEquipChange();
+}
+
 function eqSlotHTML(cat){
   const id=gearEquip[cat];
   if(id) return '<div class="eqslot r-'+itemRar(id)+'" data-cat="'+cat+'"><span class="eqlv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
@@ -243,20 +262,50 @@ function renderInventory(){
       '</div></div>'+
     '<div class="eqside right">'+eqSlotHTML('pants')+eqSlotHTML('shoes')+'</div>';
   stage.querySelectorAll('.eqslot[data-cat]').forEach(el=>el.addEventListener('click',()=>{
-    const c=el.dataset.cat; if(gearEquip[c]){ gearEquip[c]=null; saveEquip(); afterEquipChange(); } }));
+    const id=gearEquip[el.dataset.cat]; if(id) openItemPop(id); }));
 
-  const list=GEAR_CATALOG.filter(id=>gearOwned.has(id))
-                         .sort((a,b)=> RAR_ORDER.indexOf(itemRar(b))-RAR_ORDER.indexOf(itemRar(a)));
+  // controls: sort chips + one-tap auto-equip
+  const ctl=$('eqcontrols');
+  if(ctl){
+    ctl.innerHTML = '<span class="sortlbl">Sort</span>'+
+      ['rarity','stat','slot'].map(s=>'<button class="chip2'+(invSort===s?' on':'')+'" data-sort="'+s+'">'+SORT_LABEL[s]+'</button>').join('')+
+      '<button class="chip2 auto" id="autoeq">⚡ Auto-Equip</button>';
+    ctl.querySelectorAll('[data-sort]').forEach(b=>b.addEventListener('click',()=>{ invSort=b.dataset.sort; if(typeof sfx!=='undefined') sfx.pick(); renderInventory(); }));
+    const ae=$('autoeq'); if(ae) ae.addEventListener('click', autoEquipBest);
+  }
+
+  const list=sortedOwned();
   if(!list.length){ owned.innerHTML='<div class="invhint">Open a Case or buy gear in the Shop to fill your slots.</div>'; return; }
   let html='';
   for(const id of list){ const equipped=gearEquip[itemCat(id)]===id;
     html += '<div class="itile r-'+itemRar(id)+(equipped?' equipped':'')+'" data-id="'+id+'" title="'+itemName(id)+'">'+
-      '<span class="ilv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
+      (equipped?'<span class="ieq">✓</span>':'')+'<span class="ilv">'+STAT[itemStat(id)].short+'</span><img src="'+gearIconURL(id)+'"></div>';
   }
   owned.innerHTML=html;
-  owned.querySelectorAll('.itile[data-id]').forEach(el=>el.addEventListener('click',()=>{
-    const id=el.dataset.id, cat=itemCat(id); gearEquip[cat]=(gearEquip[cat]===id?null:id); saveEquip(); afterEquipChange(); }));
+  owned.querySelectorAll('.itile[data-id]').forEach(el=>el.addEventListener('click',()=>openItemPop(el.dataset.id)));
 }
+
+// ---- item detail popup: see full stats, equip/unequip ----
+function openItemPop(id){
+  const ov=$('itempop'); if(!ov) return;
+  const cat=itemCat(id), rar=itemRar(id), equipped=gearEquip[cat]===id;
+  ov.innerHTML =
+    '<div class="ipcard r-'+rar+'">'+
+      '<button class="ipx" id="ipclose">✕</button>'+
+      '<div class="ipicon r-'+rar+'"><img src="'+gearIconURL(id)+'"></div>'+
+      '<div class="ipname">'+itemName(id)+'</div>'+
+      '<div class="iptags">'+rtagHTML(rar)+statTag(itemStat(id))+'</div>'+
+      '<div class="ipstat">'+itemBonusTxt(id)+'</div>'+
+      '<div class="ipslot">Slot · '+CAT_LABEL[cat]+'</div>'+
+      '<button class="ipbtn'+(equipped?' un':'')+'" id="ipequip">'+(equipped?'UNEQUIP':'EQUIP')+'</button>'+
+    '</div>';
+  ov.classList.remove('hidden');
+  ov.onclick=(e)=>{ if(e.target===ov) closeItemPop(); };
+  $('ipclose').onclick=closeItemPop;
+  $('ipequip').onclick=()=>{ equipToggle(id); closeItemPop(); };
+}
+function closeItemPop(){ const ov=$('itempop'); if(ov) ov.classList.add('hidden'); }
+
 function afterEquipChange(){ if(typeof sfx!=='undefined') sfx.pick(); refreshMenuChar(); renderInventory(); }
 
 // ---- tab switching ----
