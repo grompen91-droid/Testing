@@ -140,7 +140,6 @@ function buyItem(id, price){
 }
 
 // ============ SHOP RENDER ============
-let shopFilter='all';   // browse filter: all | dmg | speed | range
 function itemCardHTML(id, priceOverride){
   const rar=itemRar(id), owned=gearOwned.has(id);
   const price = priceOverride!=null ? priceOverride : itemPrice(id);
@@ -168,19 +167,10 @@ function renderShop(){
   html += '<div class="shopsec"><h3 class="secttl">⭐ FEATURED · resets daily (UTC) <span class="offtag">-25%</span></h3><div class="glist" id="featlist">';
   for(const id of dailyShop(6)) html += itemCardHTML(id, featuredPrice(id));
   html += '</div></div>';
-  // ---- BROWSE all (filterable) ----
-  html += '<div class="shopsec"><h3 class="secttl">🛒 ALL GEAR</h3><div class="filterbar">'+
-    ['all','dmg','speed','range'].map(f=>'<button class="chip'+(shopFilter===f?' on':'')+'" data-filter="'+f+'">'+(f==='all'?'ALL':STAT[f].short)+'</button>').join('')+
-    '</div><div class="glist" id="browselist">';
-  const list = GEAR_CATALOG.filter(id=> shopFilter==='all' || itemStat(id)===shopFilter)
-                           .sort((a,b)=> RAR_ORDER.indexOf(itemRar(a))-RAR_ORDER.indexOf(itemRar(b)));
-  for(const id of list) html += itemCardHTML(id);
-  html += '</div></div>';
   grid.innerHTML = html;
 
   grid.querySelectorAll('button.gbuy[data-id]').forEach(b=>b.addEventListener('click',()=>buyItem(b.dataset.id, +b.dataset.price)));
   grid.querySelectorAll('button[data-crate]').forEach(b=>b.addEventListener('click',()=>openCrate(b.dataset.crate)));
-  grid.querySelectorAll('button[data-filter]').forEach(b=>b.addEventListener('click',()=>{ shopFilter=b.dataset.filter; if(typeof sfx!=='undefined') sfx.pick(); renderShop(); }));
 }
 
 // ============ CASES (animated reveal) ============

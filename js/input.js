@@ -1,6 +1,7 @@
 'use strict';
 // ============ INPUT: drag joystick, dash, zoom ============
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+document.body.classList.toggle('is-touch', IS_TOUCH);   // drives touch-only / PC-only HUD layout in CSS
 // block image dragging / right-click "save image" / copy-image
 window.addEventListener('contextmenu', e=>e.preventDefault());
 window.addEventListener('dragstart', e=>e.preventDefault());
