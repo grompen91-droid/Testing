@@ -242,3 +242,58 @@ Designed for survivors auto-combat **+** dense bullet hell; several interact wit
 | 28 | Graipussi Medussi | T3 caster |
 | 29 | Spijuniro Golubiro | T1 fodder |
 | 30 | Flamingulli-gulli-gulli | T1 fodder |
+
+---
+
+## 11. WORLDS EXPANSION — character vision & rules *(2026-06-14, the source of truth for new worlds)*
+
+> This is the **reusable rulebook** for populating new worlds. Full system design lives in
+> `docs/specs/2026-06-14-worlds-expansion-design.md`; this section is the **character vision**.
+
+### Big picture
+- Grow from a few worlds toward a **50–100 world** progression. Difficulty ramps **gradually**
+  across worlds (per-world difficulty *bands*), so the hardest content sits at the *end*, not at World 2.
+- **Fixed bookends:** **World 1 = Grasslands** (the original 30-character grass roster, unchanged) and
+  **World 10 = Dirt Depths** (the original "world 2" dirt roster/theme, moved to the end).
+- **Worlds 2–9 are NEW**, each with its own cast, theme/map shape, bosses, and ability cards.
+  *(World 2 = **Citrus Coast**, built first as the template.)*
+
+### Who the characters are — the IP rules (READ BEFORE PICKING A CAST)
+1. **Real, named Italian Brainrots** — NOT invented generic animals. Pick actual meme characters.
+2. **OG / original viral brainrots only** — **NOT** "Steal a Brainrot" (Roblox) spinoffs or other
+   game-specific inventions (e.g. avoid Dragon Cannelloni, Nuclearo Dinossauro, La Grande Combinasion,
+   Capitano Moby, Tartaruga Cisterna — those are game creations, not the OG meme canon).
+3. **Lesser-known OG ones that are NOT already in the game** — almost every *iconic* OG (Tralalero,
+   Bombardiro, Tung Sahur, La Vaca, Lirili, Patapim, Cappuccino, Ballerina, Boneca, Glorbo, Bobritto,
+   Burbaloni, Cocofanto, Girafa, Brri Brri Bicus, Garamaraman…) is **already used** — so dig for the
+   deeper-cut OG characters.
+4. **Kid-friendly** (younger audience). Skip anything crude/NSFW (e.g. Crocodildo Penisini).
+5. **🔎 Research each exact name's real appearance (web/image search) BEFORE drawing it** — match the
+   animal×object hybrid, silhouette, colors, and signature details, then stylize to our flat cartoon look.
+6. **Recreate from the concept as our own original vector sprite** (`makeSprite`, dark `OUT` outline,
+   flat shades, `eyes()` helper). Do **not** copy a specific creator's image/3D model.
+7. **⚖️ Monetization risk accepted by the owner.** Named brainrots are not guaranteed copyright-free
+   (some creators have asserted rights / trademarks). The owner has chosen to use real named OG
+   brainrots for a commercial game **knowingly accepting that risk** — verify per-character / seek
+   legal advice before selling merch. (The "public domain" note in the header is the optimistic read.)
+
+### Per-world content quota
+- **~8 enemies** + **4 bosses** (boss waves 5 / 10 / 15 / 20; 20 waves per world).
+- **Enemies:** simple, readable, **"not too hard"** — mostly chasers with a *few* light specials
+  (one dasher, one light shooter, one death-pop, one armored tank). Early worlds especially gentle.
+- **Bosses:** drawn from **lesser-known OG** brainrots. **Every boss should feel original — never the
+  same attacks.** Each gets its own move set. **Bullet-hell is reserved for late-world bosses (W7–10);**
+  W2–6 bosses are telegraphed melee/zone fights.
+- **New ability cards each world** — at least a couple, a mix of **basic passives** and **evolve
+  abilities** (4 levels → EVOLVE), gated to unlock from that world (`minWorld`). *(W2 added Spiky Peel +
+  Ricochet→Chain Reaction.)*
+
+### Difficulty & economy backbone (so items are NEEDED)
+- Enemy/boss HP & damage scale by world **band**; coins pay more in later worlds to fund the grind.
+- **Rarity-banded gear gate:** Common gear carries you to ~W5, then you need **Uncommon**, then
+  **Rare**, then **Epic+** for the final worlds. Prices/stats scale to match.
+
+### Build pattern per new world (repeat for W3–W9)
+Pick lesser-known OG cast (8 enemies + 4 bosses) → **research each look** → draw the sprites in house
+style → wire `FOES_W#` / `BOSSES_W#` + theme/map into `WORLDS` → give bosses **original move sets** →
+add the world's **new cards** → **balance** → verify headlessly → PR.
