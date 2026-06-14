@@ -664,6 +664,133 @@ makeSprite('orcalero', 120, (g,u)=>{   // ORCALERO ORCALA: armoured killer-whale
   eyes(g,u,20*u,-8*u,4.5*u,2.8*u);
 });
 
+// ============ WORLD 2 — CITRUS COAST roster (real OG Italian Brainrots, recreated in house style) ============
+// Tralaleritos — baby blue shark in blue sneakers
+makeSprite('tralalerito', 96, (g,u)=>{
+  sh(g,'#5aa9e0',3.2*u,(g)=>{ g.moveTo(-30*u,2*u); g.quadraticCurveTo(0,-18*u,28*u,-4*u); g.quadraticCurveTo(18*u,8*u,28*u,16*u); g.quadraticCurveTo(0,16*u,-30*u,2*u); g.closePath(); });
+  sh(g,'#dff0fb',0,(g)=>{ g.ellipse(0,8*u,15*u,6*u,0,0,TAU); });
+  sh(g,'#5aa9e0',2.4*u,(g)=>{ g.moveTo(-2*u,-12*u); g.lineTo(6*u,-28*u); g.lineTo(13*u,-10*u); g.closePath(); });
+  g.strokeStyle=OUT; g.lineWidth=1.6*u; for(let i=0;i<3;i++){ g.beginPath(); g.moveTo((13+i*4)*u,-2*u); g.lineTo((13+i*4)*u,7*u); g.stroke(); }
+  sh(g,'#fff',0,(g)=>{ g.moveTo(20*u,2*u); g.lineTo(28*u,0); g.lineTo(20*u,6*u); g.closePath(); });
+  eyes(g,u,15*u,-5*u,4*u,2.6*u);
+  sh(g,'#3a6fd0',2*u,(g)=>{ g.roundRect(-15*u,15*u,12*u,7*u,3*u); }); sh(g,'#3a6fd0',2*u,(g)=>{ g.roundRect(1*u,15*u,12*u,7*u,3*u); });
+});
+// Pi Pi Kiwi — fuzzy kiwi
+makeSprite('pipikiwi', 92, (g,u)=>{
+  sh(g,'#8a6a3a',3.2*u,(g)=>{ g.ellipse(0,4*u,18*u,19*u,0,0,TAU); });
+  sh(g,'#9ad36a',0,(g)=>{ g.ellipse(0,6*u,12*u,13*u,0,0,TAU); });
+  sh(g,'#f4f4e8',0,(g)=>{ g.ellipse(0,6*u,5*u,6*u,0,0,TAU); });
+  for(let i=0;i<8;i++){ const a=i/8*TAU; dot(g,Math.cos(a)*9*u,6*u+Math.sin(a)*10*u,0.9*u,OUT); }
+  sh(g,'#caa12f',0,(g)=>{ g.moveTo(-2*u,-13*u); g.lineTo(0,-24*u); g.lineTo(3*u,-13*u); g.closePath(); });
+  eyes(g,u,0,-2*u,5*u,2.6*u);
+  sh(g,'#8a5a2c',2*u,(g)=>{ g.moveTo(-6*u,22*u); g.lineTo(-6*u,28*u); }); sh(g,'#8a5a2c',2*u,(g)=>{ g.moveTo(6*u,22*u); g.lineTo(6*u,28*u); });
+});
+// Tukanno Bananno — toucan with a banana beak
+makeSprite('tukanno', 100, (g,u)=>{
+  sh(g,'#2b2b32',3.2*u,(g)=>{ g.ellipse(-4*u,6*u,18*u,16*u,0,0,TAU); });
+  sh(g,'#f4f4f4',0,(g)=>{ g.ellipse(-2*u,2*u,11*u,9*u,0,0,TAU); });
+  sh(g,'#2b2b32',3*u,(g)=>{ g.ellipse(2*u,-14*u,13*u,12*u,0,0,TAU); });
+  sh(g,'#f5c542',2.6*u,(g)=>{ g.moveTo(11*u,-19*u); g.quadraticCurveTo(40*u,-16*u,33*u,-3*u); g.quadraticCurveTo(22*u,-6*u,11*u,-10*u); g.closePath(); });
+  g.strokeStyle=OUT; g.lineWidth=1.5*u; g.beginPath(); g.moveTo(13*u,-12*u); g.lineTo(32*u,-9*u); g.stroke();
+  eyes(g,u,4*u,-16*u,5*u,3*u);
+  sh(g,'#f0a23a',2*u,(g)=>{ g.moveTo(-8*u,21*u); g.lineTo(-8*u,29*u); }); sh(g,'#f0a23a',2*u,(g)=>{ g.moveTo(2*u,21*u); g.lineTo(2*u,29*u); });
+});
+// Raccooni Watermelunni — raccoon with a watermelon belly
+makeSprite('raccooni', 100, (g,u)=>{
+  sh(g,'#4e9a3e',3.2*u,(g)=>{ g.ellipse(0,8*u,22*u,20*u,0,0,TAU); });
+  sh(g,'#e0506a',0,(g)=>{ g.ellipse(0,9*u,16*u,14*u,0,0,TAU); });
+  for(let i=0;i<5;i++){ dot(g,(-10+i*5)*u,(4+(i%2)*8)*u,1.2*u,OUT); }
+  sh(g,'#9aa0a8',3*u,(g)=>{ g.ellipse(0,-16*u,15*u,13*u,0,0,TAU); });
+  sh(g,'#9aa0a8',0,(g)=>{ g.moveTo(-15*u,-22*u); g.lineTo(-9*u,-32*u); g.lineTo(-4*u,-22*u); g.closePath(); }); sh(g,'#9aa0a8',0,(g)=>{ g.moveTo(15*u,-22*u); g.lineTo(9*u,-32*u); g.lineTo(4*u,-22*u); g.closePath(); });
+  sh(g,OUT,0,(g)=>{ g.ellipse(0,-15*u,12*u,4.5*u,0,0,TAU); });
+  sh(g,'#f4f4f4',0,(g)=>{ g.ellipse(0,-10*u,7*u,4*u,0,0,TAU); });
+  eyes(g,u,0,-15*u,5*u,2.8*u);
+});
+// Avocadini Guffo — avocado-slice owl
+makeSprite('avoguffo', 100, (g,u)=>{
+  sh(g,'#7cae3e',3.4*u,(g)=>{ g.ellipse(0,4*u,22*u,26*u,0,0,TAU); });
+  sh(g,'#c8e08a',0,(g)=>{ g.ellipse(0,4*u,15*u,19*u,0,0,TAU); });
+  sh(g,'#8a5a2c',0,(g)=>{ g.ellipse(0,11*u,8*u,9*u,0,0,TAU); });
+  sh(g,'#6d9c34',0,(g)=>{ g.moveTo(-15*u,-15*u); g.lineTo(-9*u,-28*u); g.lineTo(-5*u,-15*u); g.closePath(); }); sh(g,'#6d9c34',0,(g)=>{ g.moveTo(15*u,-15*u); g.lineTo(9*u,-28*u); g.lineTo(5*u,-15*u); g.closePath(); });
+  sh(g,'#6d9c34',2.4*u,(g)=>{ g.ellipse(-22*u,2*u,6*u,13*u,0.2,0,TAU); }); sh(g,'#6d9c34',2.4*u,(g)=>{ g.ellipse(22*u,2*u,6*u,13*u,-0.2,0,TAU); });
+  sh(g,'#f0a23a',0,(g)=>{ g.moveTo(-3*u,-6*u); g.lineTo(3*u,-6*u); g.lineTo(0,0); g.closePath(); });
+  eyes(g,u,0,-10*u,6*u,4*u);
+  sh(g,'#8a5a2c',2*u,(g)=>{ g.moveTo(-7*u,28*u); g.lineTo(-7*u,34*u); }); sh(g,'#8a5a2c',2*u,(g)=>{ g.moveTo(7*u,28*u); g.lineTo(7*u,34*u); });
+});
+// Svinino Bombondino — candy-wrapped pig
+makeSprite('svinino', 96, (g,u)=>{
+  sh(g,'#f06fa8',0,(g)=>{ g.moveTo(-20*u,2*u); g.lineTo(-32*u,-6*u); g.lineTo(-30*u,10*u); g.closePath(); }); sh(g,'#f06fa8',0,(g)=>{ g.moveTo(20*u,2*u); g.lineTo(32*u,-6*u); g.lineTo(30*u,10*u); g.closePath(); });
+  sh(g,'#f59ac4',3.2*u,(g)=>{ g.ellipse(0,4*u,20*u,17*u,0,0,TAU); });
+  sh(g,'#f59ac4',0,(g)=>{ g.moveTo(-14*u,-12*u); g.lineTo(-18*u,-22*u); g.lineTo(-6*u,-15*u); g.closePath(); }); sh(g,'#f59ac4',0,(g)=>{ g.moveTo(14*u,-12*u); g.lineTo(18*u,-22*u); g.lineTo(6*u,-15*u); g.closePath(); });
+  g.strokeStyle='#fff'; g.lineWidth=3*u; g.beginPath(); g.moveTo(-12*u,-5*u); g.lineTo(12*u,12*u); g.stroke();
+  sh(g,'#e07aa0',0,(g)=>{ g.ellipse(0,8*u,7*u,5*u,0,0,TAU); });
+  dot(g,-2*u,8*u,1.3*u,OUT); dot(g,2*u,8*u,1.3*u,OUT);
+  eyes(g,u,0,-2*u,5*u,3*u);
+});
+// Avocadini Antilopini — avocado antelope (dasher)
+makeSprite('avoantilope', 100, (g,u)=>{
+  sh(g,'#7cae3e',3.2*u,(g)=>{ g.ellipse(0,8*u,18*u,21*u,0,0,TAU); });
+  sh(g,'#c8e08a',0,(g)=>{ g.ellipse(0,8*u,12*u,15*u,0,0,TAU); });
+  sh(g,'#8a5a2c',0,(g)=>{ g.ellipse(0,14*u,7*u,8*u,0,0,TAU); });
+  sh(g,'#caa06a',2.8*u,(g)=>{ g.ellipse(0,-16*u,10*u,9*u,0,0,TAU); });
+  g.strokeStyle='#6e4a28'; g.lineWidth=2.6*u; g.beginPath(); g.moveTo(-5*u,-22*u); g.quadraticCurveTo(-12*u,-32*u,-6*u,-38*u); g.stroke(); g.beginPath(); g.moveTo(5*u,-22*u); g.quadraticCurveTo(12*u,-32*u,6*u,-38*u); g.stroke();
+  eyes(g,u,0,-16*u,4.5*u,2.6*u);
+  sh(g,'#6e4a28',2.2*u,(g)=>{ g.moveTo(-8*u,27*u); g.lineTo(-8*u,33*u); }); sh(g,'#6e4a28',2.2*u,(g)=>{ g.moveTo(8*u,27*u); g.lineTo(8*u,33*u); });
+});
+// Perochello Lemonchello — pear/lemon two-tone (slow tank)
+makeSprite('perochello', 96, (g,u)=>{
+  sh(g,'#cfe05a',3.2*u,(g)=>{ g.ellipse(0,6*u,19*u,22*u,0,0,TAU); });
+  g.fillStyle='#f4d83a'; g.beginPath(); g.ellipse(0,6*u,19*u,22*u,0,-Math.PI/2,Math.PI/2); g.closePath(); g.fill();
+  g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.moveTo(0,-16*u); g.lineTo(0,28*u); g.stroke();
+  sh(g,'#6d9c34',0,(g)=>{ g.ellipse(2*u,-20*u,5*u,3*u,0.6,0,TAU); });
+  eyes(g,u,0,0,6*u,3*u);
+  g.strokeStyle=OUT; g.lineWidth=1.8*u; g.beginPath(); g.arc(0,8*u,5*u,0.15,Math.PI-0.15); g.stroke();
+});
+// ---- World 2 BOSSES ----
+// Ecco Cavallo Virtuoso — horse head on a wooden violin body, black boots
+makeSprite('eccocavallo', 120, (g,u)=>{
+  sh(g,'#b07a3a',3.4*u,(g)=>{ g.ellipse(0,8*u,20*u,26*u,0,0,TAU); });
+  sh(g,'#8a5a28',0,(g)=>{ g.ellipse(-9*u,4*u,3*u,7*u,0,0,TAU); }); sh(g,'#8a5a28',0,(g)=>{ g.ellipse(9*u,4*u,3*u,7*u,0,0,TAU); });
+  g.strokeStyle='#f0e0b0'; g.lineWidth=1.2*u; for(let i=-1;i<=1;i++){ g.beginPath(); g.moveTo(i*5*u,-12*u); g.lineTo(i*5*u,28*u); g.stroke(); }
+  sh(g,'#7a5a3a',3*u,(g)=>{ g.ellipse(0,-22*u,12*u,14*u,0,0,TAU); });
+  sh(g,'#7a5a3a',0,(g)=>{ g.moveTo(-6*u,-32*u); g.lineTo(-9*u,-42*u); g.lineTo(-2*u,-34*u); g.closePath(); }); sh(g,'#7a5a3a',0,(g)=>{ g.moveTo(6*u,-32*u); g.lineTo(9*u,-42*u); g.lineTo(2*u,-34*u); g.closePath(); });
+  sh(g,'#5a3f28',0,(g)=>{ g.ellipse(0,-15*u,7*u,5*u,0,0,TAU); });
+  eyes(g,u,0,-24*u,5*u,3*u);
+  sh(g,'#2b2b32',2.6*u,(g)=>{ g.roundRect(-16*u,30*u,12*u,9*u,3*u); }); sh(g,'#2b2b32',2.6*u,(g)=>{ g.roundRect(4*u,30*u,12*u,9*u,3*u); });
+});
+// Tigrullini Watermellini — tiger head on a watermelon torso
+makeSprite('tigrwater', 120, (g,u)=>{
+  sh(g,'#e0506a',3.4*u,(g)=>{ g.ellipse(0,12*u,24*u,22*u,0,0,TAU); });
+  g.lineWidth=4*u; g.strokeStyle='#3c7a30'; g.beginPath(); g.arc(0,12*u,23*u,0.35,Math.PI-0.35); g.stroke();
+  for(let i=0;i<6;i++){ dot(g,(-12+i*5)*u,(10+(i%2)*6)*u,1.4*u,OUT); }
+  sh(g,'#ef9a3a',3*u,(g)=>{ g.ellipse(0,-18*u,15*u,13*u,0,0,TAU); });
+  sh(g,'#ef9a3a',0,(g)=>{ g.moveTo(-14*u,-24*u); g.lineTo(-12*u,-34*u); g.lineTo(-5*u,-26*u); g.closePath(); }); sh(g,'#ef9a3a',0,(g)=>{ g.moveTo(14*u,-24*u); g.lineTo(12*u,-34*u); g.lineTo(5*u,-26*u); g.closePath(); });
+  g.strokeStyle=OUT; g.lineWidth=2*u; for(const s of [-1,1]){ g.beginPath(); g.moveTo(s*6*u,-23*u); g.lineTo(s*13*u,-21*u); g.stroke(); g.beginPath(); g.moveTo(s*6*u,-17*u); g.lineTo(s*14*u,-16*u); g.stroke(); }
+  sh(g,'#fff',0,(g)=>{ g.ellipse(0,-13*u,7*u,5*u,0,0,TAU); });
+  eyes(g,u,0,-20*u,5*u,3*u);
+});
+// Avocadorilla — avocado gorilla
+makeSprite('avocadorilla', 124, (g,u)=>{
+  sh(g,'#3a3a42',3.2*u,(g)=>{ g.ellipse(-24*u,10*u,8*u,18*u,0.2,0,TAU); }); sh(g,'#3a3a42',3.2*u,(g)=>{ g.ellipse(24*u,10*u,8*u,18*u,-0.2,0,TAU); });
+  sh(g,'#6d9c34',3.6*u,(g)=>{ g.ellipse(0,6*u,24*u,28*u,0,0,TAU); });
+  sh(g,'#b6d96a',0,(g)=>{ g.ellipse(0,8*u,16*u,20*u,0,0,TAU); });
+  sh(g,'#8a5a2c',0,(g)=>{ g.ellipse(0,14*u,10*u,11*u,0,0,TAU); });
+  sh(g,'#3a3a42',3*u,(g)=>{ g.ellipse(0,-20*u,15*u,13*u,0,0,TAU); });
+  sh(g,'#5a4a4a',0,(g)=>{ g.ellipse(0,-16*u,10*u,8*u,0,0,TAU); });
+  eyes(g,u,0,-21*u,5*u,3*u);
+  dot(g,-3*u,-12*u,1.4*u,OUT); dot(g,3*u,-12*u,1.4*u,OUT);
+});
+// Tracotucotulu Delapeladustuz — light-blue VW Beetle camel with legs for wheels
+makeSprite('tracotucotulu', 130, (g,u)=>{
+  sh(g,'#9fcfe0',3.6*u,(g)=>{ g.moveTo(-34*u,12*u); g.quadraticCurveTo(-30*u,-14*u,-6*u,-18*u); g.quadraticCurveTo(20*u,-20*u,32*u,2*u); g.quadraticCurveTo(34*u,12*u,32*u,15*u); g.lineTo(-32*u,15*u); g.closePath(); });
+  sh(g,'#2b3038',0,(g)=>{ g.moveTo(-22*u,-2*u); g.quadraticCurveTo(-18*u,-14*u,-4*u,-15*u); g.quadraticCurveTo(8*u,-15*u,12*u,-3*u); g.closePath(); });
+  dot(g,26*u,2*u,4*u,'#fff7c0'); g.strokeStyle=OUT; g.lineWidth=1.6*u; g.beginPath(); g.arc(26*u,2*u,4*u,0,TAU); g.stroke();
+  sh(g,'#cda86a',2.8*u,(g)=>{ g.ellipse(33*u,-7*u,9*u,8*u,0,0,TAU); });
+  sh(g,'#cda86a',0,(g)=>{ g.ellipse(40*u,-3*u,5*u,4*u,0,0,TAU); });
+  eyes(g,u,34*u,-9*u,3.4*u,2.2*u);
+  g.lineCap='round'; for(const lx of [-22,-8,8,22]){ g.strokeStyle='#b08a4a'; g.lineWidth=4*u; g.beginPath(); g.moveTo(lx*u,13*u); g.lineTo(lx*u,29*u); g.stroke(); g.strokeStyle=OUT; g.lineWidth=1.4*u; g.beginPath(); g.moveTo(lx*u,13*u); g.lineTo(lx*u,29*u); g.stroke(); }
+});
+
 // ---- pickups ----
 makeSprite('gem', 56, (g,u)=>{
   sh(g,'#4fc3f7',3*u,(g)=>{ g.moveTo(0,-22*u); g.lineTo(16*u,-4*u); g.lineTo(0,22*u); g.lineTo(-16*u,-4*u); g.closePath(); });

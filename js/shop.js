@@ -10,12 +10,14 @@ const CAT_LABEL = { helmet:'Helmet', chest:'Chestplate', pants:'Pants', shoes:'S
 const CAT_NOUN  = { helmet:'Helm', chest:'Plate', pants:'Greaves', shoes:'Boots' };
 
 // rarity: border color + base price (prices cut to ~1/3 of the old shop)
+// prices scale ~3-4x per tier so the next rarity costs "about one world of grinding"
+// (tied to the rarity-banded gear gate — see docs/specs/2026-06-14-worlds-expansion-design.md)
 const RAR = {
-  common:    { name:'COMMON',    color:'#9aa3af', price:25   },
-  uncommon:  { name:'UNCOMMON',  color:'#5fbf52', price:80   },
-  rare:      { name:'RARE',      color:'#4aa3df', price:230  },
-  epic:      { name:'EPIC',      color:'#b06ff0', price:600  },
-  legendary: { name:'LEGENDARY', color:'#e0a92e', price:1200 },
+  common:    { name:'COMMON',    color:'#9aa3af', price:30   },
+  uncommon:  { name:'UNCOMMON',  color:'#5fbf52', price:120  },
+  rare:      { name:'RARE',      color:'#4aa3df', price:450  },
+  epic:      { name:'EPIC',      color:'#b06ff0', price:1500 },
+  legendary: { name:'LEGENDARY', color:'#e0a92e', price:4500 },
 };
 const RAR_ORDER = ['common','uncommon','rare','epic','legendary'];
 
@@ -53,9 +55,9 @@ function catalogByRarity(r){ return GEAR_CATALOG.filter(id=>itemRar(id)===r); }
 
 // crates: weighted random pulls. cheaper crate = mostly low rarity, pricier = better odds.
 const CRATES = {
-  wood:   { name:'Wooden Crate', price:30,  glow:'#9aa3af', odds:{common:60,uncommon:30,rare:8, epic:2, legendary:0} },
-  silver: { name:'Silver Crate', price:120, glow:'#bcd0e0', odds:{common:18,uncommon:40,rare:28,epic:11,legendary:3} },
-  gold:   { name:'Gold Crate',   price:400, glow:'#e0a92e', odds:{common:0, uncommon:16,rare:40,epic:32,legendary:12} },
+  wood:   { name:'Wooden Crate', price:40,   glow:'#9aa3af', odds:{common:60,uncommon:30,rare:8, epic:2, legendary:0} },
+  silver: { name:'Silver Crate', price:240,  glow:'#bcd0e0', odds:{common:18,uncommon:40,rare:28,epic:11,legendary:3} },
+  gold:   { name:'Gold Crate',   price:1200, glow:'#e0a92e', odds:{common:0, uncommon:16,rare:40,epic:32,legendary:12} },
 };
 const CRATE_ORDER = ['wood','silver','gold'];
 
@@ -126,7 +128,9 @@ function compositeCharURL(){
   }
   return c.toDataURL();
 }
-function refreshMenuChar(){ const img=$('charimg'); if(img){ const u=compositeCharURL(); if(u) img.src=u; } }
+// The Battle stage now shows the world emblem (see game.js); the player+gear preview lives on the
+// Inventory tab (#eqchar). Keep this as the world-emblem refresher so equipping gear doesn't clobber it.
+function refreshMenuChar(){ if(typeof setStageEmblem==='function' && typeof selWorld!=='undefined') setStageEmblem(selWorld); }
 
 // ---- gold display + coin chip ----
 function refreshGoldUI(){ const t=$('goldtxt'); if(t) t.textContent=gold; }

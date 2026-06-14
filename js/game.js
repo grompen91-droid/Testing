@@ -80,7 +80,10 @@ function foeIsShooter(d){ return !!d.shoot; }
 function foeIsHazard(d){ return !!d.aoe || (d.cast && (d.cast.kind==='geyser'||d.cast.kind==='debris')); }
 function foeIsBurst(d){ return !!d.shoot && (d.shoot.type==='ring' || (d.shoot.n||1)>=3); }
 function foeIsSpecial(d){ return foeIsHazard(d) || foeIsBurst(d); }
-function worldDmgMul(){ return curWorld().dmgMul||1; }   // per-world enemy damage multiplier
+function worldBand(){ return curWorld().band||0; }       // 0-indexed difficulty band (drives macro scaling)
+function worldDmgMul(){ return (curWorld().dmgMul||1) * (1 + worldBand()*0.12); }   // per-world enemy damage (band ramp)
+function worldHpBand(){ return 1 + worldBand()*0.42; }   // enemy HP multiplier per world band
+function worldCoinMul(){ return 1 + worldBand()*0.6; }   // later worlds pay out more (funds the gear grind)
 // coins are scarce early; from wave 20 on they pay out a little more (capped at 3x)
 function coinMult(){ return Math.min(3, wave < 20 ? 1 : 1 + (wave-19)*0.1); }
 // ---- enemy archetypes: the Italian Brainrot bestiary (ordered easy -> hard) ----
@@ -163,21 +166,75 @@ const BOSSES_DIRT = [
   { spr:'orcalero', name:'ORCALERO ORCALA',           hp:560, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
   { spr:'madudung',  name:'MADUDUNGDUNG',             hp:680, r:62, pattern:'chaos',  bars:2, hp2:480, duo:'garamaraman' },
 ];
+// ============ WORLD 2 — CITRUS COAST roster (real OG Italian Brainrots, recreated). band 1: easy, mostly chasers. ============
+const FOES_W2 = [
+  // Tier I — fodder
+  { spr:'tralalerito', name:'Tralaleritos',          hp:3, sp:92, r:14, xp:1, score:10 },
+  { spr:'pipikiwi',    name:'Pi Pi Kiwi',            hp:3, sp:80, r:14, xp:1, score:10 },
+  { spr:'tukanno',     name:'Tukanno Bananno',       hp:4, sp:74, r:16, xp:1, score:12 },
+  { spr:'raccooni',    name:'Raccooni Watermelunni', hp:4, sp:70, r:16, xp:1, score:12 },
+  // Tier II — infantry (one light shooter, one dasher, one death-pop — kept gentle)
+  { spr:'svinino',     name:'Svinino Bombondino',    hp:6, sp:66, r:16, xp:2, score:16, death:{type:'ring',n:4} },
+  { spr:'avoantilope', name:'Avocadini Antilopini',  hp:7, sp:88, r:17, xp:2, score:20, dash:true },
+  { spr:'avoguffo',    name:'Avocadini Guffo',       hp:6, sp:58, r:17, xp:2, score:18, range:300, shoot:{type:'aim',n:1,cd:2.8,spd:150,col:'#7cae3e'} },
+  // Tier III — heavy
+  { spr:'perochello',  name:'Perochello Lemonchello',hp:13, sp:42, r:21, xp:3, score:30, front:0.5 },
+];
+const BOSSES_W2 = [
+  { spr:'eccocavallo',  name:'ECCO CAVALLO VIRTUOSO',         hp:130, r:54, moveKey:'hotspot',   phased:true },
+  { spr:'tigrwater',    name:'TIGRULLINI WATERMELLINI',       hp:200, r:55, moveKey:'tralala2',  phased:true },
+  { spr:'avocadorilla', name:'AVOCADORILLA',                  hp:300, r:58, moveKey:'croco2',    phased:true },
+  { spr:'tracotucotulu',name:'TRACOTUCOTULU DELAPELADUSTUZ',  hp:420, r:60, moveKey:'saturnita', phased:true },
+];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
+// ---- 10 worlds: gradual difficulty bands (0..9), distinct map shapes, per-world enemy tints. ----
+// Phase 1 reuses the grass roster (W1-5) and dirt roster (W6-10) recolored via enemyTint; dedicated
+// original sprites + unique boss movesets arrive in later content phases. World 10 = the dirt roster
+// unchanged. See docs/specs/2026-06-14-worlds-expansion-design.md.
 const WORLDS = [
-  { id:'grass', name:'GRASSLANDS', waveTarget:20, endless:false,
+  { id:'grass', name:'GRASSLANDS', band:0, waveTarget:20, endless:false, map:{w:2600,h:2600}, enemyTint:null,
     theme:{ void:'#5b7d33', tile1:'#86c64a', tile2:'#7cbd43', tuft:'rgba(60,110,40,0.35)',
             wall:null, post:null, bg:'#6fae3d', tint:null, music:'game' },
     foes:FOES_GRASS, bosses:BOSSES_GRASS },
-  { id:'dirt', name:'DIRT DEPTHS', waveTarget:30, endless:false, hpMul:0.7, dmgMul:1.5, enemyMul:0.6,   // easier but deadlier: -30% HP, +50% enemy damage, fewer enemies
+  { id:'citrus', name:'CITRUS COAST', band:1, waveTarget:20, endless:false, map:{w:3200,h:2000}, enemyTint:null,
+    theme:{ void:'#c89a3a', tile1:'#f0d878', tile2:'#e8cd63', tuft:'rgba(180,140,50,0.28)',
+            wall:null, post:null, bg:'#ecd070', tint:'#f0c850', music:'game' },
+    foes:FOES_W2, bosses:BOSSES_W2 },
+  { id:'sand', name:'SUNNY SANDS', band:2, waveTarget:20, endless:false, map:{w:3400,h:3400}, enemyTint:'#e0b050',
+    theme:{ void:'#b8893a', tile1:'#e8c878', tile2:'#ddb95f', tuft:'rgba(150,110,40,0.30)',
+            wall:null, post:null, bg:'#d9b86a', tint:'#e0b050', music:'game' },
+    foes:FOES_GRASS, bosses:BOSSES_GRASS },
+  { id:'frost', name:'FROSTBITE', band:3, waveTarget:20, endless:false, map:{w:1100,h:3800}, enemyTint:'#9fd0ff',
+    theme:{ void:'#6f9fb5', tile1:'#bfe0ef', tile2:'#aed4e6', tuft:'rgba(110,160,190,0.30)',
+            wall:'#7fa6bc', post:'#a8cfe0', postDark:'#5a7e92', bg:'#b3d8e8', tint:'#9fd0ff', music:'boss2' },
+    foes:FOES_GRASS, bosses:BOSSES_GRASS },
+  { id:'autumn', name:'AUTUMN WOODS', band:4, waveTarget:20, endless:false, map:{w:3000,h:3000}, enemyTint:'#e0792c',
+    theme:{ void:'#8a4f22', tile1:'#d98a44', tile2:'#cf7e3a', tuft:'rgba(120,60,20,0.32)',
+            wall:null, post:null, bg:'#c97a36', tint:'#e0792c', music:'game' },
+    foes:FOES_GRASS, bosses:BOSSES_GRASS },
+  { id:'swamp', name:'SWAMP', band:5, waveTarget:20, endless:false, map:{w:3800,h:1600}, enemyTint:'#6a8a3a',
+    theme:{ void:'#38502a', tile1:'#5f7a45', tile2:'#56713e', tuft:'rgba(30,50,20,0.35)',
+            wall:'#3a4d28', post:'#5a7038', postDark:'#28361c', bg:'#55703c', tint:'#6a8a3a', music:'dirt',
+            debris:0.7 },
+    foes:FOES_DIRT, bosses:BOSSES_DIRT },
+  { id:'sky', name:'SKYLAND', band:6, waveTarget:20, endless:false, map:{w:3600,h:3600}, enemyTint:'#bfe0ff',
+    theme:{ void:'#8fb6cf', tile1:'#cfe6f5', tile2:'#c0dcef', tuft:'rgba(140,180,210,0.28)',
+            wall:null, post:null, bg:'#c2def0', tint:'#bfe0ff', music:'boss1' },
+    foes:FOES_DIRT, bosses:BOSSES_DIRT },
+  { id:'crystal', name:'CRYSTAL CAVES', band:7, waveTarget:20, endless:false, map:{w:1300,h:3600}, enemyTint:'#b08fe0',
+    theme:{ void:'#3a2a52', tile1:'#6a4f8a', tile2:'#5e4578', tuft:'rgba(150,120,200,0.28)',
+            wall:'#2f2247', post:'#5a4078', postDark:'#1e1530', bg:'#5a4078', tint:'#b08fe0', music:'boss2' },
+    foes:FOES_DIRT, bosses:BOSSES_DIRT },
+  { id:'volcano', name:'VOLCANO', band:8, waveTarget:20, endless:false, map:{w:2800,h:2800}, enemyTint:'#e0502c',
+    theme:{ void:'#3a1810', tile1:'#7a3a2a', tile2:'#6e3020', tuft:'rgba(60,24,12,0.35)',
+            wall:'#2a120a', post:'#6e3424', postDark:'#1c0c06', bg:'#6b2e1e', tint:'#e0502c', music:'boss0',
+            debris:0.8 },
+    foes:FOES_DIRT, bosses:BOSSES_DIRT },
+  { id:'dirt', name:'DIRT DEPTHS', band:9, waveTarget:20, endless:false, map:{w:1200,h:4000}, enemyTint:null,
     theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
             wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'dirt',
             debris:0.8, edgeDark:0.15 },
     foes:FOES_DIRT, bosses:BOSSES_DIRT },
-  { id:'under', name:'THE UNDERGROUND', waveTarget:0, endless:true,
-    theme:{ void:'#1c1622', tile1:'#33293f', tile2:'#2c2336', tuft:'rgba(120,90,160,0.25)',
-            wall:'#241a30', post:'#4a3a60', postDark:'#160f1e', bg:'#241a30', tint:'#6a4f8a', music:'boss2' },
-    foes:FOES_GRASS, bosses:BOSSES_GRASS },
 ];
 let worldIdx = 0;
 function curWorld(){ return WORLDS[worldIdx]; }
@@ -189,6 +246,11 @@ let selWorld = Math.min(unlockedMax, WORLDS.length-1);
 function loadWorld(idx){
   worldIdx = clamp(idx,0,WORLDS.length-1);
   const w = curWorld(); curFoes = w.foes; curBosses = w.bosses; curTheme = w.theme;
+  if(w.map){   // per-world field dimensions (shape). Cap by area so the ground canvas stays memory-safe.
+    let mw=w.map.w, mh=w.map.h; const MAXAREA=13e6;
+    if(mw*mh>MAXAREA){ const k=Math.sqrt(MAXAREA/(mw*mh)); mw=Math.round(mw*k); mh=Math.round(mh*k); }
+    WORLD.w=mw; WORLD.h=mh;
+  }
   document.body.style.background = curTheme.bg;
   buildGround();   // pre-render this world's ground once (avoids per-frame tile loops)
 }
@@ -226,10 +288,27 @@ function toMenuFromClear(){
 }
 // ---- world-select carousel (menu) ----
 function worldLabel(i){ return 'WORLD '+(i+1)+' · '+(i<=unlockedMax ? WORLDS[i].name : '??? 🔒'); }
+// per-world preview emblem shown on the Battle stage: world ground tones + its end-boss silhouette
+const _emblemURL = {};
+function worldEmblemURL(i){
+  if(_emblemURL[i]) return _emblemURL[i];
+  const w=WORLDS[i], sz=220, c=document.createElement('canvas'); c.width=c.height=sz;
+  const g=c.getContext('2d'), th=w.theme;
+  g.fillStyle=th.tile2; g.fillRect(0,0,sz,sz);
+  g.fillStyle=th.tile1; const T=28;                                   // checker ground
+  for(let y=0;y<sz;y+=T) for(let x=0;x<sz;x+=T) if(((x/T+y/T)&1)) g.fillRect(x,y,T,T);
+  const bdef = w.bosses[w.bosses.length-1];                           // headliner = the world's end-boss
+  const spr = bdef && SP[bdef.spr];
+  if(spr){ const s=sz*0.72, im=(w.enemyTint && tintedSprite(bdef.spr,w.enemyTint))||spr;
+    g.drawImage(im, (sz-s)/2, (sz-s)/2+8, s, s); }
+  const u=c.toDataURL(); _emblemURL[i]=u; return u;
+}
+function setStageEmblem(i){ const img=$('charimg'); if(img) img.src = worldEmblemURL(clamp(i,0,WORLDS.length-1)); }
 function refreshWorldSel(){
   $('wname').textContent = worldLabel(selWorld);
   $('wprev').disabled = selWorld<=0;
   $('wnext').disabled = selWorld>=unlockedMax;   // can't pick locked worlds
+  setStageEmblem(selWorld);                       // Battle stage shows the world, not the player
 }
 function triggerUnlockReveal(){
   refreshWorldSel();
@@ -320,6 +399,15 @@ const UPGRADES = [
     evo:{name:'Event Singularity', icon:'octopus', desc:'EVOLVE — huge crush that also devours enemy bullets.', f:()=>{P.gravcrush=true;P.gravEvo=true;P.gravR+=60;P.gravDmg+=18;P.gravLife+=0.8;}} },
   { id:'abyssal', name:'Abyssal Pact', icon:'gembig', rarity:'epic', cap:5, minWorld:2,
     steps:[{desc:'+6% damage for every enemy near you (caps high). The swarm feeds you.',f:()=>{P.abyssal=(P.abyssal||0)+1;}}] },
+  // 🍊 World 2 (CITRUS COAST) cards
+  { id:'thorns', name:'Spiky Peel', icon:'turtle', rarity:'uncommon', cap:5, minWorld:1,
+    steps:[{desc:'enemies that touch you take damage.',f:()=>P.thorns+=6}] },
+  { id:'ricochet', name:'Ricochet', icon:'gembig', rarity:'rare', minWorld:1,
+    steps:[{desc:'your shots ricochet to a nearby enemy.',f:()=>P.ricochet+=1},
+           {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1},
+           {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1},
+           {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1}],
+    evo:{name:'Chain Reaction', icon:'gembig', desc:'EVOLVE — ricochets reach far and hit much harder.', f:()=>{P.ricochet+=2;P.ricochetEvo=true;}} },
 
   // ✨ SYNERGY cards — hidden until you own the prerequisite cards (req)
   { id:'frostfire', name:'Frostfire Core', icon:'gem', rarity:'epic', cap:1, req:['slow','nova'],
@@ -339,6 +427,21 @@ const UPGRADES = [
 ];
 // give every upgrade (and its evolved form) its own custom icon sprite (ab_<id>)
 for(const u of UPGRADES){ const ic='ab_'+u.id; if(SP[ic]){ u.icon=ic; if(u.evo) u.evo.icon=ic; } }
+// ---- card unlock schedule: each world introduces new options (0-indexed world). ----
+// Synergy cards (frostfire/eventhz/...) keep their req-gating and stay available from W1.
+const CARD_MINWORLD = {
+  dmg:0, rate:0, speed:0, hp:0, magnet:0, armor:0,
+  multi:1, range:1,
+  crit:2, heavy:2, regen:2, gold:2, dashcd:2,
+  pierce:3, slow:3, critdmg:3, steady:3,
+  orbit:4, vamp:4,
+  nova:5, thick:5, frenzy:5,
+  aegis:6, tremor:6, glass:6,
+  blackhole:7, aftershock:7,
+  phoenix:8, gravcrush:8,
+  abyssal:9,
+};
+for(const u of UPGRADES){ if(CARD_MINWORLD[u.id]!=null) u.minWorld = CARD_MINWORLD[u.id]; }
 // returns the next card "move" for an upgrade, or null if exhausted
 function nextMove(u){
   const lvl = P.up[u.id]||0;
@@ -368,6 +471,7 @@ function resetPlayer(){
     frostfire:false, holeNova:false, critHeal:0, glassSafe:false, orbShoot:false, orbShootCd:0, overdrive:false, aegisNova:false,
     // world-exclusive abilities
     tremor:0, aftershock:0, abyssal:0, abyssalMul:1,
+    thorns:0, ricochet:0, ricochetEvo:false,   // World 2: Spiky Peel / Ricochet
     gravcrush:false, gravCd:0, gravCdBase:7, gravR:130, gravDmg:20, gravLife:2, gravEvo:false
   });
 }
@@ -406,10 +510,11 @@ function startWave(){
 
 // lock the field into a small bounded arena around the player; boss arrives after a delay
 function startBossArena(){
-  const half = ARENA_SIZE/2;
-  const cxw = clamp(P.x, WALL+half, WORLD.w-WALL-half);
-  const cyw = clamp(P.y, WALL+half, WORLD.h-WALL-half);
-  arena = { x:cxw-half, y:cyw-half, w:ARENA_SIZE, h:ARENA_SIZE };
+  // arena fits inside the world even in thin corridors (clamped to map width/height)
+  const aw = Math.min(ARENA_SIZE, WORLD.w-2*WALL), ah = Math.min(ARENA_SIZE, WORLD.h-2*WALL);
+  const cxw = clamp(P.x, WALL+aw/2, WORLD.w-WALL-aw/2);
+  const cyw = clamp(P.y, WALL+ah/2, WORLD.h-WALL-ah/2);
+  arena = { x:cxw-aw/2, y:cyw-ah/2, w:aw, h:ah };
   luckies=[];                                // clear lucky blocks: they'd be stranded outside the arena
   setZoom(clamp(ARENA_ZOOM, ZMIN, ZMAX));   // auto zoom-in (player can still re-zoom)
   bossPending = ARENA_LEAD;
@@ -425,7 +530,7 @@ function ringPos(){ // spawn point on a ring around player, clamped to world
 
 function spawnBoss(){
   const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
-  const mult = (1 + (wave-5)*0.22) * (curWorld().hpMul||1);
+  const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.42);   // softened wave growth; world band carries the macro ramp
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
   const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult, total = bar1+bar2;
   boss = {
@@ -484,7 +589,7 @@ function spawnEnemy(){
   }
   const p = ringPos();
   const special = foeIsSpecial(def);
-  const hpMult = (1 + (wave-1)*0.16) * (curWorld().hpMul||1) * (special?SPECIAL_HP_BUFF:1);
+  const hpMult = (1 + (wave-1)*0.07) * worldHpBand() * (curWorld().hpMul||1) * (special?SPECIAL_HP_BUFF:1);   // gentle per-wave growth + per-world band
   enemies.push({
     spr:def.spr, name:def.name, x:p.x, y:p.y, r:def.r,
     hp:def.hp*HP_MULT*hpMult, maxHp:def.hp*HP_MULT*hpMult,
@@ -890,6 +995,13 @@ function update(dt){
           hitSpark(b.x,b.y,isCrit?'#ffe14d':'#ff9f3a',isCrit);
           damageEnemy(e,dmg,b.x,b.y,isCrit);
           if(isCrit && P.critHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.critHeal);   // Blood Crit
+          if(P.ricochet>0 && !b.ric){   // Ricochet: fling weaker bolts at nearby foes (don't ricochet a ricochet)
+            const R=P.ricochetEvo?220:140, mul=P.ricochetEvo?0.7:0.5; let n=0;
+            forEnemiesNear(b.x,b.y,R,(o)=>{ if(n>=P.ricochet||o===e||o.iv>0||o.under||o.lead||b.hit.has(o)) return;
+              const a=Math.atan2(o.y-b.y,o.x-b.x);
+              bullets.push({x:b.x,y:b.y,vx:Math.cos(a)*540,vy:Math.sin(a)*540,r:b.r*0.85,pierce:0,hit:new Set([e]),dist:R+40,dmgMul:(b.dmgMul||1)*mul,ric:true});
+              n++; });
+          }
           if(P.tremor && Math.random() < 0.22+P.tremor*0.05){   // Tremor Rounds: ground shock splashes nearby foes
             const R=34+P.tremor*7, sd=P.dmg*(0.3+P.tremor*0.12)*(P.abyssalMul||1);
             forEnemiesNear(b.x,b.y,R,(o)=>{ if(o===e||o.iv>0||o.under||o.lead) return; if(dist2(b.x,b.y,o.x,o.y)<R*R){ o.hp-=sd; o.hitT=Math.max(o.hitT,0.05); } });
@@ -1017,7 +1129,9 @@ function update(dt){
     }
 
     if(!e.under && dist2(e.x,e.y,P.x,P.y) < (e.r+P.r)*(e.r+P.r)){
+      const hitLands = P.inv<=0 && P.dashT<=0 && P.shield<=0;   // the contact actually deals damage this frame
       hurtPlayer((e.isBoss?20:10)*(e.dmgBuff||1), e);
+      if(P.thorns>0 && hitLands && !e.isBoss) damageEnemy(e, P.thorns, P.x, P.y, false);   // Spiky Peel
       if(e.kb && e.dst==='dash'){   // charging boulder bowls the player back
         const a=Math.atan2(P.y-e.y,P.x-e.x);
         P.x=clamp(P.x+Math.cos(a)*120, WALL+P.r, WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*120, WALL+P.r, WORLD.h-WALL-P.r);
@@ -1128,7 +1242,7 @@ function update(dt){
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
       if(g.heart){ const h=g.big?50:25; P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
-      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
+      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else if(g.magnet){ for(const o of gems) o.vac=true; floatText(P.x,P.y-24,'MAGNET','#9fe0ff',16); burst(P.x,P.y,'#9fe0ff',12,160); sfx.level(); }   // pull in every pickup on the map
       else { gainXp(g.v); sfx.gem(2); }
     }
@@ -1680,7 +1794,7 @@ function render(){
     }
     const wob = e.isBoss ? Math.sin(e.t*2)*0.06 : Math.sin(e.t*6)*0.12;
     if(e.cut && cut){ cx.globalAlpha = cut.alpha; }
-    drawSprite(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), wob, e.sq, e.hitT, e.face===-1, null);
+    drawSprite(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), wob, e.sq, e.hitT, e.face===-1, e.isBoss?null:curWorld().enemyTint);   // per-world enemy recolor
     if(e.cut){ cx.globalAlpha = 1; }
     if(e.frz>0){ cx.globalAlpha=0.4; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
     if(e.iv>0){ cx.strokeStyle='#d8b46a'; cx.lineWidth=4; cx.globalAlpha=0.85; cx.beginPath(); cx.arc(e.x,e.y,e.r+6,0,TAU); cx.stroke(); cx.globalAlpha=1; }
@@ -1910,8 +2024,8 @@ function menuUpdate(dt){
 resetPlayer(); state=ST.MENU;
 computeCamera();
 document.body.style.background = curTheme.bg;
-// populate the main menu (character + saved gold)
-$('charimg').src = SP['player'].toDataURL();
+// populate the main menu (world emblem on the Battle stage + saved gold)
+setStageEmblem(selWorld);
 $('goldicon').src = SP['coin'].toDataURL();
 $('goldtxt').textContent = gold;
 // top resource bar: a "player level" badge from worlds unlocked + a progress fill + gold
