@@ -966,3 +966,209 @@ makeSprite('ab_glassphx',64,(g,u)=>{ _flame(g,u,'#ff7a3a','#ffd24a'); sh(g,'#bfe
 makeSprite('ab_orbstorm',64,(g,u)=>{ for(let i=0;i<4;i++){ g.save(); g.rotate(i*Math.PI/2+Math.PI/4); g.translate(0,-20*u); _bolt(g,u*0.45,'#ffd24a'); g.restore(); } dot(g,0,0,12*u,'#5fe6ff'); g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.arc(0,0,12*u,0,TAU); g.stroke(); });
 makeSprite('ab_overdrive',64,(g,u)=>{ g.lineCap='round'; g.strokeStyle='#46566f'; g.lineWidth=5*u; g.beginPath(); g.arc(0,8*u,22*u,Math.PI,0); g.stroke(); g.strokeStyle='#e0392e'; g.beginPath(); g.arc(0,8*u,22*u,Math.PI*0.62,0); g.stroke(); g.lineCap='butt'; g.strokeStyle=OUT; g.lineWidth=3*u; g.beginPath(); g.moveTo(0,8*u); g.lineTo(15*u,-9*u); g.stroke(); dot(g,0,8*u,4*u,OUT); });
 makeSprite('ab_aegisnova',64,(g,u)=>{ _shield(g,u,'#7ecbff'); g.strokeStyle='#fff'; g.lineWidth=2.4*u; for(const r of [26,31]){ g.beginPath(); g.arc(0,0,r*u,-0.55,0.55); g.stroke(); } });
+
+// ============================================================
+// WORLD 3 — FORESTA FRUTOSA sprites
+// ============================================================
+
+// ---- Bobritto Bandito: beaver bandit with knives and bandana ----
+makeSprite('bobritto', 120, (g,u)=>{
+  sh(g,'#5C3A1E',2*u,(p)=>{ p.ellipse(0,28*u,12*u,6*u,0,0,TAU); }); // tail
+  sh(g,'#8B5E3C',3*u,(p)=>{ p.ellipse(0,4*u,18*u,22*u,0,0,TAU); }); // body
+  sh(g,'#A0724A',3*u,(p)=>{ p.ellipse(0,-18*u,14*u,14*u,0,0,TAU); }); // head
+  sh(g,'#c0392b',2*u,(p)=>{ p.rect(-14*u,-24*u,28*u,8*u); }); // red bandana
+  g.save(); g.translate(-14*u,2*u); g.rotate(-0.7);
+  sh(g,'#d0d0d0',1.5*u,(p)=>{ p.rect(-2*u,-8*u,4*u,14*u); }); g.restore();
+  g.save(); g.translate(14*u,2*u); g.rotate(0.7);
+  sh(g,'#d0d0d0',1.5*u,(p)=>{ p.rect(-2*u,-8*u,4*u,14*u); }); g.restore();
+  eyes(g,u,0,-20*u,5*u,3.5*u);
+});
+
+// ---- Garamaraman: wiry fast creature with long flailing arms ----
+makeSprite('garamaraman', 120, (g,u)=>{
+  sh(g,'#a8c840',3*u,(p)=>{ p.ellipse(0,6*u,10*u,18*u,0,0,TAU); }); // body
+  sh(g,'#e67e22',3*u,(p)=>{ p.ellipse(0,-18*u,12*u,11*u,0,0,TAU); }); // head
+  sh(g,'#a8c840',2.5*u,(p)=>{ p.moveTo(-10*u,-2*u); p.quadraticCurveTo(-30*u,-10*u,-28*u,10*u); p.lineTo(-24*u,10*u); p.quadraticCurveTo(-26*u,-8*u,-8*u,-2*u); p.closePath(); }); // left arm
+  sh(g,'#a8c840',2.5*u,(p)=>{ p.moveTo(10*u,-2*u); p.quadraticCurveTo(30*u,-10*u,28*u,10*u); p.lineTo(24*u,10*u); p.quadraticCurveTo(26*u,-8*u,8*u,-2*u); p.closePath(); }); // right arm
+  g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.arc(0,-18*u,6*u,0.2,Math.PI-0.2); g.stroke(); // grin
+  dot(g,-4*u,-20*u,2*u,OUT); dot(g,4*u,-20*u,2*u,OUT);
+});
+
+// ---- Burbaloni Luliloli: round puffy lavender creature ----
+makeSprite('burbaloni', 120, (g,u)=>{
+  sh(g,'#b48adf',3*u,(p)=>{ p.ellipse(0,2*u,22*u,22*u,0,0,TAU); }); // body
+  sh(g,'#9b6ec7',0,(p)=>{ p.ellipse(4*u,8*u,12*u,10*u,0,0,TAU); }); // shading
+  dot(g,-11*u,-4*u,5*u,'#f4a7c3'); dot(g,11*u,-4*u,5*u,'#f4a7c3'); // cheeks
+  sh(g,'#b48adf',2*u,(p)=>{ p.ellipse(-20*u,4*u,6*u,4*u,0.3,0,TAU); }); // left arm
+  sh(g,'#b48adf',2*u,(p)=>{ p.ellipse(20*u,4*u,6*u,4*u,-0.3,0,TAU); }); // right arm
+  g.save();
+  g.beginPath(); g.ellipse(-7*u,-6*u,4*u,3.5*u,0,0,TAU); g.fillStyle='#fff'; g.fill(); g.strokeStyle=OUT; g.lineWidth=1.5*u; g.stroke();
+  g.fillStyle='#2a1a3a'; g.beginPath(); g.ellipse(-7*u,-5*u,2.5*u,2*u,0,0,TAU); g.fill();
+  g.beginPath(); g.ellipse(7*u,-6*u,4*u,3.5*u,0,0,TAU); g.fillStyle='#fff'; g.fill(); g.strokeStyle=OUT; g.lineWidth=1.5*u; g.stroke();
+  g.fillStyle='#2a1a3a'; g.beginPath(); g.ellipse(7*u,-5*u,2.5*u,2*u,0,0,TAU); g.fill();
+  g.restore();
+  g.beginPath(); g.moveTo(-11*u,-6*u); g.lineTo(-3*u,-7*u); g.moveTo(3*u,-6*u); g.lineTo(11*u,-7*u); g.strokeStyle=OUT; g.lineWidth=1.5*u; g.stroke();
+});
+
+// ---- Boneca Ambalabu: split croc-doll with straw hat ----
+makeSprite('bonecaambalabu', 120, (g,u)=>{
+  sh(g,'#2e7d32',2.5*u,(p)=>{ p.rect(-22*u,-12*u,22*u,32*u); }); // left croc half
+  dot(g,-16*u,-4*u,3*u,'#1b5e20'); dot(g,-10*u,2*u,3*u,'#1b5e20'); dot(g,-16*u,8*u,3*u,'#1b5e20'); // croc scales
+  sh(g,'#fad9c1',2.5*u,(p)=>{ p.rect(0,-12*u,22*u,32*u); }); // right doll half
+  g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.moveTo(0,-12*u); g.lineTo(0,20*u); g.stroke(); // seam
+  sh(g,'#d4ac0d',2*u,(p)=>{ p.ellipse(0,-20*u,18*u,5*u,0,0,TAU); }); // hat brim
+  sh(g,'#c9a00d',2*u,(p)=>{ p.rect(-8*u,-34*u,16*u,15*u); }); // hat crown
+  dot(g,-12*u,-16*u,4*u,'#fffde7'); dot(g,-12*u,-16*u,2*u,'#1b5e20'); // croc eye
+  dot(g,12*u,-16*u,4*u,'#f4f4f4'); dot(g,12*u,-16*u,1.5*u,OUT); // doll button eye
+  g.strokeStyle=OUT; g.lineWidth=1.2*u;
+  for(let i=0;i<4;i++){ const a=i*Math.PI/2; g.beginPath(); g.moveTo(12*u+Math.cos(a)*4*u,-16*u+Math.sin(a)*4*u); g.lineTo(12*u+Math.cos(a)*6*u,-16*u+Math.sin(a)*6*u); g.stroke(); }
+  sh(g,'#fff9c4',1.5*u,(p)=>{ for(let i=0;i<3;i++){ p.rect(-20*u+i*5*u,18*u,3*u,5*u); } }); // croc teeth
+});
+
+// ---- Girafa Assassina: giraffe with long neck and dark cloak ----
+makeSprite('girafassassina', 144, (g,u)=>{
+  sh(g,'#d4ac0d',2.5*u,(p)=>{ p.rect(-6*u,-42*u,12*u,38*u); }); // neck
+  dot(g,-2*u,-35*u,3*u,'#5d4037'); dot(g,3*u,-22*u,4*u,'#5d4037'); dot(g,-3*u,-10*u,3.5*u,'#5d4037'); // neck spots
+  sh(g,'#d4ac0d',3*u,(p)=>{ p.ellipse(0,10*u,16*u,18*u,0,0,TAU); }); // body
+  dot(g,-8*u,6*u,4*u,'#5d4037'); dot(g,6*u,14*u,5*u,'#5d4037'); // body spots
+  sh(g,'rgba(20,10,10,0.85)',2*u,(p)=>{ p.moveTo(-20*u,-4*u); p.lineTo(-14*u,24*u); p.lineTo(14*u,24*u); p.lineTo(20*u,-4*u); p.closePath(); }); // cloak
+  sh(g,'#d4ac0d',2.5*u,(p)=>{ p.ellipse(0,-50*u,8*u,7*u,0,0,TAU); }); // small head
+  sh(g,'#a0752a',2*u,(p)=>{ p.rect(-5*u,-60*u,2.5*u,8*u); p.rect(2.5*u,-60*u,2.5*u,8*u); }); // ossicones
+  g.fillStyle='#ff1744'; g.fillRect(-5*u,-52*u,3*u,2*u); g.fillRect(2*u,-52*u,3*u,2*u); // glaring eyes
+  sh(g,'#c49a11',2*u,(p)=>{ for(const x of [-10,-4,4,10]) p.rect(x*u,26*u,4*u,18*u); }); // 4 legs
+});
+
+// ---- Glorbo Frutabaga: owl with frutabaga head ----
+makeSprite('glorbo', 120, (g,u)=>{
+  sh(g,'#7b1fa2',3*u,(p)=>{ p.ellipse(0,-14*u,18*u,20*u,0,0,TAU); }); // frutabaga head
+  sh(g,'rgba(255,255,255,0.3)',0,(p)=>{ p.ellipse(-6*u,-18*u,4*u,10*u,0.3,0,TAU); }); // white streaks
+  sh(g,'#2e7d32',2*u,(p)=>{ p.rect(-3*u,-36*u,6*u,4*u); }); // stem
+  sh(g,'#2e7d32',2*u,(p)=>{ p.moveTo(-3*u,-34*u); p.lineTo(-10*u,-40*u); p.moveTo(3*u,-34*u); p.lineTo(10*u,-40*u); }); // leaves
+  sh(g,'#6a4c93',3*u,(p)=>{ p.ellipse(0,10*u,12*u,14*u,0,0,TAU); }); // owl body
+  sh(g,'#4a3470',2.5*u,(p)=>{ p.ellipse(-14*u,10*u,8*u,6*u,0.4,0,TAU); }); // left wing
+  sh(g,'#4a3470',2.5*u,(p)=>{ p.ellipse(14*u,10*u,8*u,6*u,-0.4,0,TAU); }); // right wing
+  g.strokeStyle='#f9a825'; g.lineWidth=1.5*u; g.beginPath(); g.moveTo(-4*u,24*u); g.lineTo(-8*u,30*u); g.moveTo(0,24*u); g.lineTo(0,30*u); g.moveTo(4*u,24*u); g.lineTo(8*u,30*u); g.stroke(); // talons
+  eyes(g,u,0,-14*u,7*u,4*u);
+});
+
+// ---- Cocofanto Elephanto: round elephant with coconut pattern ----
+makeSprite('cocofanto', 144, (g,u)=>{
+  sh(g,'#9e9e9e',2.5*u,(p)=>{ p.ellipse(-30*u,4*u,12*u,16*u,0,0,TAU); }); // left ear
+  sh(g,'#9e9e9e',2.5*u,(p)=>{ p.ellipse(30*u,4*u,12*u,16*u,0,0,TAU); }); // right ear
+  sh(g,'#bdbdbd',3.5*u,(p)=>{ p.ellipse(0,8*u,30*u,28*u,0,0,TAU); }); // body
+  g.strokeStyle='#5d4037'; g.lineWidth=2.5*u;
+  g.beginPath(); g.arc(0,8*u,20*u,-0.8,0.8); g.stroke();
+  g.beginPath(); g.arc(0,8*u,20*u,Math.PI-0.8,Math.PI+0.8); g.stroke();
+  g.beginPath(); g.arc(0,8*u,20*u,0.5,Math.PI-0.5); g.stroke();
+  sh(g,'#c5c5c5',3*u,(p)=>{ p.ellipse(0,-20*u,18*u,16*u,0,0,TAU); }); // head
+  sh(g,'#bdbdbd',2.5*u,(p)=>{ p.moveTo(-4*u,-8*u); p.quadraticCurveTo(-12*u,4*u,-6*u,10*u); p.lineTo(-2*u,10*u); p.quadraticCurveTo(-8*u,4*u,0,-8*u); p.closePath(); }); // trunk
+  sh(g,'#fff9c4',2*u,(p)=>{ p.ellipse(-8*u,-6*u,3*u,6*u,0.3,0,TAU); p.ellipse(8*u,-6*u,3*u,6*u,-0.3,0,TAU); }); // tusks
+  eyes(g,u,0,-22*u,6*u,3.5*u);
+  sh(g,'#bdbdbd',2.5*u,(p)=>{ p.roundRect(-22*u,32*u,10*u,14*u,4*u); p.roundRect(-8*u,34*u,10*u,12*u,4*u); p.roundRect(6*u,34*u,10*u,12*u,4*u); p.roundRect(18*u,32*u,10*u,14*u,4*u); }); // legs
+});
+
+// ---- Kikkurimi Kikkurone: wide flat frog with enormous mouth ----
+makeSprite('kikkurimi', 120, (g,u)=>{
+  sh(g,'#4caf50',3*u,(p)=>{ p.ellipse(0,6*u,22*u,18*u,0,0,TAU); }); // body
+  sh(g,'#a5d6a7',0,(p)=>{ p.ellipse(0,10*u,14*u,11*u,0,0,TAU); }); // belly
+  sh(g,'#388e3c',3*u,(p)=>{ p.ellipse(0,-12*u,20*u,14*u,0,0,TAU); }); // head
+  sh(g,'#c62828',2*u,(p)=>{ p.arc(0,-12*u,18*u,0.1,Math.PI-0.1); p.closePath(); }); // massive mouth
+  sh(g,'#ef9a9a',0,(p)=>{ p.ellipse(0,-6*u,10*u,4*u,0,0,TAU); }); // tongue
+  // bulging eyes
+  dot(g,-10*u,-24*u,6*u,'#fff'); dot(g,-10*u,-24*u,3.5*u,'#ffd600'); dot(g,-10*u,-24*u,1.5*u,OUT);
+  dot(g,10*u,-24*u,6*u,'#fff'); dot(g,10*u,-24*u,3.5*u,'#ffd600'); dot(g,10*u,-24*u,1.5*u,OUT);
+  g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.arc(-10*u,-24*u,6*u,0,TAU); g.arc(10*u,-24*u,6*u,0,TAU); g.stroke();
+  sh(g,'#4caf50',2*u,(p)=>{ p.ellipse(-18*u,20*u,7*u,4*u,0,0,TAU); p.ellipse(18*u,20*u,7*u,4*u,0,0,TAU); }); // feet
+});
+
+// ============================================================
+// WORLD 3 — BOSS sprites (size 256)
+// ============================================================
+
+// ---- Subrosa Cambriana: rose-bear with petal mane and thorn legs ----
+makeSprite('subrosa', 256, (g,u)=>{
+  for(let i=0;i<8;i++){
+    const a=i*TAU/8, px=Math.cos(a)*34*u, py=Math.sin(a)*34*u;
+    g.save(); g.translate(px,py); g.rotate(a);
+    sh(g,'#c62828',2*u,(p)=>{ p.ellipse(0,0,8*u,14*u,0,0,TAU); }); g.restore();
+  }
+  dot(g,0,0,8*u,'#e53935'); // rose center
+  sh(g,'#f8bbd0',4*u,(p)=>{ p.ellipse(0,14*u,30*u,28*u,0,0,TAU); }); // bear body
+  sh(g,'#f8bbd0',4*u,(p)=>{ p.ellipse(0,-14*u,24*u,22*u,0,0,TAU); }); // bear head
+  dot(g,-18*u,-30*u,8*u,'#f8bbd0'); dot(g,18*u,-30*u,8*u,'#f8bbd0'); // ears
+  g.strokeStyle=OUT; g.lineWidth=3*u; g.beginPath(); g.arc(-18*u,-30*u,8*u,0,TAU); g.arc(18*u,-30*u,8*u,0,TAU); g.stroke();
+  dot(g,-18*u,-30*u,4*u,'#ff80ab'); dot(g,18*u,-30*u,4*u,'#ff80ab'); // inner ear
+  sh(g,'#ad1457',0,(p)=>{ p.ellipse(0,-8*u,7*u,5*u,0,0,TAU); }); // nose
+  eyes(g,u,0,-18*u,9*u,5*u);
+  g.strokeStyle=OUT; g.lineWidth=2.5*u; g.beginPath(); g.moveTo(-14*u,-26*u); g.lineTo(-8*u,-24*u); g.moveTo(8*u,-24*u); g.lineTo(14*u,-26*u); g.stroke(); // worried brows
+  sh(g,'#2e7d32',3*u,(p)=>{ p.rect(-18*u,38*u,10*u,22*u); p.rect(8*u,38*u,10*u,22*u); }); // legs
+  sh(g,'#1b5e20',2*u,(p)=>{ p.moveTo(-18*u,44*u); p.lineTo(-26*u,42*u); p.lineTo(-18*u,48*u); p.moveTo(18*u,44*u); p.lineTo(26*u,42*u); p.lineTo(18*u,48*u); }); // thorns
+  sh(g,'#880e4f',2*u,(p)=>{ for(const x of [-10,0,10]){ p.moveTo(x*u,60*u); p.lineTo((x-3)*u,68*u); p.moveTo(x*u,60*u); p.lineTo((x+3)*u,68*u); } }); // claws
+});
+
+// ---- Bobritto Bandolero: boss beaver with gold bandana and machetes ----
+makeSprite('bobritoboss', 256, (g,u)=>{
+  sh(g,'#5c3a1e',3*u,(p)=>{ p.ellipse(0,46*u,20*u,8*u,0,0,TAU); }); // tail
+  sh(g,'#7a4f2e',4*u,(p)=>{ p.ellipse(0,10*u,30*u,32*u,0,0,TAU); }); // body
+  g.save(); g.translate(-28*u,4*u); g.rotate(-0.5);
+  sh(g,'#9a6040',3*u,(p)=>{ p.rect(-6*u,-10*u,12*u,20*u); });
+  sh(g,'#e0e0e0',2.5*u,(p)=>{ p.rect(-3*u,-42*u,6*u,34*u); });
+  sh(g,'#9e9e9e',2.5*u,(p)=>{ p.rect(-3*u,-10*u,6*u,6*u); });
+  sh(g,'#5d4037',2*u,(p)=>{ p.rect(-2.5*u,-8*u,5*u,10*u); }); g.restore();
+  g.save(); g.translate(28*u,4*u); g.rotate(0.5);
+  sh(g,'#9a6040',3*u,(p)=>{ p.rect(-6*u,-10*u,12*u,20*u); });
+  sh(g,'#e0e0e0',2.5*u,(p)=>{ p.rect(-3*u,-42*u,6*u,34*u); });
+  sh(g,'#9e9e9e',2.5*u,(p)=>{ p.rect(-3*u,-10*u,6*u,6*u); });
+  sh(g,'#5d4037',2*u,(p)=>{ p.rect(-2.5*u,-8*u,5*u,10*u); }); g.restore();
+  sh(g,'#9a6040',4*u,(p)=>{ p.ellipse(0,-22*u,22*u,20*u,0,0,TAU); }); // head
+  sh(g,'#f9a825',3*u,(p)=>{ p.rect(-22*u,-28*u,44*u,10*u); }); // gold bandana
+  dot(g,18*u,-24*u,5*u,'#f57f17'); // bandana knot
+  sh(g,'#fff9c4',2*u,(p)=>{ p.rect(-8*u,-12*u,7*u,6*u); p.rect(1*u,-12*u,7*u,6*u); }); // buck teeth
+  eyes(g,u,0,-24*u,8*u,5*u);
+  g.strokeStyle=OUT; g.lineWidth=3*u; g.beginPath(); g.moveTo(-16*u,-32*u); g.lineTo(-6*u,-28*u); g.moveTo(6*u,-28*u); g.lineTo(16*u,-32*u); g.stroke(); // angry brows
+});
+
+// ---- Frullone Vibrassone: blender-on-legs boss ----
+makeSprite('frullone', 256, (g,u)=>{
+  sh(g,'#424242',4*u,(p)=>{ p.roundRect(-20*u,46*u,16*u,28*u,6*u); p.roundRect(4*u,46*u,16*u,28*u,6*u); }); // legs
+  sh(g,'#e0e0e0',4*u,(p)=>{ p.roundRect(-24*u,-10*u,48*u,56*u,8*u); }); // chrome body
+  sh(g,'rgba(255,255,255,0.4)',0,(p)=>{ p.roundRect(-18*u,-6*u,16*u,48*u,4*u); }); // chrome sheen
+  sh(g,'rgba(180,220,255,0.5)',2*u,(p)=>{ p.roundRect(-14*u,-2*u,28*u,40*u,6*u); }); // glass window
+  g.save(); g.strokeStyle='#9e9e9e'; g.lineWidth=2.5*u;
+  for(let b=0;b<3;b++){
+    const by=8*u+b*12*u;
+    g.beginPath(); g.moveTo(-10*u,by); g.lineTo(10*u,by+4*u); g.stroke();
+    g.beginPath(); g.moveTo(10*u,by); g.lineTo(-10*u,by+4*u); g.stroke();
+  }
+  g.restore();
+  sh(g,'#c62828',3*u,(p)=>{ p.ellipse(0,-12*u,26*u,8*u,0,0,TAU); }); // red lid
+  dot(g,0,-18*u,5*u,'#b71c1c'); // lid knob
+  g.strokeStyle='#bdbdbd'; g.lineWidth=2*u;
+  for(let v=-1;v<=1;v++){
+    const vy=-2*u+v*14*u;
+    g.beginPath(); g.moveTo(-30*u,vy); g.quadraticCurveTo(-34*u,vy+3*u,-30*u,vy+6*u); g.stroke();
+    g.beginPath(); g.moveTo(30*u,vy); g.quadraticCurveTo(34*u,vy+3*u,30*u,vy+6*u); g.stroke();
+  }
+  dot(g,-16*u,-12*u,3*u,'#ffeb3b'); dot(g,16*u,-12*u,3*u,'#ffeb3b'); // indicator lights
+});
+
+// ---- Cocofanto Mastodonte: massive ancient elephant boss ----
+makeSprite('cocofantoboss', 256, (g,u)=>{
+  sh(g,'#8d8d8d',3.5*u,(p)=>{ p.ellipse(-48*u,6*u,18*u,24*u,0,0,TAU); p.ellipse(48*u,6*u,18*u,24*u,0,0,TAU); }); // ears
+  sh(g,'#9e9e9e',5*u,(p)=>{ p.ellipse(0,12*u,46*u,42*u,0,0,TAU); }); // body
+  g.strokeStyle='#4e342e'; g.lineWidth=3.5*u;
+  g.beginPath(); g.arc(0,12*u,34*u,-0.9,0.9); g.stroke();
+  g.beginPath(); g.arc(0,12*u,34*u,Math.PI-0.9,Math.PI+0.9); g.stroke();
+  g.beginPath(); g.arc(0,12*u,34*u,0.4,Math.PI-0.4); g.stroke();
+  g.strokeStyle='#212121'; g.lineWidth=1.5*u;
+  g.beginPath(); g.moveTo(10*u,-4*u); g.lineTo(16*u,8*u); g.lineTo(12*u,16*u); g.stroke();
+  g.beginPath(); g.moveTo(-12*u,6*u); g.lineTo(-8*u,18*u); g.stroke();
+  sh(g,'#7b1fa2',0,(p)=>{ p.rect(-38*u,-8*u,10*u,4*u); p.rect(28*u,-8*u,10*u,4*u); p.rect(-8*u,-36*u,4*u,10*u); }); // war paint body
+  sh(g,'#aaaaaa',4.5*u,(p)=>{ p.ellipse(0,-28*u,28*u,24*u,0,0,TAU); }); // head
+  sh(g,'#7b1fa2',0,(p)=>{ p.rect(-20*u,-28*u,8*u,3*u); p.rect(12*u,-28*u,8*u,3*u); }); // war paint face
+  sh(g,'#9e9e9e',3.5*u,(p)=>{ p.moveTo(-6*u,-10*u); p.quadraticCurveTo(-18*u,6*u,-10*u,16*u); p.lineTo(-4*u,16*u); p.quadraticCurveTo(-12*u,6*u,0,-10*u); p.closePath(); }); // trunk
+  sh(g,'#558b2f',3*u,(p)=>{ p.ellipse(-12*u,-8*u,5*u,10*u,0.4,0,TAU); p.ellipse(12*u,-8*u,5*u,10*u,-0.4,0,TAU); }); // mossy tusks
+  eyes(g,u,0,-32*u,9*u,5.5*u);
+  g.strokeStyle=OUT; g.lineWidth=3*u; g.beginPath(); g.moveTo(-18*u,-40*u); g.lineTo(-8*u,-36*u); g.moveTo(8*u,-36*u); g.lineTo(18*u,-40*u); g.stroke(); // angry brows
+  sh(g,'#9e9e9e',3.5*u,(p)=>{ p.roundRect(-38*u,50*u,16*u,22*u,5*u); p.roundRect(-16*u,52*u,16*u,20*u,5*u); p.roundRect(0,52*u,16*u,20*u,5*u); p.roundRect(22*u,50*u,16*u,22*u,5*u); }); // 4 massive legs
+});

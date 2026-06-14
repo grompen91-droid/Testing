@@ -186,6 +186,39 @@ const BOSSES_W2 = [   // each uses its own original moveset (keyed on spr in bos
   { spr:'avocadorilla', name:'AVOCADORILLA',                  hp:300, r:58, phased:true },
   { spr:'tracotucotulu',name:'TRACOTUCOTULU DELAPELADUSTUZ',  hp:420, r:60, phased:true },
 ];
+// ---- World 3: FORESTA FRUTOSA ----
+const FOES_W3 = [
+  // Tier I — fodder
+  { spr:'bobritto',      name:'Bobritto Bandito',    hp:5,  sp:90, r:19, xp:1, score:11,
+    range:260, shoot:{type:'aim',n:1,cd:2.2,spd:170,col:'#c0392b'}, dash:true },
+  { spr:'garamaraman',   name:'Garamaraman',          hp:4,  sp:100,r:16, xp:1, score:10,
+    death:{type:'split'} },
+  // Tier II — infantry
+  { spr:'burbaloni',     name:'Burbaloni Luliloli',   hp:8,  sp:58, r:22, xp:2, score:18,
+    range:320, shoot:{type:'aim',n:1,cd:3.0,spd:95,col:'#b48adf'} },
+  { spr:'bonecaambalabu',name:'Boneca Ambalabu',       hp:10, sp:68, r:24, xp:2, score:22,
+    dash:true, range:240, shoot:{type:'aim',n:2,cd:3.5,spd:138,col:'#2e7d32'} },
+  // Tier III — casters
+  { spr:'girafassassina',name:'Girafa Assassina',     hp:9,  sp:38, r:28, xp:3, score:28,
+    range:500, front:0.6, shoot:{type:'aim',n:3,cd:2.5,spd:180,col:'#d4ac0d'} },
+  { spr:'glorbo',        name:'Glorbo Frutabaga',     hp:9,  sp:52, r:23, xp:2, score:20,
+    range:350, shoot:{type:'aim',n:1,cd:2.8,spd:110,col:'#8e44ad'},
+    aoe:{r:44,tele:0.1,life:1.2,dps:4,slow:true,cd:4.0} },
+  // Tier IV — heavy
+  { spr:'cocofanto',     name:'Cocofanto Elephanto',  hp:30, sp:34, r:40, xp:5, score:60,
+    front:0.55, dash:true, death:{type:'ring',n:4} },
+  // Tier V — elite (support)
+  { spr:'kikkurimi',     name:'Kikkurimi Kikkurone',  hp:20, sp:56, r:26, xp:4, score:55,
+    support:true,
+    aoe:{r:34,tele:0,life:0.4,dps:0,slow:true,cd:4.2},
+    range:260, shoot:{type:'aim',n:1,cd:4.5,spd:125,col:'#27ae60'} },
+];
+const BOSSES_W3 = [
+  { spr:'subrosa',       name:'SUBROSA CAMBRIANA',           hp:140, r:52, phased:true },
+  { spr:'bobritoboss',   name:'BOBRITTO BANDOLERO',          hp:200, r:54, phased:true },
+  { spr:'frullone',      name:'FRULLONE VIBRASSONE',         hp:290, r:57, phased:true },
+  { spr:'cocofantoboss', name:'COCOFANTO MASTODONTE',        hp:420, r:62, phased:true },
+];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
 // ---- 10 worlds: gradual difficulty bands (0..9), distinct map shapes, per-world enemy tints. ----
 // Phase 1 reuses the grass roster (W1-5) and dirt roster (W6-10) recolored via enemyTint; dedicated
@@ -200,6 +233,12 @@ const WORLDS = [
     theme:{ void:'#c89a3a', tile1:'#f0d878', tile2:'#e8cd63', tuft:'rgba(180,140,50,0.28)',
             wall:null, post:null, bg:'#ecd070', tint:'#f0c850', music:'game' },
     foes:FOES_W2, bosses:BOSSES_W2 },
+  { id:'forest', name:'FORESTA FRUTOSA', band:1, waveTarget:20, endless:false,
+    map:{w:2800,h:2600}, enemyTint:null,
+    theme:{ void:'#2a5c1a', tile1:'#5aaa3c', tile2:'#4d9633',
+            tuft:'rgba(30,80,20,0.40)', wall:'#5c3a1e', post:'#7a4e28',
+            bg:'#478a2e', tint:null, music:'game' },
+    foes:FOES_W3, bosses:BOSSES_W3 },
   { id:'sand', name:'SUNNY SANDS', band:2, waveTarget:20, endless:false, map:{w:3400,h:3400}, enemyTint:'#e0b050',
     theme:{ void:'#b8893a', tile1:'#e8c878', tile2:'#ddb95f', tuft:'rgba(150,110,40,0.30)',
             wall:null, post:null, bg:'#d9b86a', tint:'#e0b050', music:'game' },
@@ -409,6 +448,46 @@ const UPGRADES = [
            {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1}],
     evo:{name:'Chain Reaction', icon:'gembig', desc:'EVOLVE — ricochets reach far and hit much harder.', f:()=>{P.ricochet+=2;P.ricochetEvo=true;}} },
 
+  // 🌿 World 3 (FORESTA FRUTOSA) cards
+  { id:'chain', name:'Rizz Chain', icon:'gembig', rarity:'rare', minWorld:2,
+    steps:[
+      {desc:'shots chain-arc to 1 nearby enemy (60% dmg).',f:()=>{P.chain=(P.chain||0)+1;}},
+      {desc:'chains to 2 nearby enemies.',                  f:()=>{P.chain=(P.chain||0)+1;}},
+      {desc:'chains to 3 nearby enemies (70% dmg).',        f:()=>{P.chain=(P.chain||0)+1;}},
+      {desc:'chains to 4 nearby enemies (75% dmg).',        f:()=>{P.chain=(P.chain||0)+1;}},
+    ],
+    evo:{name:'Infinite Rizz', icon:'gembig',
+         desc:'EVOLVE — chains bounce to every enemy in range + heal 0.5 HP per bounce.',
+         f:()=>{P.chain=(P.chain||0)+2; P.chainEvo=true; P.chainHeal=(P.chainHeal||0)+0.5;}} },
+
+  { id:'boomerang', name:'Boomerang Croc', icon:'crocodilo', rarity:'epic', minWorld:2,
+    steps:[
+      {desc:'every 7s, a croc flies out and returns, piercing all.',f:()=>{P.boomerang=true;P.boomCd=7;P.boomCdBase=7;P.boomN=(P.boomN||0)+1;}},
+      {desc:'2 crocs; 6s cooldown.',                               f:()=>{P.boomN=(P.boomN||1)+1;P.boomCdBase=6;}},
+      {desc:'3 crocs; 5s cooldown.',                               f:()=>{P.boomN=(P.boomN||2)+1;P.boomCdBase=5;}},
+      {desc:'3 crocs; 4s cooldown, larger.',                       f:()=>{P.boomCdBase=4;P.boomR=(P.boomR||8)*1.2;}},
+    ],
+    evo:{name:'Croc Pack', icon:'crocodilo',
+         desc:'EVOLVE — 4 crocs orbit you permanently, auto-attacking the nearest foe every 1s.',
+         f:()=>{P.boomEvo=true;P.boomN=4;}} },
+
+  { id:'execute', name:'Executioner', icon:'coin', rarity:'uncommon', cap:5, minWorld:2,
+    steps:[{desc:'enemies below 15% HP die instantly on your hits. (+3% per level)',
+            f:()=>P.execute=(P.execute||0.12)+0.03}] },
+
+  { id:'secondwind', name:'Second Wind', icon:'heart', rarity:'legendary', cap:3, minWorld:2,
+    steps:[
+      {desc:'once (60s recharge): a killing blow leaves you at 1 HP + 2.5s invuln + bullet clear.',
+       f:()=>{P.secondWind=(P.secondWind||0)+1;P.swCdBase=60;P.swCd=0;}},
+      {desc:'2 charges; recharges faster (45s).',f:()=>{P.secondWind=(P.secondWind||0)+1;P.swCdBase=45;}},
+      {desc:'3 charges; 35s recharge.',          f:()=>{P.secondWind=(P.secondWind||0)+1;P.swCdBase=35;}},
+    ]},
+
+  // ✨ W3 synergy
+  { id:'chainstorm', name:'Chain Storm', icon:'gembig', rarity:'epic', cap:1, req:['chain','nova'],
+    steps:[{desc:'SYNERGY — each Rizz Chain bounce also detonates a mini nova burst.',
+            f:()=>P.chainNova=true}] },
+
   // ✨ SYNERGY cards — hidden until you own the prerequisite cards (req)
   { id:'frostfire', name:'Frostfire Core', icon:'gem', rarity:'epic', cap:1, req:['slow','nova'],
     steps:[{desc:'SYNERGY — Nova does +120% to frozen foes, who shatter into shards on death.',f:()=>P.frostfire=true}] },
@@ -440,6 +519,8 @@ const CARD_MINWORLD = {
   blackhole:7, aftershock:7,
   phoenix:8, gravcrush:8,
   abyssal:9,
+  // World 3
+  chain:2, boomerang:2, execute:2, secondwind:2, chainstorm:2,
 };
 for(const u of UPGRADES){ if(CARD_MINWORLD[u.id]!=null) u.minWorld = CARD_MINWORLD[u.id]; }
 // returns the next card "move" for an upgrade, or null if exhausted
@@ -472,7 +553,12 @@ function resetPlayer(){
     // world-exclusive abilities
     tremor:0, aftershock:0, abyssal:0, abyssalMul:1,
     thorns:0, ricochet:0, ricochetEvo:false,   // World 2: Spiky Peel / Ricochet
-    gravcrush:false, gravCd:0, gravCdBase:7, gravR:130, gravDmg:20, gravLife:2, gravEvo:false
+    gravcrush:false, gravCd:0, gravCdBase:7, gravR:130, gravDmg:20, gravLife:2, gravEvo:false,
+    // World 3: FORESTA FRUTOSA
+    chain:0, chainEvo:false, chainHeal:0, chainNova:false,
+    boomerang:false, boomCd:0, boomCdBase:7, boomN:0, boomR:8, boomEvo:false, boomT:0,
+    execute:0,
+    secondWind:0, swCdBase:60, swCd:0
   });
 }
 
@@ -952,6 +1038,39 @@ function update(dt){
       sfx.boss();
     }
   }
+  // --- Second Wind cooldown tick ---
+  if(P.swCd>0) P.swCd-=dt;
+
+  // --- Boomerang Croc ---
+  if(P.boomerang){
+    if(P.boomEvo){
+      P.boomT=(P.boomT||0)+dt;
+      if(P.boomT>1.0){
+        P.boomT=0;
+        let best=null, bestD=Infinity;
+        for(const e of enemies){ const d=dist2(P.x,P.y,e.x,e.y); if(d<bestD){bestD=d;best=e;} }
+        if(best){
+          const a=Math.atan2(best.y-P.y,best.x-P.x), br=P.boomR||8;
+          bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:br,pierce:3,hit:new Set(),dist:500,dmgMul:1.4,col:'#27ae60'});
+        }
+      }
+    } else {
+      P.boomCd=(P.boomCd||0)-dt;
+      if(P.boomCd<=0){
+        P.boomCd=P.boomCdBase||7;
+        const n=P.boomN||1, br=P.boomR||8;
+        let bestA=0; let bd=Infinity;
+        for(const e of enemies){ const d=dist2(P.x,P.y,e.x,e.y); if(d<bd){bd=d;bestA=Math.atan2(e.y-P.y,e.x-P.x);} }
+        for(let i=0;i<n;i++){
+          const spread=(i-(n-1)/2)*0.22, a=bestA+spread;
+          bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*340,vy:Math.sin(a)*340,
+                        r:br,pierce:99,hit:new Set(),dist:480,dmgMul:1.2,boomerang:true,boomSpd:340,col:'#27ae60'});
+        }
+        sfx.hit();
+      }
+    }
+  }
+
   // --- Abyssal Pact (World 3+): damage scales with the size of the swarm around you ---
   if(P.abyssal){
     let c=0; forEnemiesNear(P.x,P.y,240,(o)=>{ if(!o.isBoss && !o.under && dist2(P.x,P.y,o.x,o.y)<240*240) c++; });
@@ -978,6 +1097,13 @@ function update(dt){
     const b=bullets[i];
     b.dist -= Math.hypot(b.vx,b.vy)*dt;     // range limit
     b.x+=b.vx*dt; b.y+=b.vy*dt;
+    // Boomerang Croc: reverse toward player when range runs out
+    if(b.boomerang && b.dist<=0){
+      const a=Math.atan2(P.y-b.y,P.x-b.x), spd=b.boomSpd||340;
+      b.vx=Math.cos(a)*spd; b.vy=Math.sin(a)*spd;
+      b.boomerang=false; b.dist=600; b.hit=new Set();   // can hit again on return
+      continue;
+    }
     if(b.dist<=0){ burst(b.x,b.y,'#fff6bf',3,55); bullets.splice(i,1); continue; }
     if(b.x<-20||b.x>WORLD.w+20||b.y<-20||b.y>WORLD.h+20){ bullets.splice(i,1); continue; }
     // grid-accelerated hit test: only check enemies in the bullet's cell block, one hit per frame
@@ -1006,6 +1132,35 @@ function update(dt){
             const R=34+P.tremor*7, sd=P.dmg*(0.3+P.tremor*0.12)*(P.abyssalMul||1);
             forEnemiesNear(b.x,b.y,R,(o)=>{ if(o===e||o.iv>0||o.under||o.lead) return; if(dist2(b.x,b.y,o.x,o.y)<R*R){ o.hp-=sd; o.hitT=Math.max(o.hitT,0.05); } });
             parts.push({x:b.x,y:b.y,vx:0,vy:0,life:0.18,max:0.18,color:'#caa15a',r:R,ring:true,gr:R*2.4});
+          }
+          // Rizz Chain: arc to nearby foes after hit (not on ricochet bullets)
+          if(P.chain>0 && !b.ric){
+            const maxChain=P.chainEvo?999:P.chain;
+            const dmgMul=P.chainEvo?0.8:(P.chain>=4?0.75:P.chain>=3?0.70:0.60);
+            const chainHits=new Set([e]); let lastX=b.x, lastY=b.y;
+            if(P.chainEvo){
+              for(const o of enemies){ if(chainHits.has(o)||o.under||o.iv>0) continue;
+                if(dist2(lastX,lastY,o.x,o.y)<280*280){ chainHits.add(o);
+                  damageEnemy(o,b.dmg*dmgMul,lastX,lastY,false);
+                  parts.push({x:(lastX+o.x)/2,y:(lastY+o.y)/2,vx:0,vy:0,life:0.18,max:0.18,color:'#a0f0c0',r:4});
+                  if(P.chainHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.chainHeal);
+                  if(P.chainNova) parts.push({x:o.x,y:o.y,vx:0,vy:0,life:0.25,max:0.25,color:'#fff',r:22,ring:true});
+                }
+              }
+            } else {
+              for(let ci=0;ci<maxChain;ci++){
+                let best=null, bestD=280*280;
+                for(const o of enemies){ if(chainHits.has(o)||o.under||o.iv>0) continue;
+                  const d=dist2(lastX,lastY,o.x,o.y); if(d<bestD){bestD=d;best=o;} }
+                if(!best) break;
+                chainHits.add(best);
+                damageEnemy(best,b.dmg*dmgMul,lastX,lastY,false);
+                parts.push({x:(lastX+best.x)/2,y:(lastY+best.y)/2,vx:0,vy:0,life:0.18,max:0.18,color:'#a0f0c0',r:4});
+                if(P.chainHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.chainHeal);
+                if(P.chainNova) parts.push({x:best.x,y:best.y,vx:0,vy:0,life:0.25,max:0.25,color:'#fff',r:22,ring:true});
+                lastX=best.x; lastY=best.y;
+              }
+            }
           }
           if(b.pierce>0){ b.pierce--; } else { bullets.splice(i,1); }
           hitDone=true; break;   // one enemy per frame (pierced bullets hit the next on later frames)
@@ -1139,6 +1294,8 @@ function update(dt){
       }
     }
 
+    // Executioner: instant kill below threshold
+    if(P.execute>0 && e.hp>0 && !e.isBoss && !e.lead && e.hp/e.maxHp < P.execute) e.hp=0;
     if(e.hp<=0 && !e.lead){   // duo partner (e.lead) is never killed on its own -> damage routes to the lead
       enemies.splice(i,1);
       kills++; setKillHUD();
@@ -1392,6 +1549,23 @@ function bossMoves(e){
       if(e.vph>=3) return ['RAINBOW_SPIRAL','DIVE_BOMB','BEAK_BARRAGE','FRUIT_RAIN','FEATHER_FAN'];
       if(e.vph>=2) return ['DIVE_BOMB','FEATHER_FAN','BEAK_BARRAGE','FRUIT_RAIN'];
       return ['BEAK_BARRAGE','DIVE_BOMB','FRUIT_RAIN'];
+    // ---- World 3 (FORESTA FRUTOSA) — telegraphed melee/zone fights ----
+    case 'subrosa':                        // B1: thorn garden
+      if(e.vph>=3) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','BLOOM_STORM','THORN_RING'];
+      if(e.vph>=2) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','THORN_RING'];
+      return ['ROSE_LUNGE','THORN_RING','PETAL_FAN'];
+    case 'bobritoboss':                    // B2: blade orbit
+      if(e.vph>=3) return ['MACHETE_DASH','KNIFE_VOLLEY','BLADE_ORBIT','DOUBLE_DASH'];
+      if(e.vph>=2) return ['MACHETE_DASH','KNIFE_VOLLEY','BLADE_ORBIT'];
+      return ['MACHETE_DASH','KNIFE_VOLLEY'];
+    case 'frullone':                       // B3: centrifuge
+      if(e.vph>=3) return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE','VORTEX_PULL'];
+      if(e.vph>=2) return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE'];
+      return ['BLADE_SPRAY','BLENDER_CHARGE'];
+    case 'cocofantoboss':                  // B4: armoured colossus
+      if(e.vph>=3) return ['STOMP_QUAKE','TUSK_SWEEP','COCONUT_BARRAGE','STAMPEDE','TREMOR_STOMP'];
+      if(e.vph>=2) return ['STOMP_QUAKE','TUSK_SWEEP','COCONUT_BARRAGE','STAMPEDE'];
+      return ['STOMP_QUAKE','TUSK_SWEEP','COCONUT_BARRAGE'];
     // ---- World 2 (DIRT DEPTHS) ----
     case 'tatasahur':                      // burrow-slam + marching drum beat
       if(e.vph>=3) return ['DRUM_MARCH','BURROW_DOUBLE','DEBRIS3','aimed5','AIMED_WALL'];
@@ -1443,7 +1617,12 @@ const MOVE_COL = { dash:'#e54d4d', spiral:'#e54d4d', aimed3:'#e23b3b', aimed5:'#
   NOTE_VOLLEY:'#ffd24a', HOOF_STOMP:'#c9923f', ECHO_RINGS:'#ffe08a', GALLOP:'#ffd24a', NOTE_SPIRAL:'#ffd24a',
   SEED_FAN:'#3f7d33', POUNCE:'#e0503f', MELON_BURST:'#e0503f', RIND_SPIRAL:'#e0503f',
   CHEST_POUND:'#6b8e23', AVO_SMASH:'#5c7a2e', GUAC_RAIN:'#7ab955', BOULDER_ROLL:'#7ab955', PIT_PINWHEEL:'#5c7a2e',
-  BEAK_BARRAGE:'#ff7a2a', DIVE_BOMB:'#ff7a2a', FRUIT_RAIN:'#ff5acd', FEATHER_FAN:'#9fe0ff', RAINBOW_SPIRAL:'#ff5acd' };
+  BEAK_BARRAGE:'#ff7a2a', DIVE_BOMB:'#ff7a2a', FRUIT_RAIN:'#ff5acd', FEATHER_FAN:'#9fe0ff', RAINBOW_SPIRAL:'#ff5acd',
+  // World 3 (FORESTA FRUTOSA)
+  ROSE_LUNGE:'#e91e63', THORN_RING:'#c62828', PETAL_FAN:'#e91e63', BLOOM_STORM:'#e91e63',
+  MACHETE_DASH:'#c0392b', KNIFE_VOLLEY:'#c0392b', BLADE_ORBIT:'#9e9e9e', DOUBLE_DASH:'#c0392b',
+  BLADE_SPRAY:'#9e9e9e', BLENDER_CHARGE:'#e0e0e0', GRIND_ZONE:'#bdbdbd', VORTEX_PULL:'#e0e0e0',
+  STOMP_QUAKE:'#8d6e63', TUSK_SWEEP:'#8d6e63', COCONUT_BARRAGE:'#8d6e63', STAMPEDE:'#8d6e63', TREMOR_STOMP:'#6d4c41' };
 function pickMove(e){ const pool=bossMoves(e); let m; do{ m=pick(pool); }while(pool.length>1 && m===e.lastMv); e.lastMv=m; return m; }
 // run one move; returns how long the boss stays in the "fire" state before recovering
 function execMove(e){
@@ -1522,6 +1701,57 @@ function execMove(e){
     case 'TWIN_STORM':    e.storm=2.6; e.stormN=8;  e.stormSpd=145; e.stormStep=0.26; e.stormDir=1; e.stormCol='#c77dff'; e.stormCd=0.11; e.stormTwin=true; sfx.warn(); return 2.6;
     case 'RING_VOLLEY':   mRing(e,22,180,'#4aa3df'); mRing(e,18,130,'#7ec8ff'); mRing(e,14,85,'#d2a0ff'); shake=Math.max(shake,5); return 0.4;
     case 'AIMED_WALL':    mAimed(e,9,0.12,200,'#e23b3b'); mRing(e,14,120,'#e23b3b'); return 0.3;
+    // ---- W3 moves ----
+    case 'ROSE_LUNGE':
+      e.dst='wind'; e.dwin=e.enraged?0.35:0.5; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.landFx={type:'pounce'}; sfx.warn(); return 0.9;
+    case 'THORN_RING':
+      { const off=rand(0,TAU);
+        for(let k=0;k<6;k++) addZone(e.x+Math.cos(off+k*TAU/6)*130, e.y+Math.sin(off+k*TAU/6)*130,
+          38, {tele:0.6,life:2.0,dps:10,col:'#c62828'});
+        sfx.hit(); return 0.5; }
+    case 'PETAL_FAN':
+      mAimed(e,5,0.22,142,'#e91e63'); return 0.25;
+    case 'BLOOM_STORM':
+      e.storm=1.6; e.stormN=4; e.stormSpd=108; e.stormStep=0.38;
+      e.stormDir=Math.random()<0.5?1:-1; e.stormCol='#e91e63';
+      e.stormCd=0.18; e.stormTwin=false; e.stormRainbow=false; sfx.warn(); return 1.6;
+    case 'MACHETE_DASH':
+      e.dst='wind'; e.dwin=e.enraged?0.3:0.45; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.landFx={type:'pounce'}; sfx.warn(); return 0.9;
+    case 'KNIFE_VOLLEY':
+      mAimed(e,3,0.28,162,'#c0392b'); return 0.2;
+    case 'BLADE_ORBIT':
+      { const off=Math.atan2(P.y-e.y,P.x-e.x);
+        for(let k=0;k<2;k++) fireEB(e.x,e.y,0,0,'#e0e0e0',{orbit:{cx:e.x,cy:e.y,ang:off+k*Math.PI,rad:96,angV:2.4,radV:0}});
+        sfx.warn(); return 0.3; }
+    case 'DOUBLE_DASH':
+      e.dst='wind'; e.dwin=e.enraged?0.25:0.38; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.landFx={type:'pounce'}; e.dashRepeat=(e.dashRepeat||0)+1; sfx.warn(); return 0.7;
+    case 'BLADE_SPRAY':
+      mRing(e,8,138,'#9e9e9e'); mRingGap(e,8,82,'#757575',0.40); return 0.35;
+    case 'BLENDER_CHARGE':
+      e.wd={n:e.vph>=3?3:1, ang:Math.atan2(P.y-e.y,P.x-e.x), spd:e.enraged?490:440, tT:0, life:2.2};
+      sfx.warn(); burst(e.x,e.y,'#9e9e9e',18,300); return 2.2;
+    case 'GRIND_ZONE':
+      addZone(P.x,P.y,78,{tele:0.55,life:2.2,dps:13,slow:true,col:'#bdbdbd'}); return 0.35;
+    case 'VORTEX_PULL':
+      e.pull=1.2; e.pullStr=138; mRing(e,16,152,'#e0e0e0'); return 1.2;
+    case 'STOMP_QUAKE':
+      addZone(e.x,e.y,100,{tele:0.3,life:0.6,dps:18,col:'#8d6e63'});
+      { const a=rand(0,TAU); for(let q=0;q<4;q++) geyserLine(e.x,e.y,a+q*Math.PI/2,'#8d6e63',5,56); }
+      shake=Math.max(shake,9); sfx.hit(); return 0.5;
+    case 'TUSK_SWEEP':
+      e.dst='wind'; e.dwin=e.enraged?0.4:0.58; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.kb=true; e.landFx={type:'pounce'}; sfx.warn(); return 1.0;
+    case 'COCONUT_BARRAGE':
+      mAimed(e,4,0.30,142,'#8d6e63'); return 0.25;
+    case 'STAMPEDE':
+      e.dst='wind'; e.dwin=e.enraged?0.3:0.44; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.kb=true; e.landFx={type:'pounce'}; e.dashRepeat=2; sfx.warn(); return 1.2;
+    case 'TREMOR_STOMP':
+      addZone(e.x,e.y,110,{tele:0.45,life:0.9,dps:20,col:'#6d4c41'});
+      mAimed(e,5,0.24,148,'#8d6e63'); shake=Math.max(shake,10); sfx.hit(); return 0.5;
   }
   return 0.2;
 }
@@ -1551,10 +1781,19 @@ function updateBoss(e,dt){
       if(k.kind==='note'){ fireEB(e.x,e.y,e.da+Math.PI/2,120,k.col); fireEB(e.x,e.y,e.da-Math.PI/2,120,k.col); }
       else if(k.kind==='guac'){ addZone(e.x,e.y,42,{tele:0.25,life:1.6,dps:8,slow:true,col:k.col}); }
       else if(k.kind==='feather'){ parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.4,max:0.4,color:k.col,r:e.r*0.7}); fireEB(e.x,e.y,e.da+Math.PI,110,k.col); } } }
-    if(e.ddur<=0){ e.dst='idle'; e.dashTrail=null;
-      if(e.landFx){ const f=e.landFx; e.landFx=null;   // pounce/dive impact: telegraphed slam + a gapped ring you step out of
-        if(f.type==='pounce'){ addZone(e.x,e.y,84,{tele:0.2,life:0.5,dps:20,col:'#3f7d33'}); mRingGap(e,14,120,'#e0503f',0.32); shake=Math.max(shake,8); sfx.hit(); }
-        else if(f.type==='dive'){ addZone(e.x,e.y,80,{tele:0.2,life:0.5,dps:20,col:'#ff7a2a'}); mRingGap(e,16,125,'#ff7a2a',0.32); shake=Math.max(shake,8); sfx.hit(); } } } }
+    if(e.ddur<=0){
+      // W3: DOUBLE_DASH / STAMPEDE repeat — re-trigger a second charge immediately
+      if(e.dashRepeat>0){
+        e.dashRepeat--;
+        e.dst='wind'; e.dwin=e.enraged?0.28:0.38; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+        if(!e.landFx) e.landFx={type:'pounce'};
+      } else {
+        e.dst='idle'; e.dashTrail=null;
+        if(e.landFx){ const f=e.landFx; e.landFx=null;   // pounce/dive impact: telegraphed slam + a gapped ring you step out of
+          if(f.type==='pounce'){ addZone(e.x,e.y,84,{tele:0.2,life:0.5,dps:20,col:'#3f7d33'}); mRingGap(e,14,120,'#e0503f',0.32); shake=Math.max(shake,8); sfx.hit(); }
+          else if(f.type==='dive'){ addZone(e.x,e.y,80,{tele:0.2,life:0.5,dps:20,col:'#ff7a2a'}); mRingGap(e,16,125,'#ff7a2a',0.32); shake=Math.max(shake,8); sfx.hit(); } }
+      }
+    } }
   if(e.spin>0){ e.spin-=dt; e.spinT=(e.spinT||0)-dt; if(e.spinT<=0){ e.spinT=0.1; e.phase=(e.phase||0)+0.42;
     const col=e.spinCol||'#e54d4d'; fireEB(e.x,e.y,e.phase,170,col); fireEB(e.x,e.y,e.phase+Math.PI,170,col); } }
   // sustained bullet-hell storm: a rotating multi-arm spiral (optionally a counter-rotating twin)
@@ -1676,6 +1915,12 @@ function hurtPlayer(dmg, src){
       for(const e of enemies){ if(dist2(P.x,P.y,e.x,e.y)<R*R) damageEnemy(e,(P.phoenixEvo?80:50)*P.dmg,P.x,P.y,false); }
       ebullets = ebullets.filter(b=>dist2(P.x,P.y,b.x,b.y)>R*R);
       return;
+    }
+    // Second Wind: survive a killing blow once per charge
+    if(P.secondWind>0 && P.swCd<=0){
+      P.hp=1; P.inv=2.5; P.secondWind--; P.swCd=P.swCdBase;
+      ebullets=[]; burst(P.x,P.y,'#4aa3df',20,280); sfx.win();
+      bigText('SECOND WIND','#4aa3df'); return;
     }
     gameOver();
   }
