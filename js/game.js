@@ -166,6 +166,26 @@ const BOSSES_DIRT = [
   { spr:'orcalero', name:'ORCALERO ORCALA',           hp:560, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
   { spr:'madudung',  name:'MADUDUNGDUNG',             hp:680, r:62, pattern:'chaos',  bars:2, hp2:480, duo:'garamaraman' },
 ];
+// ============ WORLD 2 — CITRUS COAST roster (real OG Italian Brainrots, recreated). band 1: easy, mostly chasers. ============
+const FOES_W2 = [
+  // Tier I — fodder
+  { spr:'tralalerito', name:'Tralaleritos',          hp:3, sp:92, r:14, xp:1, score:10 },
+  { spr:'pipikiwi',    name:'Pi Pi Kiwi',            hp:3, sp:80, r:14, xp:1, score:10 },
+  { spr:'tukanno',     name:'Tukanno Bananno',       hp:4, sp:74, r:16, xp:1, score:12 },
+  { spr:'raccooni',    name:'Raccooni Watermelunni', hp:4, sp:70, r:16, xp:1, score:12 },
+  // Tier II — infantry (one light shooter, one dasher, one death-pop — kept gentle)
+  { spr:'svinino',     name:'Svinino Bombondino',    hp:6, sp:66, r:16, xp:2, score:16, death:{type:'ring',n:4} },
+  { spr:'avoantilope', name:'Avocadini Antilopini',  hp:7, sp:88, r:17, xp:2, score:20, dash:true },
+  { spr:'avoguffo',    name:'Avocadini Guffo',       hp:6, sp:58, r:17, xp:2, score:18, range:300, shoot:{type:'aim',n:1,cd:2.8,spd:150,col:'#7cae3e'} },
+  // Tier III — heavy
+  { spr:'perochello',  name:'Perochello Lemonchello',hp:13, sp:42, r:21, xp:3, score:30, front:0.5 },
+];
+const BOSSES_W2 = [
+  { spr:'eccocavallo',  name:'ECCO CAVALLO VIRTUOSO',         hp:130, r:54, moveKey:'hotspot',   phased:true },
+  { spr:'tigrwater',    name:'TIGRULLINI WATERMELLINI',       hp:200, r:55, moveKey:'tralala2',  phased:true },
+  { spr:'avocadorilla', name:'AVOCADORILLA',                  hp:300, r:58, moveKey:'croco2',    phased:true },
+  { spr:'tracotucotulu',name:'TRACOTUCOTULU DELAPELADUSTUZ',  hp:420, r:60, moveKey:'saturnita', phased:true },
+];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
 // ---- 10 worlds: gradual difficulty bands (0..9), distinct map shapes, per-world enemy tints. ----
 // Phase 1 reuses the grass roster (W1-5) and dirt roster (W6-10) recolored via enemyTint; dedicated
@@ -176,11 +196,10 @@ const WORLDS = [
     theme:{ void:'#5b7d33', tile1:'#86c64a', tile2:'#7cbd43', tuft:'rgba(60,110,40,0.35)',
             wall:null, post:null, bg:'#6fae3d', tint:null, music:'game' },
     foes:FOES_GRASS, bosses:BOSSES_GRASS },
-  { id:'dirt', name:'DIRT DEPTHS', band:1, waveTarget:20, endless:false, map:{w:3200,h:2000}, enemyTint:'#8a5a2c',
-    theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
-            wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'dirt',
-            debris:0.8, edgeDark:0.15 },
-    foes:FOES_GRASS, bosses:BOSSES_GRASS },
+  { id:'citrus', name:'CITRUS COAST', band:1, waveTarget:20, endless:false, map:{w:3200,h:2000}, enemyTint:null,
+    theme:{ void:'#c89a3a', tile1:'#f0d878', tile2:'#e8cd63', tuft:'rgba(180,140,50,0.28)',
+            wall:null, post:null, bg:'#ecd070', tint:'#f0c850', music:'game' },
+    foes:FOES_W2, bosses:BOSSES_W2 },
   { id:'sand', name:'SUNNY SANDS', band:2, waveTarget:20, endless:false, map:{w:3400,h:3400}, enemyTint:'#e0b050',
     theme:{ void:'#b8893a', tile1:'#e8c878', tile2:'#ddb95f', tuft:'rgba(150,110,40,0.30)',
             wall:null, post:null, bg:'#d9b86a', tint:'#e0b050', music:'game' },
@@ -211,9 +230,10 @@ const WORLDS = [
             wall:'#2a120a', post:'#6e3424', postDark:'#1c0c06', bg:'#6b2e1e', tint:'#e0502c', music:'boss0',
             debris:0.8 },
     foes:FOES_DIRT, bosses:BOSSES_DIRT },
-  { id:'under', name:'THE UNDERGROUND', band:9, waveTarget:20, endless:false, map:{w:1200,h:4000}, enemyTint:null,
-    theme:{ void:'#1c1622', tile1:'#33293f', tile2:'#2c2336', tuft:'rgba(120,90,160,0.25)',
-            wall:'#241a30', post:'#4a3a60', postDark:'#160f1e', bg:'#241a30', tint:'#6a4f8a', music:'boss2' },
+  { id:'dirt', name:'DIRT DEPTHS', band:9, waveTarget:20, endless:false, map:{w:1200,h:4000}, enemyTint:null,
+    theme:{ void:'#5a3d28', tile1:'#7a5333', tile2:'#6f4a2c', tuft:'rgba(40,26,14,0.35)',
+            wall:'#4a3320', post:'#7a5a38', postDark:'#3a2616', bg:'#6b4a30', tint:'#8a5a2c', music:'dirt',
+            debris:0.8, edgeDark:0.15 },
     foes:FOES_DIRT, bosses:BOSSES_DIRT },
 ];
 let worldIdx = 0;
