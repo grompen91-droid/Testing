@@ -399,6 +399,15 @@ const UPGRADES = [
     evo:{name:'Event Singularity', icon:'octopus', desc:'EVOLVE — huge crush that also devours enemy bullets.', f:()=>{P.gravcrush=true;P.gravEvo=true;P.gravR+=60;P.gravDmg+=18;P.gravLife+=0.8;}} },
   { id:'abyssal', name:'Abyssal Pact', icon:'gembig', rarity:'epic', cap:5, minWorld:2,
     steps:[{desc:'+6% damage for every enemy near you (caps high). The swarm feeds you.',f:()=>{P.abyssal=(P.abyssal||0)+1;}}] },
+  // 🍊 World 2 (CITRUS COAST) cards
+  { id:'thorns', name:'Spiky Peel', icon:'turtle', rarity:'uncommon', cap:5, minWorld:1,
+    steps:[{desc:'enemies that touch you take damage.',f:()=>P.thorns+=6}] },
+  { id:'ricochet', name:'Ricochet', icon:'gembig', rarity:'rare', minWorld:1,
+    steps:[{desc:'your shots ricochet to a nearby enemy.',f:()=>P.ricochet+=1},
+           {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1},
+           {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1},
+           {desc:'+1 ricochet bounce.',f:()=>P.ricochet+=1}],
+    evo:{name:'Chain Reaction', icon:'gembig', desc:'EVOLVE — ricochets reach far and hit much harder.', f:()=>{P.ricochet+=2;P.ricochetEvo=true;}} },
 
   // ✨ SYNERGY cards — hidden until you own the prerequisite cards (req)
   { id:'frostfire', name:'Frostfire Core', icon:'gem', rarity:'epic', cap:1, req:['slow','nova'],
@@ -462,6 +471,7 @@ function resetPlayer(){
     frostfire:false, holeNova:false, critHeal:0, glassSafe:false, orbShoot:false, orbShootCd:0, overdrive:false, aegisNova:false,
     // world-exclusive abilities
     tremor:0, aftershock:0, abyssal:0, abyssalMul:1,
+    thorns:0, ricochet:0, ricochetEvo:false,   // World 2: Spiky Peel / Ricochet
     gravcrush:false, gravCd:0, gravCdBase:7, gravR:130, gravDmg:20, gravLife:2, gravEvo:false
   });
 }
@@ -520,7 +530,7 @@ function ringPos(){ // spawn point on a ring around player, clamped to world
 
 function spawnBoss(){
   const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
-  const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.55);   // softened wave growth; world band carries the macro ramp
+  const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.42);   // softened wave growth; world band carries the macro ramp
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
   const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult, total = bar1+bar2;
   boss = {
@@ -985,6 +995,13 @@ function update(dt){
           hitSpark(b.x,b.y,isCrit?'#ffe14d':'#ff9f3a',isCrit);
           damageEnemy(e,dmg,b.x,b.y,isCrit);
           if(isCrit && P.critHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.critHeal);   // Blood Crit
+          if(P.ricochet>0 && !b.ric){   // Ricochet: fling weaker bolts at nearby foes (don't ricochet a ricochet)
+            const R=P.ricochetEvo?220:140, mul=P.ricochetEvo?0.7:0.5; let n=0;
+            forEnemiesNear(b.x,b.y,R,(o)=>{ if(n>=P.ricochet||o===e||o.iv>0||o.under||o.lead||b.hit.has(o)) return;
+              const a=Math.atan2(o.y-b.y,o.x-b.x);
+              bullets.push({x:b.x,y:b.y,vx:Math.cos(a)*540,vy:Math.sin(a)*540,r:b.r*0.85,pierce:0,hit:new Set([e]),dist:R+40,dmgMul:(b.dmgMul||1)*mul,ric:true});
+              n++; });
+          }
           if(P.tremor && Math.random() < 0.22+P.tremor*0.05){   // Tremor Rounds: ground shock splashes nearby foes
             const R=34+P.tremor*7, sd=P.dmg*(0.3+P.tremor*0.12)*(P.abyssalMul||1);
             forEnemiesNear(b.x,b.y,R,(o)=>{ if(o===e||o.iv>0||o.under||o.lead) return; if(dist2(b.x,b.y,o.x,o.y)<R*R){ o.hp-=sd; o.hitT=Math.max(o.hitT,0.05); } });
@@ -1112,7 +1129,9 @@ function update(dt){
     }
 
     if(!e.under && dist2(e.x,e.y,P.x,P.y) < (e.r+P.r)*(e.r+P.r)){
+      const hitLands = P.inv<=0 && P.dashT<=0 && P.shield<=0;   // the contact actually deals damage this frame
       hurtPlayer((e.isBoss?20:10)*(e.dmgBuff||1), e);
+      if(P.thorns>0 && hitLands && !e.isBoss) damageEnemy(e, P.thorns, P.x, P.y, false);   // Spiky Peel
       if(e.kb && e.dst==='dash'){   // charging boulder bowls the player back
         const a=Math.atan2(P.y-e.y,P.x-e.x);
         P.x=clamp(P.x+Math.cos(a)*120, WALL+P.r, WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*120, WALL+P.r, WORLD.h-WALL-P.r);
