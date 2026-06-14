@@ -1,6 +1,8 @@
 'use strict';
 // ============ INPUT: drag joystick, dash, zoom ============
-const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+// primary-input check: a PC (even a touchscreen laptop, which also has a mouse) reports
+// hover:hover/pointer:fine, so it stays on the PC HUD. Only true touch-first devices match.
+const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 document.body.classList.toggle('is-touch', IS_TOUCH);   // drives touch-only / PC-only HUD layout in CSS
 // block image dragging / right-click "save image" / copy-image
 window.addEventListener('contextmenu', e=>e.preventDefault());
