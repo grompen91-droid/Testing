@@ -1361,6 +1361,7 @@ makeSprite('magotiramisu', 256, (g,u)=>{
 
 // ---- Ice Ice Bearlini Polari Orangini: polar bear with orange-slice markings ----
 makeSprite('icebearlini', 256, (g,u)=>{
+  g.scale(0.74,0.74); g.translate(0,-4*u);   // colossus is tall+wide: shrink-to-fit so no part (incl. outlines) is clipped by the canvas
   // ears
   dot(g,-34*u,-46*u,13*u,'#f3f7fa'); dot(g,34*u,-46*u,13*u,'#f3f7fa');
   g.strokeStyle=OUT; g.lineWidth=3.5*u; g.beginPath(); g.arc(-34*u,-46*u,13*u,0,TAU); g.arc(34*u,-46*u,13*u,0,TAU); g.stroke();

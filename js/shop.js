@@ -59,8 +59,8 @@ function catalogByRarity(r){ return GEAR_CATALOG.filter(id=>itemRar(id)===r); }
 // crates: weighted random pulls. cheaper crate = mostly low rarity, pricier = better odds.
 const CRATES = {
   wood:   { name:'Wooden Crate', price:40,   glow:'#9aa3af', odds:{common:60,uncommon:30,rare:8, epic:2, legendary:0, mythic:0} },
-  silver: { name:'Silver Crate', price:240,  glow:'#bcd0e0', odds:{common:18,uncommon:40,rare:28,epic:11,legendary:3, mythic:0} },
-  gold:   { name:'Gold Crate',   price:1200, glow:'#e0a92e', odds:{common:0, uncommon:16,rare:38,epic:31,legendary:11,mythic:4} },
+  silver: { name:'Silver Crate', price:240,  glow:'#bcd0e0', odds:{common:6, uncommon:30,rare:36,epic:20,legendary:7, mythic:1} },
+  gold:   { name:'Gold Crate',   price:1200, glow:'#e0a92e', odds:{common:0, uncommon:5, rare:25,epic:38,legendary:23,mythic:9} },
 };
 const CRATE_ORDER = ['wood','silver','gold'];
 
@@ -76,9 +76,9 @@ let gearEquip = Object.assign({helmet:null,chest:null,pants:null,shoes:null},
 // First run (no key): seed with current owned so existing gear doesn't badge.
 let gearSeen = localStorage.getItem('br_gear_seen')!=null
   ? new Set(JSON.parse(localStorage.getItem('br_gear_seen'))) : new Set(gearOwned);
-function saveOwned(){ localStorage.setItem('br_items_owned', JSON.stringify([...gearOwned])); }
-function saveEquip(){ localStorage.setItem('br_gear_equipped', JSON.stringify(gearEquip)); }
-function saveSeen(){  localStorage.setItem('br_gear_seen',   JSON.stringify([...gearSeen])); }
+function saveOwned(){ localStorage.setItem('br_items_owned', JSON.stringify([...gearOwned])); if(window.markDirty) window.markDirty(); }
+function saveEquip(){ localStorage.setItem('br_gear_equipped', JSON.stringify(gearEquip)); if(window.markDirty) window.markDirty(); }
+function saveSeen(){  localStorage.setItem('br_gear_seen',   JSON.stringify([...gearSeen])); if(window.markDirty) window.markDirty(); }
 function unseenCount(){ let n=0; for(const id of gearOwned) if(!gearSeen.has(id)) n++; return n; }
 function updateInvBadge(){ const b=$('invbadge'); if(!b) return; const n=unseenCount();
   b.textContent = n>99?'99+':n; b.classList.toggle('hidden', n<=0); }
@@ -209,7 +209,7 @@ function openCrate(key){
   if(typeof sfx!=='undefined') sfx.pick();
   const won = rollCrateItem(key);
   const dup = gearOwned.has(won);
-  if(dup){ const refund=Math.round(itemPrice(won)*0.4); gold+=refund; localStorage.setItem('br_gold',gold); }
+  if(dup){ const refund=Math.round(itemPrice(won)*0.4); gold+=refund; localStorage.setItem('br_gold',gold); if(window.markDirty) window.markDirty(); }
   else ownItem(won);
 
   const ov=$('crate'); if(!ov){ // headless / no overlay: just resolve instantly

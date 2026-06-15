@@ -363,7 +363,7 @@ function loadWorld(idx){
 let cut = null;   // cutscene state
 function worldCleared(boss){
   unlockedMax = Math.min(WORLDS.length-1, Math.max(unlockedMax, worldIdx+1));
-  localStorage.setItem('br_unlocked', unlockedMax);
+  localStorage.setItem('br_unlocked', unlockedMax); if(window.markDirty) window.markDirty();
   selWorld = Math.min(WORLDS.length-1, worldIdx+1);
   state = ST.CUTSCENE;
   cut = { t:0, boss:boss, alpha:1, fade:0, name:curWorld().name };
@@ -493,6 +493,26 @@ const UPGRADES = [
            {desc:'revive recharges faster.',f:()=>{P.phoenixCdBase=Math.max(20,P.phoenixCdBase-10);}}],
     evo:{name:'Eternal Phoenix', icon:'flamingo', desc:'EVOLVE — full-HP rebirth, a huge nuke, and a permanent burn aura.', f:()=>{P.phoenixMax+=1;P.phoenix=P.phoenixMax;P.phoenixEvo=true;P.phoenixHeal=1;P.burnAura+=14;P.phoenixCdBase=Math.max(15,P.phoenixCdBase-8);}} },
 
+  // 🆕 World 1 additions — more early-game variety
+  { id:'seeker', name:'Seeker Rounds', icon:'gembig', rarity:'uncommon', cap:4, minWorld:0,
+    steps:[{desc:'your shots curve toward enemies. (+homing per level)',f:()=>P.seeker=(P.seeker||0)+1}] },
+  { id:'laststand', name:'Last Stand', icon:'tiger', rarity:'uncommon', cap:5, minWorld:0,
+    steps:[{desc:'+14% damage while below 40% HP. (+14% per level)',f:()=>P.laststand=(P.laststand||0)+1}] },
+
+  // 🆕 World 5 additions — more late-game variety
+  { id:'daredevil', name:'Daredevil', icon:'tiger', rarity:'rare', cap:5, minWorld:4,
+    steps:[{desc:'+9% crit chance while a foe is point-blank. (+9% per level)',f:()=>P.daredevil=(P.daredevil||0)+1}] },
+  { id:'knives', name:'Knife Circus', icon:'crocodilo', rarity:'epic', minWorld:4,
+    steps:[
+      {desc:'every 3.5s, fling a spinning ring of knives outward.',f:()=>{P.knives=true;P.knifeCdBase=3.5;P.knifeN=(P.knifeN||0)+8;}},
+      {desc:'more knives, thrown more often.',                     f:()=>{P.knifeN=(P.knifeN||8)+4;P.knifeCdBase=3.0;}},
+      {desc:'more knives, thrown more often.',                     f:()=>{P.knifeN=(P.knifeN||12)+4;P.knifeCdBase=2.5;}},
+      {desc:'more knives, larger.',                                f:()=>{P.knifeN=(P.knifeN||16)+4;P.knifeBig=true;}},
+    ],
+    evo:{name:'Blade Tornado', icon:'crocodilo',
+         desc:'EVOLVE — a constant whirl of knives that pierces everything.',
+         f:()=>{P.knives=true;P.knifeEvo=true;P.knifeN=(P.knifeN||20)+8;P.knifeCdBase=1.2;P.knifeBig=true;}} },
+
   // 🌍 WORLD-EXCLUSIVE abilities — only enter the draw from a given world onward (minWorld, 0-indexed)
   { id:'tremor', name:'Tremor Rounds', icon:'crocodilo', rarity:'rare', cap:5, minWorld:1,
     steps:[{desc:'your bullet hits send out a small ground shock (+more per level).',f:()=>{P.tremor=(P.tremor||0)+1;}}] },
@@ -612,10 +632,10 @@ for(const u of UPGRADES){ const ic='ab_'+u.id; if(SP[ic]){ u.icon=ic; if(u.evo) 
 // Synergy cards (frostfire/eventhz/...) keep their req-gating and stay available from W1.
 const CARD_MINWORLD = {
   dmg:0, rate:0, speed:0, hp:0, magnet:0, armor:0,
-  multi:1, range:1,
-  crit:2, heavy:2, regen:2, gold:2, dashcd:2,
+  multi:1, range:1, orbit:0, crit:0, seeker:0, laststand:0,   // World 1 now offers far more variety
+  heavy:2, regen:2, gold:2, dashcd:2,
   pierce:3, slow:3, critdmg:3, steady:3,
-  orbit:4, vamp:4,
+  vamp:4,
   nova:5, thick:5, frenzy:5,
   aegis:6, tremor:6, glass:6,
   blackhole:7, aftershock:7,
@@ -626,7 +646,7 @@ const CARD_MINWORLD = {
   // World 4
   permafrost:3, coldblood:3, frostbloom:3, glacierheart:3,
   // World 5
-  luckyspin:4, bouncy:4, showstopper:4,
+  luckyspin:4, bouncy:4, showstopper:4, daredevil:4, knives:4,
 };
 for(const u of UPGRADES){ if(CARD_MINWORLD[u.id]!=null) u.minWorld = CARD_MINWORLD[u.id]; }
 // returns the next card "move" for an upgrade, or null if exhausted
@@ -646,7 +666,7 @@ function resetPlayer(){
   Object.assign(P, {
     x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:200,
     dmg:10, fireRate:0.32, fireCd:0, shots:1, pierce:0, range:330,
-    magnet:90, crit:0.05, orbs:0, orbA:0, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
+    magnet:90, crit:0.05, orbs:0, orbA:0, orbR:96, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
     vamp:0, bslow:1, lv:1, xp:0, xpNext:4, inv:0, up:{}, slowT:0,
     face:0, walk:0, dashCd:0, dashMax:2.2, dashT:0, dvx:0, dvy:0,
     radial:false, railgun:false, orbShield:false, novaEvo:false, freeze:false,
@@ -669,7 +689,10 @@ function resetPlayer(){
     chillHit:0, coldBlood:0,
     frostBloom:false, frostBloomEvo:false, fbCd:0, fbCdBase:6, fbR:120, fbDps:10, glacierHeart:false,
     // World 5: CIRCO BRAINROTTO
-    jackpot:0, bounce:0, pinball:false, showstopper:false
+    jackpot:0, bounce:0, pinball:false, showstopper:false,
+    daredevil:0, knives:false, knifeCd:0, knifeCdBase:3.5, knifeN:0, knifeBig:false, knifeEvo:false,
+    // World 1 additions
+    seeker:0, laststand:0
   });
 }
 
@@ -1067,6 +1090,18 @@ function update(dt){
 
   // spatial grid for this frame: powers enemy separation + bullet/orb/aura collision
   buildEnemyGrid();
+  // Daredevil: is a foe point-blank this frame? (drives a crit bonus)
+  P.foeClose = P.daredevil>0 && enemies.some(e=>!e.under && !e.lead && dist2(P.x,P.y,e.x,e.y) < 120*120);
+  // Knife Circus: periodically fling a spinning ring of knives outward
+  if(P.knives){
+    P.knifeCd -= dt;
+    if(P.knifeCd<=0){ P.knifeCd = P.knifeCdBase;
+      const n=P.knifeN||8, off=elapsed*2.2, br=(P.knifeBig?9:6)*(P.bulletR||1), spd=480*(P.bulletSpd||1);
+      for(let i=0;i<n;i++){ const a=off+i*TAU/n;
+        bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:br,pierce:P.knifeEvo?999:(P.pierce+1),hit:new Set(),dist:P.range*0.9,dmgMul:0.7}); }
+      sfx.shoot();
+    }
+  }
 
   // --- auto-fire at nearest enemy within range ---
   P.fireCd -= dt;
@@ -1082,7 +1117,7 @@ function update(dt){
       const base = Math.atan2(best.y-P.y, best.x-P.x), spread = 0.16*(P.spread||1);
       for(let i=0;i<P.shots;i++){
         const a = base + (i-(P.shots-1)/2)*spread;
-        bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:br,pierce:P.pierce,hit:new Set(),dist:P.range,bounce:P.bounce||0});
+        bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:br,pierce:P.pierce,hit:new Set(),dist:P.range,bounce:P.bounce||0,homing:P.seeker||0});
       }
       if(P.radial){                       // Omni-Barrage: 360 ring IN ADDITION (reduced dmg so it stays fair vs crowds)
         const n = clamp(P.shots*2, 8, 20);
@@ -1100,7 +1135,7 @@ function update(dt){
     P.orbA += dt*3.2;
     for(let i=0;i<P.orbs;i++){
       const a = P.orbA + i*(TAU/P.orbs);
-      const ox = P.x + Math.cos(a)*58, oy = P.y + Math.sin(a)*58;
+      const ox = P.x + Math.cos(a)*P.orbR, oy = P.y + Math.sin(a)*P.orbR;
       forEnemiesNear(ox,oy,40,(e)=>{
         if(e.iv>0 || e.lead) return;          // e.lead = duo partner: only bullets (routed) may hurt it
         if(dist2(ox,oy,e.x,e.y) < (e.r+10)*(e.r+10)){ e.hp -= 9*dt*P.dmg; e.hitT=Math.max(e.hitT,0.06); }
@@ -1114,7 +1149,7 @@ function update(dt){
     if(P.orbShoot){                       // Orbital Storm: orbs fire shots outward
       P.orbShootCd -= dt;
       if(P.orbShootCd<=0){ P.orbShootCd=1.2;
-        for(let i=0;i<P.orbs;i++){ const a=P.orbA+i*(TAU/P.orbs), ox=P.x+Math.cos(a)*58, oy=P.y+Math.sin(a)*58;
+        for(let i=0;i<P.orbs;i++){ const a=P.orbA+i*(TAU/P.orbs), ox=P.x+Math.cos(a)*P.orbR, oy=P.y+Math.sin(a)*P.orbR;
           bullets.push({x:ox,y:oy,vx:Math.cos(a)*560,vy:Math.sin(a)*560,r:6,pierce:P.pierce,hit:new Set(),dist:P.range}); }
         sfx.shoot();
       }
@@ -1265,6 +1300,11 @@ function update(dt){
   // --- player bullets ---
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];
+    if(b.homing){                           // Seeker Rounds: curve toward the nearest foe
+      let best=null,bd=420*420; for(const e of enemies){ if(e.iv>0||e.under||e.lead) continue; const d=dist2(b.x,b.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
+      if(best){ const cur=Math.atan2(b.vy,b.vx), want=Math.atan2(best.y-b.y,best.x-b.x);
+        let da=((want-cur+Math.PI)%TAU+TAU)%TAU-Math.PI; const turn=clamp(da,-(2.4+b.homing*1.3)*dt,(2.4+b.homing*1.3)*dt);
+        const sp=Math.hypot(b.vx,b.vy), na=cur+turn; b.vx=Math.cos(na)*sp; b.vy=Math.sin(na)*sp; } }
     b.dist -= Math.hypot(b.vx,b.vy)*dt;     // range limit
     b.x+=b.vx*dt; b.y+=b.vy*dt;
     if(b.boom){ b.spin=(b.spin||0)+dt*18; if(Math.random()<0.5) parts.push({x:b.x,y:b.y,vx:0,vy:0,life:0.18,max:0.18,color:'#7ef0a8',r:b.r*0.7}); }   // spin + green trail
@@ -1293,7 +1333,7 @@ function update(dt){
       for(const e of arr){
         if(b.hit.has(e) || e.iv>0) continue;
         if(dist2(b.x,b.y,e.x,e.y) < (e.r+b.r)*(e.r+b.r)){
-          const critC = P.crit + (P.overdrive ? (P.frenzy||0)*0.001 : 0);   // Overdrive: frenzy stacks add crit
+          const critC = P.crit + (P.overdrive ? (P.frenzy||0)*0.001 : 0) + (P.foeClose ? 0.09*P.daredevil : 0);   // Overdrive: frenzy stacks add crit; Daredevil: point-blank crit
           const isCrit = Math.random()<critC;
           const dmg = P.dmg * (b.dmgMul||1) * (P.abyssalMul||1) * (1 + (P.frenzy||0)*0.002) * (isCrit?(P.critMul||3):1);   // Killing Frenzy +0.2%/stack; Abyssal Pact swarm bonus
           b.hit.add(e);
@@ -1588,7 +1628,7 @@ function update(dt){
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
       if(g.heart){ const h=g.heal||(g.big?50:25); P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
-      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
+      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); if(window.markDirty) window.markDirty(); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else if(g.magnet){ for(const o of gems) o.vac=true; floatText(P.x,P.y-24,'MAGNET','#9fe0ff',16); burst(P.x,P.y,'#9fe0ff',12,160); sfx.level(); }   // pull in every pickup on the map
       else { gainXp(g.v); sfx.gem(2); }
     }
@@ -1661,6 +1701,7 @@ function damageEnemy(e,dmg,fx,fy,crit){
     if(d<1.2) dmg*=e.front;
   }
   if(P.coldBlood && (e.frz>0 || e.chillT>0)) dmg *= (1 + 0.12*P.coldBlood);   // Cold Blooded: bonus vs chilled/frozen
+  if(P.laststand && P.hp/P.maxHp < 0.4) dmg *= (1 + 0.14*P.laststand);          // Last Stand: rally while wounded
   if(P.jackpot && Math.random()<P.jackpot){                                   // Lucky Spin: jackpot double-damage
     dmg *= 2;
     if(P.showstopper && !crit){ dmg *= P.critMul; crit=true; }                // Showstopper: jackpots also crit
@@ -1697,6 +1738,27 @@ function mRingGap(e,n,spd,col,gapFrac,gapAt){
 // a marching row of telegraphed zones erupting from (x,y) along angle a
 function geyserLine(x,y,a,col,n=5,step=46){
   for(let k=1;k<=n;k++) addZone(x+Math.cos(a)*step*k, y+Math.sin(a)*step*k, 34, {tele:0.35+k*0.12, life:0.45, dps:15, col:col||'#e0503f'});
+}
+// a full WALL of bullets sweeping across the arena from one edge, with a single moving gap to slip through.
+// the gap is the telegraph: you see the hole coming and walk into it. (scripted-finale bullet-hell pattern)
+function mWall(side, spd, col, gapAt, gapW, n){
+  if(!arena) return; const a=arena;
+  if(side==='left'||side==='right'){
+    const x=side==='left'?a.x+12:a.x+a.w-12, vx=side==='left'?spd:-spd;
+    for(let i=0;i<n;i++){ const y=a.y+(i+0.5)*a.h/n; if(Math.abs(y-gapAt)<gapW) continue; ebullets.push({x,y,vx,vy:0,r:7,color:col}); }
+  } else {
+    const y=side==='top'?a.y+12:a.y+a.h-12, vy=side==='top'?spd:-spd;
+    for(let i=0;i<n;i++){ const x=a.x+(i+0.5)*a.w/n; if(Math.abs(x-gapAt)<gapW) continue; ebullets.push({x,y,vx:0,vy,r:7,color:col}); }
+  }
+  sfx.warn();
+}
+// a telegraphed LINE of hazard zones spanning the arena with one safe gap (a "wall you step through" on the ground)
+function zoneLine(horizontal, pos, gapAt, gapW, col, n, tele){
+  if(!arena) return; const a=arena;
+  for(let i=0;i<n;i++){
+    if(horizontal){ const x=a.x+(i+0.5)*a.w/n; if(Math.abs(x-gapAt)<gapW) continue; addZone(x,pos,46,{tele:tele||0.8,life:0.5,dps:15,col}); }
+    else { const y=a.y+(i+0.5)*a.h/n; if(Math.abs(y-gapAt)<gapW) continue; addZone(pos,y,46,{tele:tele||0.8,life:0.5,dps:15,col}); }
+  }
 }
 // shortest distance from point (px,py) to the segment (ax,ay)-(bx,by) — used by the duo tether beam
 function segDist(px,py,ax,ay,bx,by){
@@ -1981,7 +2043,7 @@ function execMove(e){
     case 'COCONUT_STORM': e.storm=2.2; e.stormN=7; e.stormSpd=140; e.stormStep=0.27; e.stormDir=Math.random()<0.5?1:-1; e.stormCol='#8d6e63'; e.stormCd=0.12; e.stormTwin=(e.vph>=3); e.stormRainbow=false; sfx.warn(); return 2.2;
     case 'QUAKE_RING':    addZone(e.x,e.y,90,{tele:0.4,life:0.7,dps:18,col:'#8d6e63'}); mRingGap(e,18,120,'#8d6e63',0.30); shake=Math.max(shake,8); sfx.hit(); return 0.4;
     case 'CONFETTI_TOSS': mAimed(e,5,0.20,140,'#ff5ea8'); return 0.2;                                   // trapezino: ranged confetti
-    case 'CALLIOPE_RING': mRing(e,16,130,'#ffd24a'); mRingGap(e,12,90,'#e8463c',0.32); return 0.3;       // giostra: organ-pipe rings
+    case 'CALLIOPE_RING': mRingGap(e,16,130,'#ffd24a',0.28); mRingGap(e,12,90,'#e8463c',0.32); return 0.3;  // giostra: organ-pipe rings (both gapped — readable)
     case 'EMBER_JUGGLE':  { const off=rand(0,TAU); for(let k=0;k<5;k++) fireEB(e.x,e.y,off+k*TAU/5,130,'#ff7a2a'); muzzleFlash(e.x,e.y,'#ff7a2a'); return 0.25; }  // mangiafuoco: fling the juggled embers
     // ---- W3 moves ----
     case 'ROSE_LUNGE':
@@ -2018,7 +2080,7 @@ function execMove(e){
     case 'GRIND_ZONE':
       addZone(P.x,P.y,78,{tele:0.55,life:2.2,dps:13,slow:true,col:'#bdbdbd'}); return 0.35;
     case 'VORTEX_PULL':
-      e.pull=1.2; e.pullStr=138; mRing(e,16,152,'#e0e0e0'); return 1.2;
+      e.pull=1.2; e.pullStr=138; mRingGap(e,16,152,'#e0e0e0',0.30); return 1.2;
     case 'STOMP_QUAKE':
       addZone(e.x,e.y,100,{tele:0.3,life:0.6,dps:18,col:'#8d6e63'});
       { const a=rand(0,TAU); for(let q=0;q<4;q++) geyserLine(e.x,e.y,a+q*Math.PI/2,'#8d6e63',5,56); }
@@ -2133,9 +2195,9 @@ const GIMMICK = {
 // a persistent, telegraphed mechanic that gives each boss an identity beyond its move list.
 // runs every frame alongside the move cycle; escalates with e.vph. kept forgiving (slow, wide gaps).
 function updateGimmick(e,dt){
-  if(!e.gimmick) return;
+  if(!e.gimmick || e.scriptPause) return;
   const ph=e.vph||1;
-  const gm = (e.finalPhase||e.partner) ? 1 : 2.0;   // non-final bosses fire their gimmick much less often
+  const gm = (e.finalPhase||e.partner) ? 1 : 1.4;   // non-final bosses fire their signature gimmick a bit less often (but often enough to feel unique)
   switch(e.gimmick){
     case 'metronome':                                   // steady off-beat ring on a quickening tempo
       e.gT-=dt; if(e.gT<=0){ e.gT = (ph>=3?1.0:ph>=2?1.3:1.6)*gm;
@@ -2229,6 +2291,8 @@ function startFinalCharge(e){
   e.mst='recover'; e.mt=FINAL_CHARGE;
   ebullets=[];
   bigText('FINAL PHASE!','#ff5acd'); shake=Math.max(shake,14); sfx.boss();
+  const scr=FINAL_SCRIPT[e.mk];                 // bespoke staged finale (W3/W4) instead of the random move pool
+  if(scr){ e.script=scr; e.si=0; e.sNew=true; e.sT=scr[0].dur; e.loop=0; e.scriptPause=false; }
   expandFinalArena(e);
   if(e.mate){ const m=e.mate; m.charging=FINAL_CHARGE; m.iv=FINAL_CHARGE+0.3;
     m.storm=0; m.spin=0; m.pull=0; m.echo=null; m.gsweep=null; m.wd=null; m.warpT=0;
@@ -2241,6 +2305,123 @@ function expandFinalArena(e){
   const naw=Math.min(arena.w*1.5, WORLD.w-2*WALL), nah=Math.min(arena.h*1.5, WORLD.h-2*WALL);
   const ncx=clamp(cx0,WALL+naw/2,WORLD.w-WALL-naw/2), ncy=clamp(cy0,WALL+nah/2,WORLD.h-WALL-nah/2);
   arena={x:ncx-naw/2,y:ncy-nah/2,w:naw,h:nah};
+}
+
+// ============================================================
+// BESPOKE PHASE-3 FINALES (World 3 & 4)
+// Instead of the random move-pool every other boss uses, these two finals run a hand-authored
+// SEQUENCE of stages: invulnerable bullet-hell waves, each followed by a vulnerable DPS "pause"
+// window (boss drops its guard, screen clears, big banner "STRIKE NOW"). It loops and escalates
+// (e.loop). Each boss's stages are wholly distinct from each other and from every other fight.
+// ============================================================
+const FINAL_SCRIPT = {
+  // ===== WORLD 3 · COCOFANTO MASTODONTE — "TERREMOTO FINALE" : a seismic, ground-control colossus =====
+  cocofantoboss: [
+    { name:'SEISMIC WALTZ', col:'#8d6e63', dur:7.5, iv:true, hold:'center',
+      enter(e){ e.gsweep={ t:7.5, ang:rand(0,TAU), dir:Math.random()<0.5?1:-1, dropT:0 };
+        if(e.loop>0){ e.gsweep.dir2=-e.gsweep.dir; e.gsweep.ang2=e.gsweep.ang+Math.PI; }   // a 2nd counter-rotating hand after looping
+        e.sCd=0.8; },
+      tick(e,dt){
+        if(e.gsweep && e.gsweep.dir2!=null){ e.gsweep.ang2+=e.gsweep.dir2*1.5*dt;
+          e.gsweep.d2T=(e.gsweep.d2T||0)-dt; if(e.gsweep.d2T<=0){ e.gsweep.d2T=0.16; geyserLine(e.x,e.y,e.gsweep.ang2,'#6d4c41',6,52); } }
+        e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(0.55,0.9-e.loop*0.1);
+          addZone(P.x,P.y,60,{tele:0.7,life:0.5,dps:16,col:'#8d6e63'});      // a coconut lobbed at your feet
+          mRingGap(e,12+e.loop*2,120,'#8d6e63',0.34); } },
+    },
+    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+    { name:'COCONUT MONSOON', col:'#8d6e63', dur:7.5, iv:true, hold:'center',
+      enter(e){ e.sCd=0.5; e.sk=0; },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=0.95; e.sk++;
+        const band=(arena?arena.y:0)+((e.sk*0.21)%1)*(arena?arena.h:600);   // a drifting row of falling coconuts
+        const gx=arena?rand(arena.x+90,arena.x+arena.w-90):P.x;
+        zoneLine(true, band, gx, 70, '#8d6e63', 9, 0.8);
+        mRingGap(e,16+e.loop*2,130,'#a06a4a',0.30); } },
+    },
+    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+    { name:'STAMPEDE GAUNTLET', col:'#6d4c41', dur:7.0, iv:true,
+      enter(e){ e.dst='wind'; e.dwin=0.45; e.da=Math.atan2(P.y-e.y,P.x-e.x); e.kb=true;
+        e.landFx={type:'pounce'}; e.dashTrail={kind:'guac',col:'#8d6e63'}; e.dashRepeat=4+e.loop; sfx.warn(); },
+      tick(e,dt){ if(e.dst==='idle' && (e.dashRepeat||0)<=0 && e.sT>1.4){   // re-charge if it finishes the set early
+        e.dst='wind'; e.dwin=0.4; e.da=Math.atan2(P.y-e.y,P.x-e.x); e.kb=true;
+        e.landFx={type:'pounce'}; e.dashTrail={kind:'guac',col:'#8d6e63'}; e.dashRepeat=2; } },
+    },
+    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+  ],
+  // ===== WORLD 4 · ICE ICE BEARLINI — "ZERO ASSOLUTO" : a frost-storm colossus =====
+  icebearlini: [
+    { name:'BLIZZARD', col:'#9fd0ff', dur:7.5, iv:true, hold:'center',
+      enter(e){ e.storm=7.5; e.stormN=7+e.loop; e.stormSpd=120; e.stormStep=0.26; e.stormDir=Math.random()<0.5?1:-1;
+        e.stormCol='#9fd0ff'; e.stormCd=0.12; e.stormTwin=true; e.stormRainbow=false; e.sCd=1.0; sfx.warn(); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.2;   // frost drifts settle as slowing patches
+        if(arena) for(let k=0;k<2;k++) addZone(rand(arena.x+50,arena.x+arena.w-50),rand(arena.y+50,arena.y+arena.h-50),56,{tele:0.7,life:2.4,dps:8,slow:true,col:'#bfe6ff'}); } },
+    },
+    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+    { name:'AVALANCHE WALLS', col:'#bfe6ff', dur:8.0, iv:true,
+      enter(e){ e.sCd=0.4; e.sk=0; },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(1.3,1.8-e.loop*0.15); e.sk++;
+        const a=arena; if(!a) return;
+        const horiz=(e.sk%2===0);
+        const side= horiz ? (e.sk%4<2?'left':'right') : (e.sk%4<2?'top':'bottom');
+        const gapAt= horiz ? rand(a.y+90,a.y+a.h-90) : rand(a.x+90,a.x+a.w-90);
+        mWall(side,150+e.loop*15,'#9fd0ff',gapAt,64,14); } },
+    },
+    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+    { name:'ORANGE SUPERNOVA', col:'#ff8f2e', dur:5.5, iv:true, hold:'center',
+      enter(e){ e.sk=0; e.sCd=1.0; burst(e.x,e.y,'#ff8f2e',30,360); shake=Math.max(shake,10); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0 && e.sk<3){ e.sCd=1.4; e.sk++;   // three huge nested orange shockwaves, each with a gap
+        mRing(e,26,200,'#ff8f2e'); mRingGap(e,22,150,'#ffb15a',0.20); mRingGap(e,18,100,'#ff8f2e',0.24);
+        shake=Math.max(shake,8); sfx.hit(); } },
+    },
+    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+  ],
+  // ===== WORLD 5 · IL GRAN PAGLIACCIO — "GRAN FINALE" : the ringmaster's three-act spectacle =====
+  granpagliaccio: [
+    { name:'CONFETTI CYCLONE', col:'#ff5ea8', dur:7.0, iv:true, hold:'center',
+      enter(e){ e.storm=7.0; e.stormN=6+e.loop; e.stormSpd=120; e.stormStep=0.27; e.stormDir=Math.random()<0.5?1:-1;
+        e.stormCol='#ff5ea8'; e.stormCd=0.13; e.stormTwin=true; e.stormRainbow=false; e.sCd=1.1; sfx.warn(); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.1; mRingGap(e,14,110,'#ffd24a',0.32); } },
+    },
+    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+    { name:'BALLOON BARRAGE', col:'#ff5ea8', dur:7.5, iv:true,
+      enter(e){ e.sCd=0.4; e.sk=0; },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(1.4,1.9-e.loop*0.15); e.sk++;
+        const a=arena; if(!a) return;
+        const horiz=(e.sk%2===0);
+        const side= horiz ? (e.sk%4<2?'left':'right') : (e.sk%4<2?'top':'bottom');
+        const gapAt= horiz ? rand(a.y+90,a.y+a.h-90) : rand(a.x+90,a.x+a.w-90);
+        mWall(side,140+e.loop*15,'#ff5ea8',gapAt,68,12);
+        if(e.sk%2===0) summonAdds(e,'clownino',1,4); } },
+    },
+    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+    { name:'THE GRAND FINALE', col:'#ffd24a', dur:6.0, iv:true, hold:'center',
+      enter(e){ e.sk=0; e.sCd=0.8; burst(e.x,e.y,'#ffd24a',30,360); shake=Math.max(shake,10); summonAdds(e,'clownino',3,6); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.0; e.sk++;
+        mRingGap(e,18,160,'#ff5ea8',0.24); mRingGap(e,14,105,'#ffd24a',0.28);
+        shake=Math.max(shake,6); sfx.hit(); } },
+    },
+    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:3.0, iv:false },
+  ],
+};
+// drive one scripted-finale stage; advances + loops + escalates when the stage timer runs out
+function runFinalScript(e,dt){
+  const stages=e.script; if(!stages) return;
+  if(e.sNew){ e.sNew=false; const st=stages[e.si];
+    // clean slate between stages: kill every sustained attack so each beat reads clearly
+    e.storm=0; e.spin=0; e.pull=0; e.gsweep=null; e.echo=null; e.wd=null; e.carpet=0;
+    e.dst='idle'; e.dashRepeat=0; e.landFx=null; e.dashTrail=null; e.warpT=0;
+    e.scriptPause = !st.iv;                            // pause the persistent gimmick during DPS windows
+    if(st.iv){ e.iv=Math.max(e.iv, st.dur+0.3); }
+    else { ebullets=[]; burst(e.x,e.y,'#7ed957',22,220); }   // DPS window: wipe the screen, drop the guard
+    bigText(st.name, st.col); sfx.boss();
+    if(st.enter) st.enter(e);
+  }
+  const st=stages[e.si];
+  if(st.iv) e.iv=Math.max(e.iv,0.25);
+  if(st.hold==='center' && arena){ const cxw=arena.x+arena.w/2, cyw=arena.y+arena.h/2;
+    e.x += (cxw-e.x)*2.4*dt; e.y += (cyw-e.y)*2.4*dt; }
+  if(st.tick) st.tick(e,dt);
+  e.sT-=dt;
+  if(e.sT<=0){ e.si++; if(e.si>=stages.length){ e.si=0; e.loop=(e.loop||0)+1; } e.sNew=true; e.sT=stages[e.si].dur; }
 }
 
 function updateBoss(e,dt){
@@ -2384,17 +2565,21 @@ function updateBoss(e,dt){
   // ---- telegraphed move cycle: recover -> wind -> fire -> recover ----
   if(e.stun>0) e.stun-=dt;                 // post-ricochet standstill: vulnerable, no new attacks
   const enr = e.enraged?0.65:1;
+  if(e.script){                            // bespoke staged finale drives its own attacks; skip the random pool
+    runFinalScript(e,dt);
+  } else {
   e.mt -= dt;
   if(e.mt<=0 && !(e.stun>0)){
     if(e.mst==='recover'){ e.mst='wind'; e.mt=BOSS_WIND; e.mv=pickMove(e); e.tellCol=MOVE_COL[e.mv]||'#fff'; sfx.warn(); }
     else if(e.mst==='wind'){ e.mst='fire'; e.mt=execMove(e); }
     else { let rec=(e.spr==='vaca'&&e.vph>=3?0.7:1.1);
-      if(!e.finalPhase && !e.partner) rec*=2.4;   // non-final bosses pause much longer between attacks
+      if(!e.finalPhase && !e.partner) rec*=1.6;   // non-final bosses still pause between attacks, but stay lively (not sluggish)
       e.mst='recover'; e.mt=rec*enr; }
+  }
   }
 
   // anchor drift toward the player (unless mid-dash or standing stunned, or riding its own carousel path)
-  if(!dashing && !(e.stun>0) && e.gimmick!=='carousel'){
+  if(!dashing && !(e.stun>0) && e.gimmick!=='carousel' && !e.script){
     const tx = clamp(P.x + Math.sin(e.t*0.5)*260, WALL+e.r, WORLD.w-WALL-e.r);
     const ty = clamp(P.y - 220 + Math.cos(e.t*0.4)*60, WALL+e.r, WORLD.h-WALL-e.r);
     e.x += (tx-e.x)*0.9*dt; e.y += (ty-e.y)*0.9*dt;
@@ -2603,7 +2788,7 @@ function render(){
   if(P.orbs>0 && state!==ST.MENU){
     for(let i=0;i<P.orbs;i++){
       const a=P.orbA+i*(TAU/P.orbs);
-      const ox=P.x+Math.cos(a)*58, oy=P.y+Math.sin(a)*58;
+      const ox=P.x+Math.cos(a)*P.orbR, oy=P.y+Math.sin(a)*P.orbR;
       cx.fillStyle='#9fe0ff'; cx.beginPath(); cx.arc(ox,oy,9,0,TAU); cx.fill();
       cx.strokeStyle=OUT; cx.lineWidth=2.5; cx.stroke();
     }
@@ -2921,6 +3106,7 @@ function currentTrack(){
 function refreshMute(){
   const mi=$('muteic'); if(mi){ const s=SP[muted?'ic_mute':'ic_snd']; if(s) mi.src=s.toDataURL(); }
   $('pausemute').textContent = muted ? 'Music: Off' : 'Music: On';
+  const ps=$('pausesfx'); if(ps) ps.textContent = sfxMuted ? 'SFX: Off' : 'SFX: On';
 }
 function setMusicMuted(v){
   initAudio();
@@ -2929,8 +3115,15 @@ function setMusicMuted(v){
   else { if(AC) AC.resume(); playMusic(currentTrack()); }
   refreshMute();
 }
+function setSfxMuted(v){
+  initAudio();
+  sfxMuted = v; localStorage.setItem('br_sfxmuted', sfxMuted?'1':'0');
+  if(!sfxMuted && AC) AC.resume();
+  refreshMute();
+}
 $('mutebtn').addEventListener('click', ()=>setMusicMuted(!muted));
 $('pausemute').addEventListener('click', ()=>setMusicMuted(!muted));
+$('pausesfx').addEventListener('click', ()=>setSfxMuted(!sfxMuted));
 refreshMute();
 
 // ---- pause / resume / quit ----

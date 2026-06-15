@@ -43,6 +43,23 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 
 .hint { margin-top:clamp(18px,3.4vmin,30px); font-size:clamp(12.5px,2.1vmin,18px); color:#8a7a5a; line-height:1.7; font-weight:700; }
 
+/* ===== Login gate ===== */
+#login { z-index:40; background:rgba(36,24,14,0.94); }
+.loginpanel { display:flex; flex-direction:column; align-items:stretch; gap:clamp(12px,2.4vmin,18px); max-width:clamp(300px,80vmin,400px); }
+.logintitle { font-size:clamp(28px,6.4vmin,52px); margin-bottom:2px; }
+.loginsub { font-size:clamp(13px,2.3vmin,17px); color:#6b5a3a; font-weight:700; line-height:1.5; margin:0 0 4px; }
+.loginnote { font-size:clamp(11px,1.9vmin,14px); color:#8a7a5a; line-height:1.5; font-weight:600; }
+.loginpanel .bigbtn { font-size:clamp(16px,3.2vmin,22px); padding:clamp(11px,2.2vmin,16px) clamp(16px,3vmin,24px); width:100%; }
+#btn-google { background:#fff; color:#3c4043; box-shadow:0 6px 0 #b9c0c7; display:flex; align-items:center; justify-content:center; gap:10px; }
+#btn-google:active { box-shadow:0 2px 0 #b9c0c7; }
+#btn-google.disabled { opacity:.5; pointer-events:none; }
+#btn-google .gicon { display:inline-flex; align-items:center; justify-content:center; width:1.3em; height:1.3em; border-radius:50%;
+  background:conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); color:#fff; font-weight:900; font-size:.8em; }
+#loginmsg { font-size:clamp(12px,2vmin,15px); color:#c0392b; font-weight:700; line-height:1.4; }
+.acctbtn { font-size:clamp(10px,1.9vmin,14px); font-weight:800; color:#fff; background:rgba(0,0,0,0.28);
+  border:2px solid rgba(255,255,255,0.45); border-radius:999px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
+.acctbtn:active { transform:translateY(1px); }
+
 /* ===== Main menu — polished mobile-game look ===== */
 #menu { flex-direction:column; justify-content:flex-start; gap:0; padding:0; overflow:hidden;
   background:radial-gradient(125% 80% at 50% 8%, #ffbe55 0%, #f3892e 55%, #db6c1c 100%); }

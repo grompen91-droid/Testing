@@ -55,6 +55,7 @@
     <div id="topbadge"><span id="topLvl">1</span></div>
     <div id="topxp"><div id="topxpfill"></div></div>
     <div class="respill"><img id="goldicon" draggable="false" alt=""><span id="goldtxt">0</span><b class="resplus">+</b></div>
+    <button id="acctbtn" class="acctbtn hidden" type="button">Guest ▾</button>
     <button id="mutebtn" class="iconbtn" type="button"><img id="muteic" alt=""></button>
   </div>
 
@@ -136,9 +137,28 @@
     <h2 class="ptitle">PAUSED</h2>
     <button class="bigbtn green" id="resumebtn">RESUME</button>
     <button class="bigbtn" id="pausemute">Music</button>
+    <button class="bigbtn" id="pausesfx">SFX</button>
     <button class="bigbtn quit" id="quitbtn">Quit to Menu</button>
   </div>
 </div>
+
+<!-- LOGIN GATE: sign in with Google (cloud saves) or continue as guest (local only) -->
+<div id="login" class="overlay hidden">
+  <div class="panel loginpanel">
+    <div class="title logintitle">BRAINROT<br>RUMBLE</div>
+    <p class="loginsub">Sign in to save your progress to your Google account and play across devices.</p>
+    <button class="bigbtn" id="btn-google">
+      <span class="gicon">G</span> Sign in with Google
+    </button>
+    <button class="bigbtn green" id="btn-guest">Continue as Guest</button>
+    <div class="loginnote">Guest progress is saved on this device only and can't be moved to an account later.</div>
+    <div id="loginmsg" class="hidden"></div>
+  </div>
+</div>
+
+<!-- Supabase (UMD build exposes the global `supabase` with createClient) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 
 <!-- Game scripts: classic (non-module) so they share globals and run from file:// too.
      Load order matters: core defines shared helpers/state used by the rest. -->
@@ -148,5 +168,6 @@
 <script src="js/input.js"></script>
 <script src="js/game.js"></script>
 <script src="js/shop.js"></script>
+<script src="js/auth.js"></script>
 </body>
 </html>
