@@ -25,6 +25,7 @@ let gold = +(localStorage.getItem('br_gold')||0);   // persistent currency (save
 let arena=null, bossPending=0;
 const ARENA_SIZE=1000, ARENA_LEAD=4, ARENA_ZOOM=1.3;
 const FINAL_CHARGE=2.6;   // seconds a final boss spends invincible & still before its phase-3 onslaught
+const BOSS_WIND=0.9;      // boss attack wind-up: how long the telegraph shows before the move fires
 // XP orb tiers (index = tier). Enemies drop one orb; tier scales with their xp value.
 // Tier 4 is the gold "lucky" gem — only dropped by lucky blocks, never rolled by orbTier().
 const ORB = [null, {spr:'orbS',v:1,sz:28}, {spr:'orbM',v:4,sz:34}, {spr:'orbL',v:10,sz:44}, {spr:'orbGold',v:6,sz:40}];
@@ -2310,11 +2311,13 @@ function updateBoss(e,dt){
   // sustained bullet-hell storm: a rotating multi-arm spiral (optionally a counter-rotating twin)
   if(e.storm>0){ e.storm-=dt; e.stormT=(e.stormT||0)-dt;
     if(e.stormT<=0){ e.stormT=e.stormCd||0.12; e.stormA=(e.stormA||0)+(e.stormStep||0.28)*(e.stormDir||1);
-      const n=e.stormN||10, sp=e.stormSpd||150;
+      const rainbow = e.stormRainbow && worldIdx===0;          // rainbow spiral is a World 1 thing only
+      let n=e.stormN||10; if(rainbow) n=Math.max(4,Math.round(n*0.5));   // and it fires far fewer bullets
+      const sp=e.stormSpd||150;
       let col=e.stormCol||'#ff5acd';
-      if(e.stormRainbow){ const h=((e.stormA*90)%360+360)%360; col='hsl('+h.toFixed(0)+',88%,62%)'; }   // toucan showpiece cycles hue
+      if(rainbow){ const h=((e.stormA*90)%360+360)%360; col='hsl('+h.toFixed(0)+',88%,62%)'; }   // cycles hue
       for(let k=0;k<n;k++) fireEB(e.x,e.y, e.stormA + k*TAU/n, sp, col);
-      if(e.stormTwin) for(let k=0;k<n;k++) fireEB(e.x,e.y, -e.stormA + k*TAU/n + 0.3, sp, col);
+      if(e.stormTwin && !rainbow) for(let k=0;k<n;k++) fireEB(e.x,e.y, -e.stormA + k*TAU/n + 0.3, sp, col);
     }
   }
   // ECHO_RINGS (Ecco Cavallo): slow expanding rings, each with a wide gap that drifts — busy-looking, easy to step through
@@ -2383,7 +2386,7 @@ function updateBoss(e,dt){
   const enr = e.enraged?0.65:1;
   e.mt -= dt;
   if(e.mt<=0 && !(e.stun>0)){
-    if(e.mst==='recover'){ e.mst='wind'; e.mt=0.5; e.mv=pickMove(e); e.tellCol=MOVE_COL[e.mv]||'#fff'; sfx.warn(); }
+    if(e.mst==='recover'){ e.mst='wind'; e.mt=BOSS_WIND; e.mv=pickMove(e); e.tellCol=MOVE_COL[e.mv]||'#fff'; sfx.warn(); }
     else if(e.mst==='wind'){ e.mst='fire'; e.mt=execMove(e); }
     else { let rec=(e.spr==='vaca'&&e.vph>=3?0.7:1.1);
       if(!e.finalPhase && !e.partner) rec*=2.4;   // non-final bosses pause much longer between attacks
@@ -2620,16 +2623,26 @@ function render(){
     // shadow
     cx.fillStyle='rgba(40,60,25,0.28)';
     cx.beginPath(); cx.ellipse(e.x, e.y+e.r*0.85, e.r*0.8, e.r*0.32, 0,0,TAU); cx.fill();
-    if(e.dst==='wind'){   // charge-dash wind-up telegraph line
-      cx.globalAlpha=0.45; cx.strokeStyle='#ff5a5a'; cx.lineWidth=4; cx.setLineDash([10,8]);
-      cx.beginPath(); cx.moveTo(e.x,e.y); cx.lineTo(e.x+Math.cos(e.da)*150, e.y+Math.sin(e.da)*150); cx.stroke();
-      cx.setLineDash([]); cx.globalAlpha=1;
+    if(e.dst==='wind'){   // charge-dash wind-up: shows WHERE it will charge (bosses get a long bright arrow)
+      const len=e.isBoss?260:150, lw=e.isBoss?6:4;
+      const ex=e.x+Math.cos(e.da)*len, ey=e.y+Math.sin(e.da)*len;
+      cx.globalAlpha=0.5; cx.strokeStyle='#ff4d4d'; cx.lineWidth=lw; cx.setLineDash([12,9]); cx.lineDashOffset=-elapsed*120;
+      cx.beginPath(); cx.moveTo(e.x,e.y); cx.lineTo(ex,ey); cx.stroke(); cx.setLineDash([]);
+      if(e.isBoss){   // arrowhead at the target so the charge path is unmistakable
+        const aw=16; cx.globalAlpha=0.8; cx.fillStyle='#ff4d4d';
+        cx.beginPath(); cx.moveTo(ex,ey);
+        cx.lineTo(ex-Math.cos(e.da-0.5)*aw, ey-Math.sin(e.da-0.5)*aw);
+        cx.lineTo(ex-Math.cos(e.da+0.5)*aw, ey-Math.sin(e.da+0.5)*aw); cx.closePath(); cx.fill();
+      }
+      cx.globalAlpha=1;
     }
-    if(e.isBoss && e.mst==='wind'){   // boss attack wind-up: pulsing charge ring in the move's color
-      const pulse=0.5+0.5*Math.sin(e.t*26), col=e.tellCol||'#fff';
-      cx.globalAlpha=0.35+0.4*pulse; cx.strokeStyle=col; cx.lineWidth=4+3*pulse; cx.setLineDash([8,7]);
-      cx.beginPath(); cx.arc(e.x,e.y,e.r+14+pulse*8,0,TAU); cx.stroke();
-      cx.setLineDash([]); cx.globalAlpha=1;
+    if(e.isBoss && e.mst==='wind'){   // boss attack wind-up: color = WHAT is coming, contracting ring = WHEN it lands
+      const pulse=0.5+0.5*Math.sin(e.t*22), col=e.tellCol||'#fff';
+      const k=clamp(1-(e.mt/BOSS_WIND),0,1);   // 0 at wind start -> 1 at fire
+      cx.globalAlpha=0.4+0.4*pulse; cx.strokeStyle=col; cx.lineWidth=5+3*pulse; cx.setLineDash([9,7]); cx.lineDashOffset=-elapsed*90;
+      cx.beginPath(); cx.arc(e.x,e.y,e.r+18+pulse*10,0,TAU); cx.stroke(); cx.setLineDash([]);
+      cx.globalAlpha=0.7; cx.lineWidth=3.5; cx.beginPath(); cx.arc(e.x,e.y,e.r+8+(1-k)*48,0,TAU); cx.stroke();   // shrinks in as the attack nears
+      cx.globalAlpha=1;
     }
     const wob = e.isBoss ? Math.sin(e.t*2)*0.06 : Math.sin(e.t*6)*0.12;
     if(e.cut && cut){ cx.globalAlpha = cut.alpha; }
