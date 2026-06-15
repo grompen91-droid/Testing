@@ -55,21 +55,25 @@
     <div id="topbadge"><span id="topLvl">1</span></div>
     <div id="topxp"><div id="topxpfill"></div></div>
     <div class="respill"><img id="goldicon" draggable="false" alt=""><span id="goldtxt">0</span><b class="resplus">+</b></div>
-    <div id="settingswrap">
-      <button id="settingsbtn" class="iconbtn" type="button" aria-label="Settings">☰</button>
-      <div id="settingsdrop" class="hidden">
-        <div class="sdrop-section">
-          <div class="sdrop-head">Account</div>
-          <div class="sdrop-name" id="sdrop-username">Guest</div>
-          <button id="sdrop-acct" class="sdrop-btn" type="button">Sign In</button>
-        </div>
-        <div class="sdrop-sep"></div>
-        <div class="sdrop-section">
-          <div class="sdrop-head">Sound</div>
-          <div class="sdrop-row">
-            <button id="sdrop-music" class="sdrop-toggle" type="button">Music: On</button>
-            <button id="sdrop-sfx" class="sdrop-toggle" type="button">SFX: On</button>
-          </div>
+    <button id="settingsbtn" class="iconbtn" type="button" aria-label="Settings">☰</button>
+  </div>
+
+  <!-- Settings modal — fixed overlay, centered on screen -->
+  <div id="settingsdrop" class="hidden">
+    <div class="sdrop-inner">
+      <div class="sdrop-title">SETTINGS</div>
+      <button class="sdrop-close" id="sdrop-close" type="button" aria-label="Close">✕</button>
+      <div class="sdrop-section">
+        <div class="sdrop-head">Account</div>
+        <div class="sdrop-name" id="sdrop-username">Guest</div>
+        <button id="sdrop-acct" class="sdrop-btn" type="button">Sign In</button>
+      </div>
+      <div class="sdrop-sep"></div>
+      <div class="sdrop-section">
+        <div class="sdrop-head">Sound</div>
+        <div class="sdrop-row">
+          <button id="sdrop-music" class="sdrop-toggle" type="button">Music: On</button>
+          <button id="sdrop-sfx" class="sdrop-toggle" type="button">SFX: On</button>
         </div>
       </div>
     </div>

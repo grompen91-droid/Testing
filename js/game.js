@@ -3124,13 +3124,15 @@ function setSfxMuted(v){
   if(!sfxMuted && AC) AC.resume();
   refreshMute();
 }
-// Settings dropdown toggle
+// Settings modal toggle
 (function(){
-  const btn=$('settingsbtn'), drop=$('settingsdrop');
+  const btn=$('settingsbtn'), drop=$('settingsdrop'), closeBtn=$('sdrop-close');
   if(!btn||!drop) return;
-  btn.addEventListener('click', e=>{ e.stopPropagation(); drop.classList.toggle('hidden'); });
-  document.addEventListener('click', ()=>drop.classList.add('hidden'));
-  drop.addEventListener('click', e=>e.stopPropagation());
+  const open=()=>drop.classList.remove('hidden');
+  const close=()=>drop.classList.add('hidden');
+  btn.addEventListener('click', open);
+  if(closeBtn) closeBtn.addEventListener('click', close);
+  drop.addEventListener('click', e=>{ if(e.target===drop) close(); });
 })();
 const _dm=$('sdrop-music'); if(_dm) _dm.addEventListener('click',()=>setMusicMuted(!muted));
 const _ds=$('sdrop-sfx'); if(_ds) _ds.addEventListener('click',()=>setSfxMuted(!sfxMuted));
