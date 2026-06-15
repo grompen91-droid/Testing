@@ -34,7 +34,7 @@ const LUCKY_CAP = 2;                 // most live at once (overworld spawns 2 at
 let luckyTimer = 0;                  // countdown to the next spawn batch
 let bossLuckyT = 0;                  // countdown to the next boss-fight lucky batch
 // boss fights normally clear lucky blocks; this drops fresh ones inside the arena for sustain
-function spawnBossLucky(n){
+function spawnBossLucky(n, heal){   // heal = fixed HP each block drops when popped (25 final, 15 emergency)
   const ax0 = arena ? arena.x+60 : WALL+80, ax1 = arena ? arena.x+arena.w-60 : WORLD.w-WALL-80;
   const ay0 = arena ? arena.y+60 : WALL+80, ay1 = arena ? arena.y+arena.h-60 : WORLD.h-WALL-80;
   const hp = 4*HP_MULT*(1+(wave-1)*0.07);   // softer than world blocks so they're breakable mid-fight
@@ -42,7 +42,7 @@ function spawnBossLucky(n){
     if(luckies.length>=6) break;
     let x,y,tries=0;
     do { x=rand(ax0,ax1); y=rand(ay0,ay1); tries++; } while(dist2(x,y,P.x,P.y) < 240*240 && tries<10);
-    luckies.push({ x,y, r:26, hp, maxHp:hp, t:rand(0,TAU), hitT:0, sq:0 });
+    luckies.push({ x,y, r:26, hp, maxHp:hp, t:rand(0,TAU), hitT:0, sq:0, heal:heal||25 });
   }
 }
 function spawnLuckyBatch(n=2){           // up to n blocks (default 2), capped by LUCKY_CAP
@@ -63,8 +63,8 @@ function damageLucky(lb,dmg,fx,fy,crit){
 function popLucky(lb){
   burst(lb.x,lb.y,'#ffd23a',26,260); shake=Math.max(shake,6); sfx.evolve();
   parts.push({x:lb.x,y:lb.y,vx:0,vy:0,life:0.4,max:0.4,color:'#fff0b0',r:lb.r,ring:true,gr:420});
-  if(boss && boss.finalPhase){   // final boss: ONLY a 25 HP heart — no magnet, no gold, no 50 heart
-    const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,heart:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+  if(lb.heal){   // boss-fight block: drops a fixed-heal heart only (no magnet/gold/50-heart)
+    const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,heart:true,heal:lb.heal,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
     floatText(lb.x,lb.y-lb.r-10,'LUCKY!','#ffd23a',18);
     return;
   }
@@ -1556,10 +1556,13 @@ function update(dt){
     if(dist2(b.x,b.y,P.x,P.y) < (b.r+P.r-3)*(b.r+P.r-3)){ ebullets.splice(i,1); hurtPlayer(8); }
   }
 
-  // --- lucky blocks: overworld blocks spawn only at wave start (startWave); during fights only final bosses drop them ---
+  // --- lucky blocks: overworld blocks spawn only at wave start (startWave); during fights bosses drop them ---
   if(boss && boss.finalPhase && state===ST.PLAY){
-    bossLuckyT -= dt;                                  // FINAL bosses only: 2 blocks every 20s for sustain
+    bossLuckyT -= dt;                                  // FINAL bosses: 2 blocks every 20s (25 HP each) for sustain
     if(bossLuckyT<=0){ bossLuckyT = 20; spawnBossLucky(2); }
+  } else if(boss && state===ST.PLAY){
+    // normal (non-final) boss: drop 2 emergency blocks (15 HP each) when low, but only if none are already out
+    if(P.hp/P.maxHp < 0.25 && luckies.length===0) spawnBossLucky(2, 15);
   }
   for(let i=luckies.length-1;i>=0;i--){
     const lb=luckies[i];
@@ -1583,7 +1586,7 @@ function update(dt){
     }
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
-      if(g.heart){ const h=g.big?50:25; P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
+      if(g.heart){ const h=g.heal||(g.big?50:25); P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
       else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else if(g.magnet){ for(const o of gems) o.vac=true; floatText(P.x,P.y-24,'MAGNET','#9fe0ff',16); burst(P.x,P.y,'#9fe0ff',12,160); sfx.level(); }   // pull in every pickup on the map
       else { gainXp(g.v); sfx.gem(2); }
