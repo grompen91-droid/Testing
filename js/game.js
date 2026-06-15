@@ -24,6 +24,7 @@ let gold = +(localStorage.getItem('br_gold')||0);   // persistent currency (save
 // boss arena: the field locks to a small bounded square a few seconds before the boss arrives
 let arena=null, bossPending=0;
 const ARENA_SIZE=1000, ARENA_LEAD=4, ARENA_ZOOM=1.3;
+const FINAL_CHARGE=2.6;   // seconds a final boss spends invincible & still before its phase-3 onslaught
 // XP orb tiers (index = tier). Enemies drop one orb; tier scales with their xp value.
 // Tier 4 is the gold "lucky" gem — only dropped by lucky blocks, never rolled by orbTier().
 const ORB = [null, {spr:'orbS',v:1,sz:28}, {spr:'orbM',v:4,sz:34}, {spr:'orbL',v:10,sz:44}, {spr:'orbGold',v:6,sz:40}];
@@ -709,22 +710,32 @@ function spawnBoss(){
   const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
   const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.42);   // softened wave growth; world band carries the macro ramp
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
-  const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult, total = bar1+bar2;
+  const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult;
+  const baseTotal = bar1+bar2;
+  // each world's last boss = its FINAL boss: a beefed phase 3 whose HP alone tops phases 1+2 combined
+  const bossIdx = ((Math.floor(wave/5)-1) % curBosses.length + curBosses.length) % curBosses.length;
+  const isFinal = bossIdx === curBosses.length-1;
+  const p3pool = isFinal ? baseTotal*1.5 : 0;     // phase 3 = 1.5x of phases 1+2 → "more than 1 and 2 combined"
+  const total  = baseTotal + p3pool;
   boss = {
     spr:def.spr, name:def.name, pattern:def.pattern, mk:def.moveKey||def.spr,
-    phased:def.phased, bars:def.bars||1, bar1, bar2,
+    phased:def.phased, bars:isFinal?1:(def.bars||1), bar1, bar2,
+    finalPhase:isFinal, ph2at:isFinal?(p3pool+baseTotal*0.5):0, ph3at:isFinal?p3pool:0, charging:0,
+    gimmick:GIMMICK[def.moveKey||def.spr]||null, gT:1.5, gT2:2.5, gA:0,
     x:p.x, y:p.y, r:def.r,
     hp:total, maxHp:total,
     t:0, phase:0, isBoss:true, sp:46, xp:0, score:500, hitT:0, sq:0,
     mst:'recover', mt:1.0, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0,
     rollSpray:0, warpT:0, wd:null, gsweep:null, carpet:0, cbT:0, tether:0
   };
+  if(boss.gimmick==='flank') boss.front=0.5;   // Pit Armor: front hits softened, so you must flank
   enemies.push(boss);
   if(def.duo){   // final-boss partner: own body + move cycle, shares the lead's HP pool
     const mate = {
       spr:def.duo, name:def.duo.toUpperCase(), mk:def.duo, partner:true, lead:boss,
       x:clamp(p.x+200,WALL+def.r,WORLD.w-WALL-def.r), y:p.y, r:def.r,
-      hp:1, maxHp:1, t:0, phase:0, isBoss:true, sp:46, xp:0, score:0, hitT:0, sq:0,
+      hp:1, maxHp:1, t:0, phase:0, isBoss:true, sp:46, xp:0, score:0, hitT:0, sq:0, charging:0,
+      gimmick:GIMMICK[def.duo]||null, gT:1.5, gT2:2.5, gA:0,
       mst:'recover', mt:1.6, mv:null, lastMv:null, vph:1, pull:0, spin:0, dst:'idle', iv:0,
       rollSpray:0, warpT:0, wd:null, gsweep:null, carpet:0, cbT:0, tether:0
     };
@@ -821,8 +832,34 @@ function bigText(str,color){
   texts.push({x:P.x,y:P.y-90,str,color,size:34,life:1.6,max:1.6,vy:-12,big:true});
 }
 // telegraphed ground hazard: warns (tele), then deals DoT for (life)
+// Boomerang Croc projectile: a spinning green croc-boomerang with a friendly white halo so it reads as YOURS
+function drawBoomerangCroc(b){
+  const s=b.r*1.7, ang=b.spin||0;
+  cx.save(); cx.translate(b.x,b.y);
+  // friendly halo ring (cyan/white) — distinct from hostile dark-rimmed enemy bullets
+  cx.globalAlpha=0.5; cx.strokeStyle='#eafff4'; cx.lineWidth=3;
+  cx.beginPath(); cx.arc(0,0,s*1.25,0,TAU); cx.stroke();
+  cx.globalAlpha=1; cx.rotate(ang);
+  // boomerang body: a fat green crescent
+  cx.fillStyle='#27ae60'; cx.strokeStyle='#0d3b22'; cx.lineWidth=2.5;
+  cx.beginPath();
+  cx.arc(0,0,s,-0.5,Math.PI*0.9,false);
+  cx.arc(0,0,s*0.42,Math.PI*0.9,-0.5,true);
+  cx.closePath(); cx.fill(); cx.stroke();
+  // croc snout + jaw at the leading tip
+  cx.fillStyle='#2ecc71';
+  cx.beginPath(); cx.ellipse(s*0.82,0,s*0.38,s*0.26,0,0,TAU); cx.fill(); cx.stroke();
+  // teeth
+  cx.fillStyle='#fff';
+  for(let k=-1;k<=1;k++){ cx.beginPath(); cx.moveTo(s*0.66+k*0.001,0); cx.lineTo(s*1.12,k*s*0.12); cx.lineTo(s*1.12,k*s*0.12+s*0.08); cx.closePath(); cx.fill(); }
+  // eye
+  cx.fillStyle='#fff'; cx.beginPath(); cx.arc(s*0.7,-s*0.18,s*0.12,0,TAU); cx.fill();
+  cx.fillStyle='#0d3b22'; cx.beginPath(); cx.arc(s*0.72,-s*0.18,s*0.06,0,TAU); cx.fill();
+  cx.restore();
+}
+
 function addZone(x,y,r,o){
-  zones.push({ x,y,r, t:0, tele:o.tele||0.6, life:o.life||1.4, dps:o.dps||10, slow:!!o.slow, col:o.col||'#e8a93a' });
+  zones.push({ x,y,r, t:0, tele:o.tele||0.6, life:o.life||1.4, dps:o.dps||10, slow:!!o.slow, col:o.col||'#e8a93a', friendly:!!o.friendly });
 }
 
 // ============ LEVEL UP ============
@@ -1083,7 +1120,7 @@ function update(dt){
     P.fbCd -= dt;
     if(P.fbCd<=0){
       P.fbCd = P.fbCdBase;
-      addZone(P.x,P.y,P.fbR,{tele:0.1, life:P.frostBloomEvo?2.6:1.8, dps:P.fbDps, slow:true, col:'#bfe6ff'});
+      addZone(P.x,P.y,P.fbR,{tele:0.1, life:P.frostBloomEvo?2.6:1.8, dps:P.fbDps, slow:true, col:'#bfe6ff', friendly:true});
       forEnemiesNear(P.x,P.y,P.fbR,(e)=>{
         if(e.isBoss || e.lead) return;
         if(dist2(P.x,P.y,e.x,e.y) < P.fbR*P.fbR){
@@ -1160,7 +1197,7 @@ function update(dt){
         for(const e of enemies){ const d=dist2(P.x,P.y,e.x,e.y); if(d<bestD){bestD=d;best=e;} }
         if(best){
           const a=Math.atan2(best.y-P.y,best.x-P.x), br=P.boomR||8;
-          bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:br,pierce:3,hit:new Set(),dist:500,dmgMul:1.4,col:'#27ae60'});
+          bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*380,vy:Math.sin(a)*380,r:br,pierce:3,hit:new Set(),dist:500,dmgMul:1.4,col:'#27ae60',boom:true,spin:0});
         }
       }
     } else {
@@ -1173,7 +1210,7 @@ function update(dt){
         for(let i=0;i<n;i++){
           const spread=(i-(n-1)/2)*0.22, a=bestA+spread;
           bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*340,vy:Math.sin(a)*340,
-                        r:br,pierce:99,hit:new Set(),dist:480,dmgMul:1.2,boomerang:true,boomSpd:340,col:'#27ae60'});
+                        r:br,pierce:99,hit:new Set(),dist:480,dmgMul:1.2,boomerang:true,boomSpd:340,col:'#27ae60',boom:true,spin:0});
         }
         sfx.hit();
       }
@@ -1206,6 +1243,7 @@ function update(dt){
     const b=bullets[i];
     b.dist -= Math.hypot(b.vx,b.vy)*dt;     // range limit
     b.x+=b.vx*dt; b.y+=b.vy*dt;
+    if(b.boom){ b.spin=(b.spin||0)+dt*18; if(Math.random()<0.5) parts.push({x:b.x,y:b.y,vx:0,vy:0,life:0.18,max:0.18,color:'#7ef0a8',r:b.r*0.7}); }   // spin + green trail
     if(b.bounce>0){                          // Bouncy Shot: ricochet off the world walls, re-arming the hit set
       let bb=false;
       if(b.x<WALL){ b.x=WALL; b.vx=Math.abs(b.vx); bb=true; }
@@ -1258,7 +1296,7 @@ function update(dt){
             if(P.chainEvo){
               for(const o of enemies){ if(chainHits.has(o)||o.under||o.iv>0) continue;
                 if(dist2(lastX,lastY,o.x,o.y)<280*280){ chainHits.add(o);
-                  damageEnemy(o,b.dmg*dmgMul,lastX,lastY,false);
+                  damageEnemy(o,dmg*dmgMul,lastX,lastY,false);
                   parts.push({x:(lastX+o.x)/2,y:(lastY+o.y)/2,vx:0,vy:0,life:0.18,max:0.18,color:'#a0f0c0',r:4});
                   if(P.chainHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.chainHeal);
                   if(P.chainNova) parts.push({x:o.x,y:o.y,vx:0,vy:0,life:0.25,max:0.25,color:'#fff',r:22,ring:true});
@@ -1271,7 +1309,7 @@ function update(dt){
                   const d=dist2(lastX,lastY,o.x,o.y); if(d<bestD){bestD=d;best=o;} }
                 if(!best) break;
                 chainHits.add(best);
-                damageEnemy(best,b.dmg*dmgMul,lastX,lastY,false);
+                damageEnemy(best,dmg*dmgMul,lastX,lastY,false);
                 parts.push({x:(lastX+best.x)/2,y:(lastY+best.y)/2,vx:0,vy:0,life:0.18,max:0.18,color:'#a0f0c0',r:4});
                 if(P.chainHeal>0) P.hp=Math.min(P.maxHp,P.hp+P.chainHeal);
                 if(P.chainNova) parts.push({x:best.x,y:best.y,vx:0,vy:0,life:0.25,max:0.25,color:'#fff',r:22,ring:true});
@@ -1526,7 +1564,19 @@ function update(dt){
   // --- ground hazard zones ---
   for(let i=zones.length-1;i>=0;i--){
     const z=zones[i]; z.t+=dt;
-    if(z.t>=z.tele && z.t<z.tele+z.life && P.dashT<=0 && P.inv<=0 && dist2(z.x,z.y,P.x,P.y)<z.r*z.r){
+    const active = z.t>=z.tele && z.t<z.tele+z.life;
+    if(z.friendly){
+      // player-owned field: damages enemies, never the player
+      if(active){
+        forEnemiesNear(z.x,z.y,z.r,(e)=>{
+          if(e.iv>0 || e.under || e.lead) return;
+          if(dist2(z.x,z.y,e.x,e.y) < z.r*z.r){
+            e.hp -= z.dps*dt; e.hitT=Math.max(e.hitT,0.05);
+            if(z.slow) e.chillT=Math.max(e.chillT||0, 0.4);
+          }
+        });
+      }
+    } else if(active && P.dashT<=0 && P.inv<=0 && dist2(z.x,z.y,P.x,P.y)<z.r*z.r){
       P.hp -= z.dps*dt*worldDmgMul(); hitFlash=Math.max(hitFlash,0.3);
       if(z.slow) P.slowT=Math.max(P.slowT,0.4);
       if(P.hp<=0){ gameOver(); }
@@ -1679,23 +1729,23 @@ function bossMoves(e){
       if(e.vph>=3) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','BLOOM_STORM','THORN_RING'];
       if(e.vph>=2) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','THORN_RING'];
       return ['ROSE_LUNGE','THORN_RING','PETAL_FAN'];
-    case 'bobritoboss':                    // B2: blade orbit
-      if(e.vph>=3) return ['MACHETE_DASH','KNIFE_VOLLEY','BLADE_ORBIT','DOUBLE_DASH'];
-      if(e.vph>=2) return ['MACHETE_DASH','KNIFE_VOLLEY','BLADE_ORBIT'];
-      return ['MACHETE_DASH','KNIFE_VOLLEY'];
+    case 'bobritoboss':                    // B2: blades perpetually orbit it (gimmick) — ranged fan + dashes
+      if(e.vph>=3) return ['BLADE_FAN','KNIFE_VOLLEY','MACHETE_DASH','DOUBLE_DASH'];
+      if(e.vph>=2) return ['BLADE_FAN','KNIFE_VOLLEY','MACHETE_DASH'];
+      return ['BLADE_FAN','MACHETE_DASH','KNIFE_VOLLEY'];
     case 'frullone':                       // B3: centrifuge
       if(e.vph>=3) return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE','VORTEX_PULL'];
       if(e.vph>=2) return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE'];
       return ['BLADE_SPRAY','BLENDER_CHARGE'];
-    case 'cocofantoboss':                  // B4: armoured colossus
-      if(e.vph>=3) return ['STOMP_QUAKE','TUSK_SWEEP','COCONUT_BARRAGE','STAMPEDE','TREMOR_STOMP'];
-      if(e.vph>=2) return ['STOMP_QUAKE','TUSK_SWEEP','COCONUT_BARRAGE','STAMPEDE'];
-      return ['STOMP_QUAKE','TUSK_SWEEP','COCONUT_BARRAGE'];
+    case 'cocofantoboss':                  // B4 FINAL: armoured colossus w/ arena quake gimmick + coconut bullet-hell
+      if(e.vph>=3) return ['COCONUT_STORM','QUAKE_RING','STAMPEDE','TREMOR_STOMP','COCONUT_BARRAGE'];
+      if(e.vph>=2) return ['STOMP_QUAKE','QUAKE_RING','COCONUT_BARRAGE','TUSK_SWEEP'];
+      return ['STOMP_QUAKE','COCONUT_BARRAGE','TUSK_SWEEP'];
     // ---- World 4 (GELATO GLACIER) — original frozen-dessert movesets, telegraphed & forgiving ----
-    case 'tiramisubmarini':                // B1: charging coffee sub-train
-      if(e.vph>=3) return ['TORPEDO_DASH','DEPTH_CHARGE','STEAM_RING','BUBBLE_VOLLEY','DEPTH_CHARGE'];
-      if(e.vph>=2) return ['TORPEDO_DASH','DEPTH_CHARGE','BUBBLE_VOLLEY'];
-      return ['TORPEDO_DASH','BUBBLE_VOLLEY'];
+    case 'tiramisubmarini':                // B1: submerging coffee sub-train (gimmick: dives & surfaces)
+      if(e.vph>=3) return ['STEAM_RING','DEPTH_CHARGE','BUBBLE_VOLLEY','TORPEDO_DASH','DEPTH_CHARGE'];
+      if(e.vph>=2) return ['DEPTH_CHARGE','BUBBLE_VOLLEY','TORPEDO_DASH'];
+      return ['BUBBLE_VOLLEY','STEAM_RING','TORPEDO_DASH'];
     case 'frigocamello':                   // B2: ice-fridge camel
       if(e.vph>=3) return ['FROST_CONE','ICE_FAN','BODY_SLAM','ICE_SUMMON','ICE_FAN'];
       if(e.vph>=2) return ['FROST_CONE','ICE_FAN','BODY_SLAM'];
@@ -1709,22 +1759,22 @@ function bossMoves(e){
       if(e.vph>=2) return ['AVALANCHE_CHARGE','ORANGE_BURST','GLACIER_SLAM','PERMA_RING'];
       return ['GLACIER_SLAM','ORANGE_BURST','AVALANCHE_CHARGE'];
     // ---- World 5 (CIRCO BRAINROTTO) — carnival movesets w/ bounce/teleport flourishes (band 3) ----
-    case 'trapezino':                      // B1: trapeze acrobat
-      if(e.vph>=3) return ['TRAPEZE_SWING','RING_TOSS','HOOP_RING','RING_TOSS'];
-      if(e.vph>=2) return ['TRAPEZE_SWING','RING_TOSS','HOOP_RING'];
-      return ['TRAPEZE_SWING','RING_TOSS'];
-    case 'giostra':                        // B2: living carousel
-      if(e.vph>=3) return ['CAROUSEL_SPIN','HORSE_CHARGE','CALLIOPE_ZONE','HORSE_CHARGE'];
-      if(e.vph>=2) return ['CAROUSEL_SPIN','HORSE_CHARGE','CALLIOPE_ZONE'];
-      return ['HORSE_CHARGE','CALLIOPE_ZONE'];
-    case 'mangiafuoco':                    // B3: fire-eater (bouncing fireballs)
-      if(e.vph>=3) return ['FIRE_JUGGLE','FIRE_BREATH','EMBER_RING','FIRE_BREATH'];
-      if(e.vph>=2) return ['FIRE_BREATH','EMBER_RING','FIRE_JUGGLE'];
+    case 'trapezino':                      // B1: acrobat (gimmick: swings across the arena)
+      if(e.vph>=3) return ['RING_TOSS','HOOP_RING','CONFETTI_TOSS','TRAPEZE_SWING'];
+      if(e.vph>=2) return ['RING_TOSS','HOOP_RING','CONFETTI_TOSS','TRAPEZE_SWING'];
+      return ['RING_TOSS','HOOP_RING'];
+    case 'giostra':                        // B2: living carousel (gimmick: orbits the arena firing spokes)
+      if(e.vph>=3) return ['CALLIOPE_RING','HORSE_CHARGE','CALLIOPE_ZONE','CAROUSEL_SPIN'];
+      if(e.vph>=2) return ['CALLIOPE_RING','HORSE_CHARGE','CALLIOPE_ZONE'];
+      return ['CALLIOPE_RING','CALLIOPE_ZONE'];
+    case 'mangiafuoco':                    // B3: fire-eater (gimmick: embers orbit it)
+      if(e.vph>=3) return ['EMBER_JUGGLE','FIRE_JUGGLE','FIRE_BREATH','EMBER_RING'];
+      if(e.vph>=2) return ['FIRE_BREATH','EMBER_RING','EMBER_JUGGLE','FIRE_JUGGLE'];
       return ['FIRE_BREATH','EMBER_RING'];
-    case 'granpagliaccio':                 // B4: the Great Ringmaster (W5 finale)
-      if(e.vph>=3) return ['CONFETTI_SPIRAL','BLINK','BALLOON_RING','SUMMON_ACT','BALLOON_RING'];
-      if(e.vph>=2) return ['BLINK','BALLOON_RING','SUMMON_ACT','CONFETTI_SPIRAL'];
-      return ['BALLOON_RING','SUMMON_ACT','BLINK'];
+    case 'granpagliaccio':                 // B4 FINAL: the Great Ringmaster (gimmick: blinks + summons acts)
+      if(e.vph>=3) return ['CONFETTI_SPIRAL','BALLOON_RING','SUMMON_ACT','CONFETTI_SPIRAL'];
+      if(e.vph>=2) return ['BALLOON_RING','CONFETTI_SPIRAL','SUMMON_ACT'];
+      return ['BALLOON_RING','SUMMON_ACT'];
     // ---- World 2 (DIRT DEPTHS) ----
     case 'tatasahur':                      // burrow-slam + marching drum beat
       if(e.vph>=3) return ['DRUM_MARCH','BURROW_DOUBLE','DEBRIS3','aimed5','AIMED_WALL'];
@@ -1791,8 +1841,17 @@ const MOVE_COL = { dash:'#e54d4d', spiral:'#e54d4d', aimed3:'#e23b3b', aimed5:'#
   TRAPEZE_SWING:'#ffd24a', RING_TOSS:'#ffd24a', HOOP_RING:'#ff5ea8',
   CAROUSEL_SPIN:'#ffd24a', HORSE_CHARGE:'#e8463c', CALLIOPE_ZONE:'#e8463c',
   FIRE_BREATH:'#ff7a2a', FIRE_JUGGLE:'#ff7a2a', EMBER_RING:'#ff7a2a',
-  SUMMON_ACT:'#ff5ea8', BALLOON_RING:'#ff5ea8', BLINK:'#ff5ea8', CONFETTI_SPIRAL:'#ffd24a' };
-function pickMove(e){ const pool=bossMoves(e); let m; do{ m=pick(pool); }while(pool.length>1 && m===e.lastMv); e.lastMv=m; return m; }
+  SUMMON_ACT:'#ff5ea8', BALLOON_RING:'#ff5ea8', BLINK:'#ff5ea8', CONFETTI_SPIRAL:'#ffd24a',
+  MEGA_STORM:'#ff5acd', CROSS_STORM:'#ff9be0', SPIRAL_LITE:'#ffd24a',
+  BLADE_FAN:'#e0e0e0', COCONUT_STORM:'#8d6e63', QUAKE_RING:'#8d6e63',
+  CONFETTI_TOSS:'#ff5ea8', CALLIOPE_RING:'#ffd24a', EMBER_JUGGLE:'#ff7a2a' };
+function pickMove(e){
+  let pool=bossMoves(e);
+  // bullet-hell injection: a LOT more for final-boss phase 3, a moderate bit for mid-bosses past phase 1
+  if(e.finalPhase && e.vph>=3)        pool = pool.concat('MEGA_STORM','CROSS_STORM','RING_VOLLEY');
+  else if(!e.finalPhase && !e.partner && e.vph>=2) pool = pool.concat('SPIRAL_LITE','RING_VOLLEY');
+  let m; do{ m=pick(pool); }while(pool.length>1 && m===e.lastMv); e.lastMv=m; return m;
+}
 // run one move; returns how long the boss stays in the "fire" state before recovering
 function execMove(e){
   switch(e.mv){
@@ -1870,6 +1929,18 @@ function execMove(e){
     case 'TWIN_STORM':    e.storm=2.6; e.stormN=8;  e.stormSpd=145; e.stormStep=0.26; e.stormDir=1; e.stormCol='#c77dff'; e.stormCd=0.11; e.stormTwin=true; sfx.warn(); return 2.6;
     case 'RING_VOLLEY':   mRing(e,22,180,'#4aa3df'); mRing(e,18,130,'#7ec8ff'); mRing(e,14,85,'#d2a0ff'); shake=Math.max(shake,5); return 0.4;
     case 'AIMED_WALL':    mAimed(e,9,0.12,200,'#e23b3b'); mRing(e,14,120,'#e23b3b'); return 0.3;
+    // ---- moderate bullet-hell (mid-bosses, phase 2+): a short sparse rotating spiral ----
+    case 'SPIRAL_LITE':   e.storm=1.4; e.stormN=5; e.stormSpd=130; e.stormStep=0.33; e.stormDir=Math.random()<0.5?1:-1; e.stormCol=e.tellCol||'#ffd24a'; e.stormCd=0.16; e.stormTwin=false; e.stormRainbow=false; sfx.warn(); return 1.4;
+    // ---- heavy bullet-hell (final boss, phase 3 only) ----
+    case 'MEGA_STORM':    e.storm=3.0; e.stormN=12; e.stormSpd=160; e.stormStep=0.22; e.stormDir=Math.random()<0.5?1:-1; e.stormCol='#ff5acd'; e.stormCd=0.09; e.stormTwin=true; e.stormRainbow=true; sfx.warn(); return 3.0;
+    case 'CROSS_STORM':   mRing(e,30,210,'#ff5acd'); mRing(e,24,155,'#c77dff'); mRingGap(e,22,100,'#ff9be0',0.16); shake=Math.max(shake,7); sfx.hit(); return 0.5;
+    // ---- per-boss signature ranged moves (added with the W2-5 gimmick pass) ----
+    case 'BLADE_FAN':     mAimed(e,5,0.18,150,'#e0e0e0'); return 0.2;                                   // bobrito: a non-dash blade fan
+    case 'COCONUT_STORM': e.storm=2.2; e.stormN=7; e.stormSpd=140; e.stormStep=0.27; e.stormDir=Math.random()<0.5?1:-1; e.stormCol='#8d6e63'; e.stormCd=0.12; e.stormTwin=(e.vph>=3); e.stormRainbow=false; sfx.warn(); return 2.2;
+    case 'QUAKE_RING':    addZone(e.x,e.y,90,{tele:0.4,life:0.7,dps:18,col:'#8d6e63'}); mRingGap(e,18,120,'#8d6e63',0.30); shake=Math.max(shake,8); sfx.hit(); return 0.4;
+    case 'CONFETTI_TOSS': mAimed(e,5,0.20,140,'#ff5ea8'); return 0.2;                                   // trapezino: ranged confetti
+    case 'CALLIOPE_RING': mRing(e,16,130,'#ffd24a'); mRingGap(e,12,90,'#e8463c',0.32); return 0.3;       // giostra: organ-pipe rings
+    case 'EMBER_JUGGLE':  { const off=rand(0,TAU); for(let k=0;k<5;k++) fireEB(e.x,e.y,off+k*TAU/5,130,'#ff7a2a'); muzzleFlash(e.x,e.y,'#ff7a2a'); return 0.25; }  // mangiafuoco: fling the juggled embers
     // ---- W3 moves ----
     case 'ROSE_LUNGE':
       e.dst='wind'; e.dwin=e.enraged?0.35:0.5; e.da=Math.atan2(P.y-e.y,P.x-e.x);
@@ -2006,6 +2077,130 @@ function execMove(e){
   return 0.2;
 }
 
+// ---- per-boss signature gimmicks (World 2-5). keyed on boss move-key (e.mk) ----
+const GIMMICK = {
+  // W2 CITRUS COAST
+  eccocavallo:'metronome', tigrwater:'seedgarden', avocadorilla:'flank', tracotucotulu:'aerial',
+  // W3 FORESTA FRUTOSA
+  subrosa:'thorns', bobritoboss:'bladeorbit', frullone:'centrifuge', cocofantoboss:'quake',
+  // W4 GELATO GLACIER
+  tiramisubmarini:'submerge', frigocamello:'coldaura', magotiramisu:'blinkconjure', icebearlini:'avalanche',
+  // W5 CIRCO BRAINROTTO
+  trapezino:'swing', giostra:'carousel', mangiafuoco:'juggle', granpagliaccio:'showtime',
+};
+// a persistent, telegraphed mechanic that gives each boss an identity beyond its move list.
+// runs every frame alongside the move cycle; escalates with e.vph. kept forgiving (slow, wide gaps).
+function updateGimmick(e,dt){
+  if(!e.gimmick) return;
+  const ph=e.vph||1;
+  switch(e.gimmick){
+    case 'metronome':                                   // steady off-beat ring on a quickening tempo
+      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?1.0:ph>=2?1.3:1.6;
+        mRingGap(e,12,100,'#ffe08a',0.36); parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.3,max:0.3,color:'#ffe08a',r:e.r+8,ring:true,gr:120}); }
+      break;
+    case 'seedgarden':                                  // plant seeds that telegraph, then burst into a small ring
+      if(!e.seeds) e.seeds=[];
+      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?1.5:ph>=2?2.0:2.6;
+        const plant=(x,y)=>{ const tl=0.85; addZone(x,y,42,{tele:tl,life:0.5,dps:14,col:'#3f7d33'}); e.seeds.push({x,y,t:tl}); };
+        const n=ph>=3?2:1; for(let k=0;k<n;k++) plant(P.x+rand(-120,120),P.y+rand(-120,120)); }
+      for(let s=e.seeds.length-1;s>=0;s--){ const sd=e.seeds[s]; sd.t-=dt;
+        if(sd.t<=0){ const off=rand(0,TAU); for(let k=0;k<6;k++) fireEB(sd.x,sd.y,off+k*TAU/6,120,'#7ab955'); muzzleFlash(sd.x,sd.y,'#7ab955'); e.seeds.splice(s,1); } }
+      break;
+    case 'flank':                                       // frontal armor (set at spawn) + periodic ground-pound shock ring
+      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?2.4:3.2;
+        mRingGap(e,ph>=3?18:14,118,'#6b8e23',0.30); shake=Math.max(shake,5); }
+      break;
+    case 'aerial':                                      // flits up out of reach, rains feathers, harder to pin
+      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !(e.stun>0)){ e.gT = ph>=3?3.0:4.0;
+        e.iv=Math.max(e.iv,0.7); burst(e.x,e.y,'#9fe0ff',16,260);
+        e.x=clamp(P.x+rand(-120,120),WALL+e.r,WORLD.w-WALL-e.r); e.y=clamp(P.y-rand(150,230),WALL+e.r,WORLD.h-WALL-e.r);
+        const off=rand(0,TAU); for(let k=0;k<(ph>=3?12:9);k++) fireEB(e.x,e.y,off+k*TAU/(ph>=3?12:9),120,'#9fe0ff'); }
+      break;
+    case 'thorns':                                      // slowly plants lingering thorn patches around the field
+      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?1.6:ph>=2?2.2:2.8;
+        if(arena){ const x=rand(arena.x+50,arena.x+arena.w-50), y=rand(arena.y+50,arena.y+arena.h-50);
+          addZone(x,y,44,{tele:0.6,life:ph>=3?3.4:2.6,dps:8,slow:true,col:'#c62828'}); } }
+      break;
+    case 'bladeorbit':                                  // blades perpetually circle the boss — melee is risky
+      e.gT-=dt; if(e.gT<=0){ e.gT=1.5; const n=1+Math.min(ph,2);
+        const off=Math.atan2(P.y-e.y,P.x-e.x); for(let k=0;k<n;k++)
+          fireEB(e.x,e.y,0,0,'#e0e0e0',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/n,rad:92,angV:2.2,radV:42}}); }
+      break;
+    case 'centrifuge':{                                 // constant gentle drag toward the blender
+      const a=Math.atan2(e.y-P.y,e.x-P.x), str=(ph>=3?70:ph>=2?52:38);
+      P.x=clamp(P.x+Math.cos(a)*str*dt,WALL+P.r,WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*str*dt,WALL+P.r,WORLD.h-WALL-P.r);
+      if(Math.random()<0.25) parts.push({x:P.x,y:P.y,vx:0,vy:0,life:0.2,max:0.2,color:'#bdbdbd',r:3});
+      break; }
+    case 'quake':                                       // arena-wide ground cracks erupting outward (final)
+      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?3.2:4.0; const off=rand(0,TAU), arms=ph>=3?8:6;
+        for(let q=0;q<arms;q++) geyserLine(e.x,e.y,off+q*TAU/arms,'#8d6e63',7,58); shake=Math.max(shake,8); sfx.hit(); }
+      break;
+    case 'submerge':                                    // dives untargetable, slides under the player, surfaces with steam
+      if(e.diving){ e.iv=Math.max(e.iv,0.2); e.stun=Math.max(e.stun||0,0.12); e.subT-=dt; const a=Math.atan2(P.y-e.y,P.x-e.x);
+        e.x=clamp(e.x+Math.cos(a)*180*dt,WALL+e.r,WORLD.w-WALL-e.r); e.y=clamp(e.y+Math.sin(a)*180*dt,WALL+e.r,WORLD.h-WALL-e.r);
+        if(Math.random()<0.4) parts.push({x:e.x+rand(-10,10),y:e.y+rand(-10,10),vx:0,vy:-30,life:0.4,max:0.4,color:'#9fd0ff',r:rand(2,4)});
+        if(e.subT<=0){ e.diving=false; burst(e.x,e.y,'#cfeaff',22,260); mRingGap(e,18,120,'#cfeaff',0.30); shake=Math.max(shake,6); } }
+      else { e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !(e.stun>0)){ e.gT = ph>=3?3.6:4.6; e.diving=true; e.subT=1.1; burst(e.x,e.y,'#7ec8ff',16,200); } }
+      break;
+    case 'coldaura':{                                   // standing near the fridge-camel chills you
+      const R=ph>=3?150:128; if(dist2(e.x,e.y,P.x,P.y)<R*R){ P.slowT=Math.max(P.slowT,0.35); }
+      if(Math.random()<0.5){ const a=rand(0,TAU); parts.push({x:e.x+Math.cos(a)*R,y:e.y+Math.sin(a)*R,vx:0,vy:0,life:0.3,max:0.3,color:'#bfe6ff',r:3}); }
+      break; }
+    case 'blinkconjure':                                // wizard blinks about + keeps minions on the field
+      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && !(e.warpT>0) && !(e.stun>0)){ e.gT = ph>=3?3.4:4.4; e.warpT=0.45; burst(e.x,e.y,'#b388ff',16,220); }
+      e.gT2-=dt; if(e.gT2<=0){ e.gT2 = ph>=3?5.0:7.0; summonAdds(e,'ghiacciolospaziale',2,ph>=3?6:4); }
+      break;
+    case 'avalanche':                                   // arena-wide ice falls between charges (final)
+      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?2.6:3.4; const n=ph>=3?6:4;
+        if(arena) for(let k=0;k<n;k++) addZone(rand(arena.x+40,arena.x+arena.w-40),rand(arena.y+40,arena.y+arena.h-40),48,{tele:0.85,life:0.5,dps:15,col:'#bfe6ff'}); }
+      break;
+    case 'swing':                                       // periodically swings across the arena (graceful ricochet)
+      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !e.wd && !(e.stun>0)){ e.gT = ph>=3?3.4:4.4;
+        e.wd={n:ph>=3?2:1, ang:Math.atan2(P.y-e.y,P.x-e.x), spd:430, tT:0, life:2.0}; sfx.warn(); burst(e.x,e.y,'#ffd24a',16,260); }
+      break;
+    case 'carousel':{                                   // continuously rotates around the arena, firing spokes
+      if(e.dst==='dash'||e.dst==='wind') break;          // let HORSE_CHARGE take over cleanly
+      if(arena){ const cxw=arena.x+arena.w/2, cyw=arena.y+arena.h/2, rad=Math.min(arena.w,arena.h)*0.30;
+        e.gA=(e.gA||0)+(ph>=3?0.85:0.6)*dt;
+        e.x=clamp(cxw+Math.cos(e.gA)*rad,WALL+e.r,WORLD.w-WALL-e.r); e.y=clamp(cyw+Math.sin(e.gA)*rad,WALL+e.r,WORLD.h-WALL-e.r); }
+      e.gT-=dt; if(e.gT<=0){ e.gT=0.5; const spokes=ph>=3?6:4, base=(e.gA||0)*2;
+        for(let k=0;k<spokes;k++) fireEB(e.x,e.y,base+k*TAU/spokes,120,'#ffd24a'); }
+      break; }
+    case 'juggle':                                      // fire-eater keeps embers orbiting it
+      e.gT-=dt; if(e.gT<=0){ e.gT=1.4; const n=ph>=3?3:2, off=rand(0,TAU);
+        for(let k=0;k<n;k++) fireEB(e.x,e.y,0,0,'#ff7a2a',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/n,rad:70,angV:2.6,radV:30}}); }
+      break;
+    case 'showtime':                                    // ringmaster blinks + keeps a rotating cast of clowns (final)
+      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && !(e.warpT>0) && !(e.stun>0)){ e.gT = ph>=3?3.0:4.0; e.warpT=0.45; burst(e.x,e.y,'#ff5ea8',16,240); }
+      e.gT2-=dt; if(e.gT2<=0){ e.gT2 = ph>=3?4.5:6.5; summonAdds(e,'clownino',2,ph>=3?6:4); }
+      break;
+  }
+}
+
+// final boss enters phase 3: lock invincible, halt all attacks, grow the arena, begin the charge-up
+function startFinalCharge(e){
+  e.vph=3; e.charging=FINAL_CHARGE; e.iv=FINAL_CHARGE+0.3;
+  // wipe every sustained attack so the boss truly stands down while charging
+  e.storm=0; e.spin=0; e.pull=0; e.echo=null; e.gsweep=null; e.wd=null; e.warpT=0;
+  e.carpet=0; e.tether=0; e.stun=0; e.dst='idle'; e.rollSpray=0; e.dashRepeat=0;
+  e.mst='recover'; e.mt=FINAL_CHARGE;
+  ebullets=[];
+  bigText('FINAL PHASE!','#ff5acd'); shake=Math.max(shake,14); sfx.boss();
+  expandFinalArena(e);
+  if(e.mate){ const m=e.mate; m.charging=FINAL_CHARGE; m.iv=FINAL_CHARGE+0.3;
+    m.storm=0; m.spin=0; m.pull=0; m.echo=null; m.gsweep=null; m.wd=null; m.warpT=0;
+    m.carpet=0; m.tether=0; m.stun=0; m.dst='idle'; m.mst='recover'; m.mt=FINAL_CHARGE; }
+}
+// grow the boss arena (the "border") for the bigger phase-3 bullet-hell, keeping it inside the world
+function expandFinalArena(e){
+  if(!arena) return;
+  const cx0=arena.x+arena.w/2, cy0=arena.y+arena.h/2;
+  const naw=Math.min(arena.w*1.5, WORLD.w-2*WALL), nah=Math.min(arena.h*1.5, WORLD.h-2*WALL);
+  const ncx=clamp(cx0,WALL+naw/2,WORLD.w-WALL-naw/2), ncy=clamp(cy0,WALL+nah/2,WORLD.h-WALL-nah/2);
+  arena={x:ncx-naw/2,y:ncy-nah/2,w:naw,h:nah};
+  setZoom(clamp(ARENA_ZOOM*0.8,ZMIN,ZMAX));   // ease the camera out so the larger arena fits in view
+}
+
 function updateBoss(e,dt){
   if(e.iv>0) e.iv-=dt;
   if(!e.enraged && e.hp/e.maxHp < 0.4){ e.enraged=true; bigText('ENRAGED!','#e54d4d'); shake=Math.max(shake,12); }
@@ -2013,6 +2208,13 @@ function updateBoss(e,dt){
   // HP-gated phases. Two-bar bosses split phase 2 at the first bar's midpoint; phase 3 = second bar.
   if(e.partner){
     e.vph = e.lead ? e.lead.vph : 1;          // duo partner mirrors the lead's phase
+  } else if(e.finalPhase){
+    // FINAL boss: phase 3 is a long, beefy bar (>phases 1+2). Entering it triggers a charge-up.
+    const ph = e.hp>e.ph2at ? 1 : e.hp>e.ph3at ? 2 : 3;
+    if(ph>e.vph){
+      if(ph===3){ startFinalCharge(e); }
+      else { e.vph=ph; bigText('PHASE '+ph+'!','#d2a0ff'); shake=Math.max(shake,12); e.iv=0.6; ebullets=[]; sfx.boss(); if(e.mate) e.mate.iv=0.6; }
+    }
   } else if(e.bars===2 || e.phased || e.spr==='vaca'){
     let ph;
     if(e.bars===2){ ph = e.hp > e.bar2 + e.bar1*0.5 ? 1 : e.hp > e.bar2 ? 2 : 3; }
@@ -2020,6 +2222,23 @@ function updateBoss(e,dt){
     if(ph>e.vph){ e.vph=ph; bigText(e.bars===2 && ph===3 ? 'FINAL PHASE!' : 'PHASE '+ph+'!','#d2a0ff');
       shake=Math.max(shake,12); e.iv=0.6; ebullets=[]; sfx.boss(); if(e.mate) e.mate.iv=0.6; }
   }
+
+  // FINAL-PHASE CHARGE-UP: boss is invincible, stands still and stops attacking while powering up
+  if(e.charging>0){
+    e.charging-=dt; e.iv=Math.max(e.iv,0.2);
+    e.sq=0.35+0.3*Math.sin(e.t*22);                       // throbbing wind-up
+    if(Math.random()<0.7){ const a=rand(0,TAU), d=e.r*2.4;   // energy spiralling inward
+      parts.push({x:e.x+Math.cos(a)*d,y:e.y+Math.sin(a)*d,vx:-Math.cos(a)*200,vy:-Math.sin(a)*200,life:0.45,max:0.45,color:'#ff5acd',r:rand(3,6)}); }
+    shake=Math.max(shake, 3 + (1-e.charging/FINAL_CHARGE)*7);
+    if(e.charging<=0){                                     // UNLEASH: big opening salvo, attacks resume
+      e.charging=0; burst(e.x,e.y,'#ff5acd',44,440); shake=Math.max(shake,18); sfx.boss();
+      mRing(e,30,210,'#ff5acd'); mRing(e,24,140,'#ff9be0');
+      e.mst='recover'; e.mt=0.5;
+    }
+    return;   // no movement, no move cycle while charging
+  }
+
+  updateGimmick(e,dt);   // boss's signature persistent mechanic
 
   // sustained sub-attacks (run independent of the move state machine)
   let dashing=false;
@@ -2117,8 +2336,8 @@ function updateBoss(e,dt){
     else { e.mst='recover'; e.mt=(e.spr==='vaca'&&e.vph>=3?0.7:1.1)*enr; }
   }
 
-  // anchor drift toward the player (unless mid-dash or standing stunned)
-  if(!dashing && !(e.stun>0)){
+  // anchor drift toward the player (unless mid-dash or standing stunned, or riding its own carousel path)
+  if(!dashing && !(e.stun>0) && e.gimmick!=='carousel'){
     const tx = clamp(P.x + Math.sin(e.t*0.5)*260, WALL+e.r, WORLD.w-WALL-e.r);
     const ty = clamp(P.y - 220 + Math.cos(e.t*0.4)*60, WALL+e.r, WORLD.h-WALL-e.r);
     e.x += (tx-e.x)*0.9*dt; e.y += (ty-e.y)*0.9*dt;
@@ -2316,7 +2535,8 @@ function render(){
   const bcore = P.railgun ? '#5fe6ff' : '#ffd21f';      // evolved Railgun shots glow cyan
   const bhi   = P.railgun ? '#dafcff' : '#fff6bf';
   for(const b of bullets){
-    if(b.x<vx0-20||b.x>vx1+20||b.y<vy0-20||b.y>vy1+20) continue;
+    if(b.x<vx0-30||b.x>vx1+30||b.y<vy0-30||b.y>vy1+30) continue;
+    if(b.boom){ drawBoomerangCroc(b); continue; }                                       // spinning croc boomerang = clearly YOURS
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(b.x,b.y,b.r+2,0,TAU); cx.fill();        // white rim
     cx.fillStyle=bcore; cx.beginPath(); cx.arc(b.x,b.y,b.r,0,TAU); cx.fill();           // core
     cx.fillStyle=bhi; cx.beginPath(); cx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.4,0,TAU); cx.fill(); // highlight
@@ -2500,17 +2720,27 @@ function renderArena(vx0,vy0,vx1,vy1){
     if(vy0 < a.y)     cx.fillRect(ix0, vy0-40, iw, a.y-(vy0-40));
     if(vy1 > a.y+a.h) cx.fillRect(ix0, a.y+a.h, iw, (vy1+40)-(a.y+a.h));
   }
-  // bright-red striped (dashed) border, animated
+  // animated striped (dashed) border — turns magenta once a final boss hits its expanded phase-3 arena
+  const fin = boss && boss.finalPhase && boss.vph>=3;
   cx.save();
   cx.lineWidth=7; cx.setLineDash([24,16]); cx.lineDashOffset=-elapsed*60;
-  cx.strokeStyle='#ff2a2a'; cx.strokeRect(a.x, a.y, a.w, a.h);
-  cx.setLineDash([]); cx.lineWidth=2; cx.strokeStyle='rgba(255,90,90,0.6)'; cx.strokeRect(a.x, a.y, a.w, a.h);
+  cx.strokeStyle=fin?'#ff2ad6':'#ff2a2a'; cx.strokeRect(a.x, a.y, a.w, a.h);
+  cx.setLineDash([]); cx.lineWidth=2; cx.strokeStyle=fin?'rgba(255,120,230,0.6)':'rgba(255,90,90,0.6)'; cx.strokeRect(a.x, a.y, a.w, a.h);
   cx.restore();
 }
 
 function renderZones(){
   for(const z of zones){
     const danger = z.col||'#e8a93a';
+    if(z.friendly){                       // player-owned field: soft, no danger telegraph — clearly yours & safe
+      const k=Math.max(0,1-(z.t-z.tele)/z.life);
+      const fill=z.col||'#bfe6ff';
+      cx.globalAlpha=0.16*k+0.06; cx.fillStyle=fill; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.fill();
+      cx.globalAlpha=0.7*k; cx.lineWidth=3; cx.strokeStyle=fill;
+      cx.setLineDash([4,8]); cx.lineDashOffset=elapsed*60;   // gentle drifting dotted ring, distinct from enemy hazards
+      cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.stroke(); cx.setLineDash([]);
+      cx.globalAlpha=1; continue;
+    }
     if(z.t<z.tele){                       // telegraph: clearly shows WHERE + WHEN it lands
       const k=z.t/z.tele;                 // 0..1 charge
       const imminent = k>0.62;
