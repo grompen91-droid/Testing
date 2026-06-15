@@ -64,8 +64,12 @@ function damageLucky(lb,dmg,fx,fy,crit){
 function popLucky(lb){
   burst(lb.x,lb.y,'#ffd23a',26,260); shake=Math.max(shake,6); sfx.evolve();
   parts.push({x:lb.x,y:lb.y,vx:0,vy:0,life:0.4,max:0.4,color:'#fff0b0',r:lb.r,ring:true,gr:420});
-  let roll = (Math.random()*3)|0;
-  if(boss && boss.vph>=3) roll=0;   // boss phase 3: healing is guaranteed
+  if(boss && boss.finalPhase){   // final boss: ONLY a 25 HP heart — no magnet, no gold, no 50 heart
+    const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,heart:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+    floatText(lb.x,lb.y-lb.r-10,'LUCKY!','#ffd23a',18);
+    return;
+  }
+  const roll = (Math.random()*3)|0;
   if(roll===0){            // big heart, heals 50
     const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,heart:true,big:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
   } else if(roll===1){     // magnet — vacuums every pickup on the map
