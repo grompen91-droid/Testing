@@ -2102,21 +2102,22 @@ const GIMMICK = {
 function updateGimmick(e,dt){
   if(!e.gimmick) return;
   const ph=e.vph||1;
+  const gm = (e.finalPhase||e.partner) ? 1 : 1.5;   // non-final bosses fire their gimmick less often
   switch(e.gimmick){
     case 'metronome':                                   // steady off-beat ring on a quickening tempo
-      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?1.0:ph>=2?1.3:1.6;
+      e.gT-=dt; if(e.gT<=0){ e.gT = (ph>=3?1.0:ph>=2?1.3:1.6)*gm;
         mRingGap(e,12,100,'#ffe08a',0.36); parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.3,max:0.3,color:'#ffe08a',r:e.r+8,ring:true,gr:120}); }
       break;
     case 'seedgarden':                                  // plant seeds that telegraph, then burst into a small ring
       if(!e.seeds) e.seeds=[];
-      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?1.5:ph>=2?2.0:2.6;
+      e.gT-=dt; if(e.gT<=0){ e.gT = (ph>=3?1.5:ph>=2?2.0:2.6)*gm;
         const plant=(x,y)=>{ const tl=0.85; addZone(x,y,42,{tele:tl,life:0.5,dps:14,col:'#3f7d33'}); e.seeds.push({x,y,t:tl}); };
         const n=ph>=3?2:1; for(let k=0;k<n;k++) plant(P.x+rand(-120,120),P.y+rand(-120,120)); }
       for(let s=e.seeds.length-1;s>=0;s--){ const sd=e.seeds[s]; sd.t-=dt;
         if(sd.t<=0){ const off=rand(0,TAU); for(let k=0;k<6;k++) fireEB(sd.x,sd.y,off+k*TAU/6,120,'#7ab955'); muzzleFlash(sd.x,sd.y,'#7ab955'); e.seeds.splice(s,1); } }
       break;
     case 'flank':                                       // frontal armor (set at spawn) + periodic ground-pound shock ring
-      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?2.4:3.2;
+      e.gT-=dt; if(e.gT<=0){ e.gT = (ph>=3?2.4:3.2)*gm;
         mRingGap(e,ph>=3?18:14,118,'#6b8e23',0.30); shake=Math.max(shake,5); }
       break;
     case 'aerial':                                      // flits up out of reach, rains feathers, harder to pin
@@ -2126,12 +2127,12 @@ function updateGimmick(e,dt){
         const off=rand(0,TAU); for(let k=0;k<(ph>=3?12:9);k++) fireEB(e.x,e.y,off+k*TAU/(ph>=3?12:9),120,'#9fe0ff'); }
       break;
     case 'thorns':                                      // slowly plants lingering thorn patches around the field
-      e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?1.6:ph>=2?2.2:2.8;
+      e.gT-=dt; if(e.gT<=0){ e.gT = (ph>=3?1.6:ph>=2?2.2:2.8)*gm;
         if(arena){ const x=rand(arena.x+50,arena.x+arena.w-50), y=rand(arena.y+50,arena.y+arena.h-50);
           addZone(x,y,44,{tele:0.6,life:ph>=3?3.4:2.6,dps:8,slow:true,col:'#c62828'}); } }
       break;
     case 'bladeorbit':                                  // blades perpetually circle the boss — melee is risky
-      e.gT-=dt; if(e.gT<=0){ e.gT=1.5; const n=1+Math.min(ph,2);
+      e.gT-=dt; if(e.gT<=0){ e.gT=1.5*gm; const n=1+Math.min(ph,2);
         const off=Math.atan2(P.y-e.y,P.x-e.x); for(let k=0;k<n;k++)
           fireEB(e.x,e.y,0,0,'#e0e0e0',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/n,rad:92,angV:2.2,radV:42}}); }
       break;
@@ -2149,22 +2150,22 @@ function updateGimmick(e,dt){
         e.x=clamp(e.x+Math.cos(a)*180*dt,WALL+e.r,WORLD.w-WALL-e.r); e.y=clamp(e.y+Math.sin(a)*180*dt,WALL+e.r,WORLD.h-WALL-e.r);
         if(Math.random()<0.4) parts.push({x:e.x+rand(-10,10),y:e.y+rand(-10,10),vx:0,vy:-30,life:0.4,max:0.4,color:'#9fd0ff',r:rand(2,4)});
         if(e.subT<=0){ e.diving=false; burst(e.x,e.y,'#cfeaff',22,260); mRingGap(e,18,120,'#cfeaff',0.30); shake=Math.max(shake,6); } }
-      else { e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !(e.stun>0)){ e.gT = ph>=3?3.6:4.6; e.diving=true; e.subT=1.1; burst(e.x,e.y,'#7ec8ff',16,200); } }
+      else { e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !(e.stun>0)){ e.gT = (ph>=3?3.6:4.6)*gm; e.diving=true; e.subT=1.1; burst(e.x,e.y,'#7ec8ff',16,200); } }
       break;
     case 'coldaura':{                                   // standing near the fridge-camel chills you
       const R=ph>=3?150:128; if(dist2(e.x,e.y,P.x,P.y)<R*R){ P.slowT=Math.max(P.slowT,0.35); }
       if(Math.random()<0.5){ const a=rand(0,TAU); parts.push({x:e.x+Math.cos(a)*R,y:e.y+Math.sin(a)*R,vx:0,vy:0,life:0.3,max:0.3,color:'#bfe6ff',r:3}); }
       break; }
     case 'blinkconjure':                                // wizard blinks about + keeps minions on the field
-      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && !(e.warpT>0) && !(e.stun>0)){ e.gT = ph>=3?3.4:4.4; e.warpT=0.45; burst(e.x,e.y,'#b388ff',16,220); }
-      e.gT2-=dt; if(e.gT2<=0){ e.gT2 = ph>=3?5.0:7.0; summonAdds(e,'ghiacciolospaziale',2,ph>=3?6:4); }
+      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && !(e.warpT>0) && !(e.stun>0)){ e.gT = (ph>=3?3.4:4.4)*gm; e.warpT=0.45; burst(e.x,e.y,'#b388ff',16,220); }
+      e.gT2-=dt; if(e.gT2<=0){ e.gT2 = (ph>=3?5.0:7.0)*gm; summonAdds(e,'ghiacciolospaziale',2,ph>=3?6:4); }
       break;
     case 'avalanche':                                   // arena-wide ice falls between charges (final)
       e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?2.6:3.4; const n=ph>=3?6:4;
         if(arena) for(let k=0;k<n;k++) addZone(rand(arena.x+40,arena.x+arena.w-40),rand(arena.y+40,arena.y+arena.h-40),48,{tele:0.85,life:0.5,dps:15,col:'#bfe6ff'}); }
       break;
     case 'swing':                                       // periodically swings across the arena (graceful ricochet)
-      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !e.wd && !(e.stun>0)){ e.gT = ph>=3?3.4:4.4;
+      e.gT-=dt; if(e.gT<=0 && e.mst==='recover' && e.dst==='idle' && !e.wd && !(e.stun>0)){ e.gT = (ph>=3?3.4:4.4)*gm;
         e.wd={n:ph>=3?2:1, ang:Math.atan2(P.y-e.y,P.x-e.x), spd:430, tT:0, life:2.0}; sfx.warn(); burst(e.x,e.y,'#ffd24a',16,260); }
       break;
     case 'carousel':{                                   // continuously rotates around the arena, firing spokes
@@ -2172,11 +2173,11 @@ function updateGimmick(e,dt){
       if(arena){ const cxw=arena.x+arena.w/2, cyw=arena.y+arena.h/2, rad=Math.min(arena.w,arena.h)*0.30;
         e.gA=(e.gA||0)+(ph>=3?0.85:0.6)*dt;
         e.x=clamp(cxw+Math.cos(e.gA)*rad,WALL+e.r,WORLD.w-WALL-e.r); e.y=clamp(cyw+Math.sin(e.gA)*rad,WALL+e.r,WORLD.h-WALL-e.r); }
-      e.gT-=dt; if(e.gT<=0){ e.gT=0.5; const spokes=ph>=3?6:4, base=(e.gA||0)*2;
+      e.gT-=dt; if(e.gT<=0){ e.gT=0.5*gm; const spokes=ph>=3?6:4, base=(e.gA||0)*2;
         for(let k=0;k<spokes;k++) fireEB(e.x,e.y,base+k*TAU/spokes,120,'#ffd24a'); }
       break; }
     case 'juggle':                                      // fire-eater keeps embers orbiting it
-      e.gT-=dt; if(e.gT<=0){ e.gT=1.4; const n=ph>=3?3:2, off=rand(0,TAU);
+      e.gT-=dt; if(e.gT<=0){ e.gT=1.4*gm; const n=ph>=3?3:2, off=rand(0,TAU);
         for(let k=0;k<n;k++) fireEB(e.x,e.y,0,0,'#ff7a2a',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/n,rad:70,angV:2.6,radV:30}}); }
       break;
     case 'showtime':                                    // ringmaster blinks + keeps a rotating cast of clowns (final)
@@ -2341,7 +2342,9 @@ function updateBoss(e,dt){
   if(e.mt<=0 && !(e.stun>0)){
     if(e.mst==='recover'){ e.mst='wind'; e.mt=0.5; e.mv=pickMove(e); e.tellCol=MOVE_COL[e.mv]||'#fff'; sfx.warn(); }
     else if(e.mst==='wind'){ e.mst='fire'; e.mt=execMove(e); }
-    else { e.mst='recover'; e.mt=(e.spr==='vaca'&&e.vph>=3?0.7:1.1)*enr; }
+    else { let rec=(e.spr==='vaca'&&e.vph>=3?0.7:1.1);
+      if(!e.finalPhase && !e.partner) rec*=1.7;   // non-final bosses pause longer between attacks
+      e.mst='recover'; e.mt=rec*enr; }
   }
 
   // anchor drift toward the player (unless mid-dash or standing stunned, or riding its own carousel path)
