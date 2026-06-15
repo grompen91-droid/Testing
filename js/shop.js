@@ -183,6 +183,7 @@ function renderShop(){
   html += '<div class="banner"><span>CASES</span></div><div class="crates">';
   for(const key of CRATE_ORDER){ const cr=CRATES[key]; const poor=gold<cr.price;
     html += '<div class="crate c-'+key+'" style="--glow:'+cr.glow+'">'+
+      '<button class="crinfo" data-crinfo="'+key+'" title="Drop chances" aria-label="Drop chances">i</button>'+
       '<div class="cratebox"><img src="'+icURL('ic_crate')+'" alt=""></div><div class="cratename">'+cr.name+'</div>'+
       '<button class="sbuy cratebuy'+(poor?' poor':'')+'" data-crate="'+key+'">'+coinTag()+cr.price+'</button></div>';
   }
@@ -191,6 +192,7 @@ function renderShop(){
 
   grid.querySelectorAll('button.sbuy[data-id]').forEach(b=>b.addEventListener('click',()=>buyItem(b.dataset.id, +b.dataset.price)));
   grid.querySelectorAll('button[data-crate]').forEach(b=>b.addEventListener('click',()=>openCrate(b.dataset.crate)));
+  grid.querySelectorAll('button[data-crinfo]').forEach(b=>b.addEventListener('click',(e)=>{ e.stopPropagation(); openCrateOdds(b.dataset.crinfo); }));
 }
 
 // ============ CASES (animated reveal) ============
@@ -325,6 +327,30 @@ function openItemPop(id){
   $('ipequip').onclick=()=>{ equipToggle(id); closeItemPop(); };
 }
 function closeItemPop(){ const ov=$('itempop'); if(ov) ov.classList.add('hidden'); }
+
+// crate drop-chance popup (info button on each case)
+function openCrateOdds(key){
+  const ov=$('itempop'); if(!ov) return;
+  const cr=CRATES[key], odds=cr.odds;
+  let total=0; for(const r of RAR_ORDER) total+=odds[r]||0;
+  let rows='';
+  for(const r of RAR_ORDER){ const w=odds[r]||0; if(w<=0) continue;
+    const pct=w/total*100;
+    rows += '<div class="oddsrow"><span class="rtag r-'+r+'">'+RAR[r].name+'</span>'+
+            '<span class="oddsbarwrap"><span class="oddsbar" style="width:'+pct.toFixed(1)+'%;background:'+RAR[r].color+'"></span></span>'+
+            '<span class="oddspct">'+(pct<0.1?'<0.1':pct.toFixed(1))+'%</span></div>';
+  }
+  ov.innerHTML =
+    '<div class="ipcard">'+
+      '<button class="ipx" id="ipclose">✕</button>'+
+      '<div class="ipname">'+cr.name+'</div>'+
+      '<div class="ipslot">Drop chances</div>'+
+      '<div class="oddslist">'+rows+'</div>'+
+    '</div>';
+  ov.classList.remove('hidden');
+  ov.onclick=(e)=>{ if(e.target===ov) closeItemPop(); };
+  $('ipclose').onclick=closeItemPop;
+}
 
 function afterEquipChange(){ if(typeof sfx!=='undefined') sfx.pick(); refreshMenuChar(); renderInventory(); }
 

@@ -215,9 +215,19 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
   margin:clamp(2px,0.8vmin,8px) 0 clamp(7px,1.4vmin,12px); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .offtag { background:#e8552d; color:#fff; font-size:.72em; padding:1px 7px; border-radius:7px; border:2px solid #3a2d22; }
 .crates { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(8px,1.6vmin,14px); }
-.crate { display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vmin,10px); background:#fbf3df;
+.crate { position:relative; display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.2vmin,10px); background:#fbf3df;
   border:4px solid var(--glow); border-radius:14px; padding:clamp(10px,2vmin,16px) 6px;
   box-shadow:0 4px 0 rgba(58,45,34,.28); }
+.crinfo { position:absolute; top:5px; right:5px; width:clamp(19px,3.6vmin,25px); height:clamp(19px,3.6vmin,25px);
+  border-radius:50%; border:2px solid var(--glow); background:#fff; color:#3a2d22; font-weight:900; font-style:italic;
+  font-size:clamp(11px,2vmin,15px); line-height:1; cursor:pointer; padding:0; z-index:1; }
+.crinfo:hover { background:var(--glow); color:#fff; }
+/* crate drop-chance popup (reuses #itempop) */
+.oddslist { display:flex; flex-direction:column; gap:clamp(5px,1.2vmin,9px); width:100%; margin-top:6px; }
+.oddsrow { display:grid; grid-template-columns:clamp(72px,17vmin,100px) 1fr auto; align-items:center; gap:8px; }
+.oddsbarwrap { height:10px; border-radius:6px; background:rgba(0,0,0,.22); overflow:hidden; }
+.oddsbar { display:block; height:100%; border-radius:6px; min-width:2px; }
+.oddspct { font-weight:900; font-size:clamp(11px,1.9vmin,14px); color:#eef2f8; min-width:46px; text-align:right; }
 .cratebox { display:flex; align-items:center; justify-content:center; }
 .cratebox img { width:clamp(40px,9vmin,62px); height:clamp(40px,9vmin,62px); filter:drop-shadow(0 3px 2px rgba(0,0,0,.3)); }
 .cratename { font-size:clamp(10.5px,1.8vmin,15px); font-weight:900; color:#3a2d22; text-align:center; }
