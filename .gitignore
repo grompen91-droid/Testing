@@ -2,3 +2,6 @@
 mapdesign.html
 __*.html
 *.local.html
+
+# Claude Code internal config
+.claude/
