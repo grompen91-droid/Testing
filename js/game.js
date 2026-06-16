@@ -15,7 +15,11 @@ let chalElapsed = 0;        // challenger timer — pauses during boss fights
 let chalBossIdx = 0;        // index of next boss milestone (0-3 → 5/10/15/20 min)
 let chalBossActive = false; // true while a challenger boss is alive
 const CHAL_BOSS_TIMES = [300, 600, 900, 1200];  // seconds: 5/10/15/20 min
-let chalUnlocked = Math.min(10, Math.max(0, +(localStorage.getItem('br_ch_unlocked')||0)));
+// Seed challenger unlock from story progress so players who beat story worlds start unlocked
+let chalUnlocked = Math.min(10, Math.max(
+  +(localStorage.getItem('br_ch_unlocked')||0),
+  +(localStorage.getItem('br_unlocked')||0)
+));
 function setCoinHUD(){ const c=$('coincount'); if(c){ const s=c.querySelector('span'); if(s) s.textContent=worldCoins; } }
 function setKillHUD(){ const k=$('killtag'); if(k && k.lastElementChild) k.lastElementChild.textContent=kills; }
 function fmtTime(s){ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), q=s%60; return (m<10?'0':'')+m+':'+(q<10?'0':'')+q; }
@@ -480,6 +484,12 @@ function toMenuFromClear(){
   const d=_clearData; _clearData=null;
   $('wc-title').textContent = d.isChallenger ? 'WORLD '+d.worldNum+' CHALLENGER!' : 'WORLD '+d.worldNum+' CLEARED!';
   $('wc-coins').textContent = d.coins;
+  // Set coin icon from sprite (no emoji)
+  const coinIco=$('wc-coinico');
+  if(coinIco && typeof SP!=='undefined' && SP['coin']) coinIco.src=SP['coin'].toDataURL();
+  // Set star icon from sprite (no emoji)
+  const starIco=$('wc-starico');
+  if(starIco && typeof SP!=='undefined' && SP['ic_char']) starIco.src=SP['ic_char'].toDataURL();
   const gemRow=$('wc-gem-row');
   if(d.gems>0){ $('wc-gems').textContent='+'+d.gems; gemRow.classList.remove('hidden'); }
   else { gemRow.classList.add('hidden'); }
@@ -491,7 +501,7 @@ function toMenuFromClear(){
   $('world-cleared').classList.remove('hidden');
 }
 // ---- world-select carousel (menu) ----
-function worldLabel(i){ return 'WORLD '+(i+1)+' · '+(i<=unlockedMax ? WORLDS[i].name : '??? 🔒'); }
+function worldLabel(i){ return 'WORLD '+(i+1)+' · '+(i<=unlockedMax ? WORLDS[i].name : '??? LOCKED'); }
 // per-world preview emblem shown on the Battle stage: world ground tones + its end-boss silhouette
 const _emblemURL = {};
 function worldEmblemURL(i){
@@ -3560,7 +3570,7 @@ $('startbtn').addEventListener('click', ()=>{
       const locked=selWorld>chalUnlocked;
       chalBtn.classList.toggle('gmpop-locked', locked);
       const lb=$('gmpop-lockbadge');
-      if(lb) lb.textContent=locked?'🔒 Clear World '+(selWorld)+' Story mode first':'';
+      if(lb) lb.textContent=locked?'LOCKED — clear World '+(selWorld)+' in Story first':'';
     }
     if(pop) pop.classList.remove('hidden');
   }
