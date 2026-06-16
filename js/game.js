@@ -1,7 +1,6 @@
 'use strict';
 // ============ GAME STATE ============
 let shake = 0, hitFlash = 0, hitstop = 0, tPrev = 0, elapsed = 0;
-let _abHudT = 0;
 
 const P = {}; // player
 let bullets=[], ebullets=[], petBullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[], luckies=[];
@@ -846,8 +845,6 @@ function _doStartGame(wi){
   $('hud').classList.remove('hidden');
   $('zoomctl').classList.remove('hidden');
   if(IS_TOUCH) $('dashbtn').classList.remove('hidden');   // mobile-only on-screen dash
-  _abHudIds = '';   // force fresh DOM build for this run
-  $('ability-hud').classList.remove('hidden');
   if(gameMode==='challenger') startChallengerSpawn(); else startWave();
 }
 
@@ -1178,7 +1175,6 @@ function gameOver(){
   $('fkills').textContent = kills;
   $('hud').classList.add('hidden');
   $('dashbtn').classList.add('hidden');
-  $('ability-hud').classList.add('hidden');
   $('zoomctl').classList.add('hidden');
   $('bossbar').classList.add('hidden');
   setTimeout(()=>$('gameover').classList.remove('hidden'), 600);
@@ -1251,89 +1247,6 @@ function separate(e){
 }
 
 // ============ UPDATE ============
-const _AB_C = 5.53;   // SVG ring circumference (2*PI*0.88)
-let _abHudIds = '';   // slot-id fingerprint; rebuild DOM only when this changes
-
-function _abSlots(){
-  const s = [];
-  // Dash / Phase Shift — always present
-  {
-    const cd = P.dashCd, max = P.dashMax || 2.2;
-    const active = !!P.phaseShifting;
-    const prog = active ? Math.max(0, (P.phaseShiftT||0)/0.8)
-                        : (max > 0 ? Math.max(0, 1 - cd/max) : 1);
-    const ready = !active && cd <= 0;
-    s.push({ id:'dash', ik:'ab_dashcd', prog, ready, active,
-      lbl: active ? ((P.phaseShiftT||0)>0.05 ? (P.phaseShiftT).toFixed(1) : 'SHIFT')
-                  : (ready ? 'READY' : cd.toFixed(1)) });
-  }
-  if(P.nova){
-    const cd = Math.max(0,P.novaCd), max = P.novaCdBase||5;
-    const prog = Math.max(0, 1-cd/max), ready = cd<=0;
-    s.push({ id:'nova', ik:'ab_nova', prog, ready, active:false,
-      lbl: ready ? 'READY' : cd.toFixed(1) });
-  }
-  if(P.knives && !P.knifeEvo){
-    const cd = Math.max(0,P.knifeCd), max = P.knifeCdBase||3.5;
-    const prog = Math.max(0, 1-cd/max), ready = cd<=0;
-    s.push({ id:'knives', ik:'ab_knives', prog, ready, active:false,
-      lbl: ready ? 'READY' : cd.toFixed(1) });
-  }
-  if(P.shieldMax > 0){
-    const has = P.shield > 0;
-    const prog = has ? 1 : Math.max(0, 1-P.shieldCd/(P.shieldCdBase||8));
-    s.push({ id:'shield', ik:'ab_aegis', prog, ready:has, active:has,
-      lbl: has ? 'x'+P.shield : (P.shieldCd>0 ? P.shieldCd.toFixed(1) : 'READY') });
-  }
-  if(P.swCdBase && (P.secondWind>0 || P.swCd>0)){
-    const has = P.secondWind>0 && P.swCd<=0;
-    const prog = has ? 1 : Math.max(0, 1-P.swCd/(P.swCdBase||60));
-    s.push({ id:'sw', ik:'ab_secondwind', prog, ready:has, active:false,
-      lbl: has ? 'x'+P.secondWind : (P.swCd>0 ? Math.ceil(P.swCd)+'s' : 'READY') });
-  }
-  return s;
-}
-
-function updateAbilityHUD(dt){
-  _abHudT -= dt;
-  if(_abHudT > 0) return;
-  _abHudT = 0.05;   // 20 fps is plenty for timer text; SVG transition fills the gap visually
-
-  const el = $('ability-hud');
-  if(!el) return;
-  const slots = _abSlots();
-  const newIds = slots.map(s=>s.id).join(',');
-
-  if(newIds !== _abHudIds){
-    _abHudIds = newIds;
-    el.innerHTML = slots.map(s=>{
-      const src = (typeof SP!=='undefined' && SP[s.ik]) ? SP[s.ik].toDataURL() : '';
-      const off = (_AB_C*(1-s.prog)).toFixed(3);
-      return `<div class="ab-slot${s.active?' active':s.ready?' ready':''}" id="abs-${s.id}">`+
-        `<div class="ab-ring">`+
-        `<svg class="ab-svg" viewBox="-1 -1 2 2">`+
-        `<circle class="ab-track" r="0.88"/>`+
-        `<circle class="ab-fill" id="abf-${s.id}" r="0.88" stroke-dasharray="${_AB_C}" stroke-dashoffset="${off}"/>`+
-        `</svg>`+
-        (src ? `<img class="ab-icon" src="${src}" alt="" draggable="false">` : '')+
-        `</div>`+
-        `<div class="ab-timer" id="abt-${s.id}">${s.lbl}</div>`+
-        `</div>`;
-    }).join('');
-  } else {
-    for(const s of slots){
-      const fill = document.getElementById('abf-'+s.id);
-      const timer = document.getElementById('abt-'+s.id);
-      const slot  = document.getElementById('abs-'+s.id);
-      if(fill){
-        fill.setAttribute('stroke-dashoffset', (_AB_C*(1-s.prog)).toFixed(3));
-        fill.style.stroke = s.active ? '#5ab0ff' : (s.ready ? '#4ad85a' : '#ffd24a');
-      }
-      if(timer) timer.textContent = s.lbl;
-      if(slot)  slot.className = 'ab-slot'+(s.active?' active':s.ready?' ready':'');
-    }
-  }
-}
 
 function update(dt){
   elapsed += dt;
@@ -1397,7 +1310,6 @@ function update(dt){
   if(P.inv>0) P.inv-=dt;
   if(P.slowT>0) P.slowT-=dt;
   if(P.dashCd>0){ P.dashCd-=dt; $('dashbtn').classList.toggle('cool', P.dashCd>0); }
-  updateAbilityHUD(dt);
 
   // camera follows, clamped to world (zoom-aware)
   computeCamera();
@@ -3597,7 +3509,6 @@ function quitToMenu(){
   $('pause').classList.add('hidden');
   $('hud').classList.add('hidden');
   $('dashbtn').classList.add('hidden');
-  $('ability-hud').classList.add('hidden');
   $('zoomctl').classList.add('hidden');
   $('bossbar').classList.add('hidden');
   $('menu').classList.remove('hidden');
@@ -3661,16 +3572,12 @@ $('startbtn').addEventListener('click', ()=>{
   if(pop) pop.addEventListener('click', e=>{ if(e.target===pop) closePop(); });
   const storyBtn=$('gm-story');
   if(storyBtn) storyBtn.addEventListener('click', ()=>{
-    gameMode='story'; closePop();
-    const m=$('menu'); m.classList.add('leaving');
-    setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
+    gameMode='story'; closePop(); sfx.pick();
   });
   const chalBtn=$('gm-challenger');
   if(chalBtn) chalBtn.addEventListener('click', ()=>{
     if(selWorld>chalUnlocked){ sfx.pick(); return; }
-    gameMode='challenger'; closePop();
-    const m=$('menu'); m.classList.add('leaving');
-    setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
+    gameMode='challenger'; closePop(); sfx.pick();
   });
 })();
 $('wprev').addEventListener('click', ()=>{ if(selWorld>0){ selWorld--; refreshWorldSel(); sfx.pick(); } });
