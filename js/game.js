@@ -10,12 +10,21 @@ let wave=1, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=n
 let worldCoins=0;   // coins collected during the CURRENT world run (in-game HUD display; total still banked in `gold`)
 let _lastSec=-1;    // throttles the survival-timer DOM update to once per second
 // ===== CHALLENGER MODE STATE =====
-let gameMode = 'story';     // 'story' | 'challenger'
+let gameMode = 'story';     // 'story' | 'challenger' | 'practice'
 let chalElapsed = 0;        // challenger timer — pauses during boss fights
 let chalBossIdx = 0;        // index of next boss milestone (0-3 → 5/10/15/20 min)
 let chalBossActive = false; // true while a challenger boss is alive
 let chalLuckyT = 0;         // countdown to next lucky block batch in challenger
 const CHAL_BOSS_TIMES = [300, 600, 900, 1200];  // seconds: 5/10/15/20 min
+
+// ===== PRACTICE MODE STATE =====
+// Sandbox gamemode: no rewards, single customizable "world", reuses the challenger
+// engine (continuous spawn / elapsed-time boss milestones / infinite map) when toggled on.
+let practiceCfg = { infiniteWaves:true, timerBased:false, infiniteMap:false, bossIntervalSec:300, foes:null, bosses:null, _foeSet:null, _bossSet:null };
+function timerMode(){ return gameMode==='challenger' || (gameMode==='practice' && practiceCfg.timerBased); }
+function infiniteMapMode(){ return gameMode==='challenger' || (gameMode==='practice' && practiceCfg.infiniteMap); }
+function nextBossTimeSec(){ return gameMode==='practice' ? practiceCfg.bossIntervalSec*(chalBossIdx+1) : (CHAL_BOSS_TIMES[chalBossIdx]||300); }
+function hasMoreMilestones(){ return gameMode==='practice' ? true : chalBossIdx<CHAL_BOSS_TIMES.length; }
 // Challenger needs story world 3 cleared; its own progression is independent after that
 const _storyP = +(localStorage.getItem('br_unlocked')||0);
 let chalUnlocked = _storyP >= 3
@@ -418,7 +427,14 @@ const WORLDS = [
     foes:FOES_DIRT, bosses:BOSSES_DIRT },
 ];
 let worldIdx = 0;
-function curWorld(){ return WORLDS[worldIdx]; }
+// Practice's single "world" — a mutable stand-in whose foes/bosses get overwritten by the
+// customize popup right before each run, and whose theme/map are just Grasslands' (cosmetic only).
+const TRAINING_WORLD = {
+  id:'training', name:'TRAINING GROUNDS', band:0, endless:true,
+  map:{w:2600,h:2600}, theme:WORLDS[0].theme,
+  foes:WORLDS[0].foes, bosses:WORLDS[0].bosses,
+};
+function curWorld(){ return gameMode==='practice' ? TRAINING_WORLD : WORLDS[worldIdx]; }
 let curFoes   = WORLDS[0].foes;
 let curBosses = WORLDS[0].bosses;
 let curTheme  = WORLDS[0].theme;
@@ -440,25 +456,28 @@ function loadWorld(idx){
 let cut = null;   // cutscene state
 let _clearData = null;
 function worldCleared(boss){
-  const prevUnlocked = unlockedMax;
-  unlockedMax = Math.min(WORLDS.length-1, Math.max(unlockedMax, worldIdx+1));
-  localStorage.setItem('br_unlocked', unlockedMax); if(window.markDirty) window.markDirty();
-  selWorld = Math.min(WORLDS.length-1, worldIdx+1);
-  // One-time 5-gem reward per world cleared
-  const gwKey='br_gem_w'+worldIdx;
-  let gemsEarned=0;
-  if(!localStorage.getItem(gwKey) && typeof addGems==='function'){
-    gemsEarned=5; addGems(5); localStorage.setItem(gwKey,'1');
-    bigText('+5 ◆ GEMS','#b06ff0');
+  const isPractice = gameMode==='practice';
+  let gemsEarned=0, newChars=[];
+  if(!isPractice){   // practice grants no persistent progress at all
+    const prevUnlocked = unlockedMax;
+    unlockedMax = Math.min(WORLDS.length-1, Math.max(unlockedMax, worldIdx+1));
+    localStorage.setItem('br_unlocked', unlockedMax); if(window.markDirty) window.markDirty();
+    selWorld = Math.min(WORLDS.length-1, worldIdx+1);
+    // One-time 5-gem reward per world cleared
+    const gwKey='br_gem_w'+worldIdx;
+    if(!localStorage.getItem(gwKey) && typeof addGems==='function'){
+      gemsEarned=5; addGems(5); localStorage.setItem(gwKey,'1');
+      bigText('+5 ◆ GEMS','#b06ff0');
+    }
+    newChars = typeof CHARACTERS!=='undefined'
+      ? CHARACTERS.filter(c => {
+          if(c.rarity!=='world' || c.worldUnlock==null) return false;
+          const hadBefore = c.worldUnlock<=prevUnlocked || (typeof isCharOwned==='function' && isCharOwned(c.id));
+          return !hadBefore && c.worldUnlock<=unlockedMax;
+        })
+      : [];
   }
-  const newChars = typeof CHARACTERS!=='undefined'
-    ? CHARACTERS.filter(c => {
-        if(c.rarity!=='world' || c.worldUnlock==null) return false;
-        const hadBefore = c.worldUnlock<=prevUnlocked || (typeof isCharOwned==='function' && isCharOwned(c.id));
-        return !hadBefore && c.worldUnlock<=unlockedMax;
-      })
-    : [];
-  _clearData = { worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars };
+  _clearData = { worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars, isPractice };
   state = ST.CUTSCENE;
   cut = { t:0, boss:boss, alpha:1, fade:0, name:curWorld().name };
   boss.cut = true; boss.deathScale = 1;
@@ -466,7 +485,7 @@ function worldCleared(boss){
   ebullets=[]; bullets=[]; petBullets=[]; zones=[];
   hitstop=0.25; shake=Math.max(shake,16);
   stopMusic(); sfx.win();
-  bigText('WORLD CLEARED', '#ffd24a');
+  bigText(isPractice ? 'TRAINING COMPLETE' : 'WORLD CLEARED', '#ffd24a');
 }
 function cutsceneUpdate(dt){
   computeCamera();
@@ -485,7 +504,7 @@ function cutsceneUpdate(dt){
 function toMenuFromClear(){
   if(!_clearData){ quitToMenu(); triggerUnlockReveal(); return; }
   const d=_clearData; _clearData=null;
-  $('wc-title').textContent = d.isChallenger ? 'WORLD '+d.worldNum+' CHALLENGER!' : 'WORLD '+d.worldNum+' CLEARED!';
+  $('wc-title').textContent = d.isPractice ? 'TRAINING COMPLETE' : d.isChallenger ? 'WORLD '+d.worldNum+' CHALLENGER!' : 'WORLD '+d.worldNum+' CLEARED!';
   $('wc-coins').textContent = d.coins;
   // Set coin icon from sprite (no emoji)
   const coinIco=$('wc-coinico');
@@ -505,6 +524,7 @@ function toMenuFromClear(){
 }
 // ---- world-select carousel (menu) ----
 function worldLabel(i){
+  if(gameMode==='practice') return 'TRAINING GROUNDS';
   if(gameMode==='challenger') return 'CHALLENGER · WORLD '+(i+1);
   return 'WORLD '+(i+1)+' · '+(i<=unlockedMax ? WORLDS[i].name : '??? LOCKED');
 }
@@ -523,11 +543,25 @@ function worldEmblemURL(i){
     g.drawImage(im, (sz-s)/2, (sz-s)/2+8, s, s); }
   const u=c.toDataURL(); _emblemURL[i]=u; return u;
 }
-function setStageEmblem(i){ const img=$('charimg'); if(img) img.src = worldEmblemURL(clamp(i,0,WORLDS.length-1)); }
+let _trainingEmblemURL=null;
+function trainingEmblemURL(){
+  if(_trainingEmblemURL) return _trainingEmblemURL;
+  const sz=220, c=document.createElement('canvas'); c.width=c.height=sz;
+  const g=c.getContext('2d'), th=TRAINING_WORLD.theme;
+  g.fillStyle=th.tile2; g.fillRect(0,0,sz,sz);
+  g.fillStyle=th.tile1; const T=28;
+  for(let y=0;y<sz;y+=T) for(let x=0;x<sz;x+=T) if(((x/T+y/T)&1)) g.fillRect(x,y,T,T);
+  _trainingEmblemURL=c.toDataURL(); return _trainingEmblemURL;
+}
+function setStageEmblem(i){
+  const img=$('charimg'); if(!img) return;
+  img.src = gameMode==='practice' ? trainingEmblemURL() : worldEmblemURL(clamp(i,0,WORLDS.length-1));
+}
 function refreshWorldSel(){
   $('wname').textContent = worldLabel(selWorld);
-  $('wprev').disabled = selWorld<=0;
-  $('wnext').disabled = selWorld>=(gameMode==='challenger' ? chalUnlocked : unlockedMax);
+  const ws=$('worldsub'); if(ws) ws.textContent = gameMode==='practice' ? 'sandbox · no rewards' : 'the italian invasion';
+  $('wprev').disabled = selWorld<=0 || gameMode==='practice';
+  $('wnext').disabled = gameMode==='practice' || selWorld>=(gameMode==='challenger' ? chalUnlocked : unlockedMax);
   setStageEmblem(selWorld);
 }
 function triggerUnlockReveal(){
@@ -837,7 +871,7 @@ function startGame(idx){
 }
 function _doStartGame(wi){
   loadWorld(wi);
-  if(gameMode==='challenger'){ WORLD.w=999999; WORLD.h=999999; }   // effectively infinite; ground drawn per-frame
+  if(infiniteMapMode()){ WORLD.w=999999; WORLD.h=999999; }   // effectively infinite; ground drawn per-frame
   initAudio();
   playMusic(curTheme.music);
   resetPlayer();
@@ -866,7 +900,7 @@ function _doStartGame(wi){
   $('hud').classList.remove('hidden');
   $('zoomctl').classList.remove('hidden');
   if(IS_TOUCH) $('dashbtn').classList.remove('hidden');   // mobile-only on-screen dash
-  if(gameMode==='challenger') startChallengerSpawn(); else startWave();
+  if(timerMode()) startChallengerSpawn(); else startWave();
 }
 
 function startWave(){
@@ -885,11 +919,11 @@ function startChallengerSpawn(){
   betweenWaves=false;
   waveEnemiesLeft=9999;
   spawnTimer=0;
-  const nextSec=CHAL_BOSS_TIMES[chalBossIdx]||300;
+  const nextSec=nextBossTimeSec();
   const nm=Math.floor(nextSec/60), ns=nextSec%60;
   $('wavetag').textContent='BOSS IN '+(nm>0?nm+':'+(ns<10?'0':'')+ns:ns+'s');
   sfx.wave();
-  bigText('CHALLENGER','#ff5a70');
+  bigText(gameMode==='practice' ? 'TRAINING' : 'CHALLENGER', gameMode==='practice' ? '#4ad0c0' : '#ff5a70');
 }
 
 function chalWorldCleared(e){
@@ -948,7 +982,9 @@ function ringPos(){ // spawn point on a ring around player, clamped to world
 }
 
 function spawnBoss(){
-  const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
+  const def = gameMode==='practice'
+    ? curBosses[Math.floor(Math.random()*curBosses.length)]
+    : curBosses[(Math.floor(wave/5)-1) % curBosses.length];
   const chalMul = gameMode==='challenger' ? 3.5 : 1;
   const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.42) * chalMul;
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
@@ -1010,7 +1046,7 @@ function spawnBoss(){
 
 // returns false when the global cap is hit (so the caller keeps the wave's spawn budget for later)
 function spawnEnemy(){
-  const eCap = gameMode==='challenger' ? (IS_TOUCH ? 90 : 150) : MAX_ENEMIES;
+  const eCap = timerMode() ? (IS_TOUCH ? 90 : 150) : MAX_ENEMIES;
   if(enemies.length >= eCap) return false;     // global hard cap; challenger allows many more
   const maxIdx = Math.min(curFoes.length-1, Math.floor(wave/2));
   // count live specials so we can keep them few (earthquake + burst shooters especially)
@@ -1224,7 +1260,7 @@ function gameOver(){
   stopMusic();
   sfx.die();
   shake = 22; hitstop = 0.12;
-  $('fwave').textContent = gameMode==='challenger' ? 'time '+fmtTime(chalElapsed) : 'wave '+wave;
+  $('fwave').textContent = timerMode() ? 'time '+fmtTime(chalElapsed) : 'wave '+wave;
   $('fcoins').textContent = worldCoins;
   $('fkills').textContent = kills;
   $('hud').classList.add('hidden');
@@ -1304,10 +1340,10 @@ function separate(e){
 
 function update(dt){
   elapsed += dt;
-  // Challenger mode: advance separate timer (paused during boss), trigger milestones
-  if(gameMode==='challenger' && state===ST.PLAY){
+  // Challenger/practice-timer-based: advance separate timer (paused during boss), trigger milestones
+  if(timerMode() && state===ST.PLAY){
     if(!chalBossActive) chalElapsed += dt;
-    if(!chalBossActive && !boss && chalBossIdx<CHAL_BOSS_TIMES.length && chalElapsed>=CHAL_BOSS_TIMES[chalBossIdx]){
+    if(!chalBossActive && !boss && hasMoreMilestones() && chalElapsed>=nextBossTimeSec()){
       chalBossActive=true;
       wave=(chalBossIdx+1)*5;
       enemies.length=0; luckies=[]; ebullets=[];
@@ -1716,8 +1752,8 @@ function update(dt){
   }
 
   // --- enemies ---
-  // Challenger: cull enemies that wandered too far — they respawn around the player via normal spawn budget
-  if(gameMode==='challenger' && !chalBossActive){
+  // Infinite-map modes: cull enemies that wandered too far — they respawn around the player via normal spawn budget
+  if(infiniteMapMode() && !chalBossActive){
     const cullD = spawnRingDist()+400, CULL_DSQ = cullD*cullD;   // must stay well beyond the spawn ring or wide/zoomed-out screens cull enemies the instant they spawn
     for(let i=enemies.length-1;i>=0;i--){
       const e=enemies[i];
@@ -1868,15 +1904,15 @@ function update(dt){
           bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*420,vy:Math.sin(a)*420,r:6,pierce:1,hit:new Set(),dist:300,dmgMul:0.5}); }
         burst(e.x,e.y,'#bfe6ff',8,180);
       }
-      if(e.isBoss && gameMode==='challenger'){
-        // Challenger boss kill
+      if(e.isBoss && timerMode()){
+        // Challenger/practice-timer-based boss kill
         boss=null; arena=null;
         $('bossbar').classList.add('hidden');
         ebullets=[];
         enemies=enemies.filter(o=>o.isBoss);
         zones=[];
-        if(chalBossIdx>=CHAL_BOSS_TIMES.length-1){
-          chalWorldCleared(e);   // final challenger boss → world clear
+        if(gameMode==='challenger' && chalBossIdx>=CHAL_BOSS_TIMES.length-1){
+          chalWorldCleared(e);   // final challenger boss → world clear (practice never reaches this — hasMoreMilestones() is always true)
         } else {
           chalBossIdx++;
           chalBossActive=false;
@@ -1921,10 +1957,10 @@ function update(dt){
 
   // advance after the cleared-gap. In-update countdown (NOT a wall-clock setTimeout) so it
   // pauses with the game and can never be dropped by a pause/blur firing during the gap.
-  if(betweenWaves && waveGapT>0 && gameMode!=='challenger'){ waveGapT-=dt; if(waveGapT<=0){ waveGapT=0; wave++; startWave(); } }
+  if(betweenWaves && waveGapT>0 && !timerMode()){ waveGapT-=dt; if(waveGapT<=0){ waveGapT=0; wave++; startWave(); } }
 
-  // wave cleared? (not while the boss is still incoming; skip in challenger — enemies spawn endlessly)
-  if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0 && gameMode!=='challenger'){
+  // wave cleared? (not while the boss is still incoming; skip in timer-mode — enemies spawn endlessly)
+  if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0 && !timerMode()){
     betweenWaves=true; waveGapT=2.2;
     bigText('WAVE CLEARED','#5fbf52');
     if(typeof fireHook==='function') fireHook('waveEnd');
@@ -1950,8 +1986,8 @@ function update(dt){
   }
 
   // --- lucky blocks ---
-  if(gameMode==='challenger' && !chalBossActive && state===ST.PLAY){
-    // Challenger: periodic lucky block spawns around the player; Fortunato gets double cap
+  if(infiniteMapMode() && !chalBossActive && state===ST.PLAY){
+    // Infinite-map modes: periodic lucky block spawns around the player; Fortunato gets double cap
     chalLuckyT -= dt;
     const chalLuckyCap = P.luckyXpOnly ? 6 : 3;
     if(chalLuckyT<=0){
@@ -2004,7 +2040,7 @@ function update(dt){
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
       if(g.heart){ const h=g.heal||(g.big?50:25); P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
-      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()*(gameMode==='challenger'?Math.min(3.5,1.3+worldIdx*0.3):1)); gold+=v; worldCoins+=v; saveGold(); if(window.markDirty) window.markDirty(); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
+      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()*(gameMode==='challenger'?Math.min(3.5,1.3+worldIdx*0.3):1)); worldCoins+=v; if(gameMode!=='practice'){ gold+=v; saveGold(); if(window.markDirty) window.markDirty(); } setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else if(g.magnet){ for(const o of gems) o.vac=true; floatText(P.x,P.y-24,'MAGNET','#9fe0ff',16); burst(P.x,P.y,'#9fe0ff',12,160); sfx.level(); }   // pull in every pickup on the map
       else { gainXp(g.v); sfx.gem(2); }
     }
@@ -2054,15 +2090,15 @@ function update(dt){
   if(hitFlash>0) hitFlash -= dt*3;
 
   $('xpfill').style.width = (P.xp/P.xpNext)*100+'%';
-  { const displayTime=gameMode==='challenger'?chalElapsed:elapsed;
+  { const displayTime=timerMode()?chalElapsed:elapsed;
     const sec=Math.floor(displayTime);
     if(sec!==_lastSec){ _lastSec=sec;
       const tt=$('timetag'); if(tt) tt.textContent=fmtTime(displayTime);
-      if(gameMode==='challenger' && !chalBossActive && chalBossIdx<CHAL_BOSS_TIMES.length){
-        const rem=Math.max(0, Math.ceil(CHAL_BOSS_TIMES[chalBossIdx]-chalElapsed));
+      if(timerMode() && !chalBossActive && hasMoreMilestones()){
+        const rem=Math.max(0, Math.ceil(nextBossTimeSec()-chalElapsed));
         const rm=Math.floor(rem/60), rs=rem%60;
         const wt=$('wavetag'); if(wt) wt.textContent='BOSS IN '+(rm>0?rm+':'+(rs<10?'0':'')+rs:rs+'s');
-      } else if(gameMode==='challenger' && chalBossActive){
+      } else if(timerMode() && chalBossActive){
         const wt=$('wavetag'); if(wt) wt.textContent='BOSS FIGHT';
       }
     }
@@ -3158,7 +3194,7 @@ function render(){
   // --- ground ---
   cx.fillStyle=curTheme.void;
   cx.fillRect(vx0-40, vy0-40, vw+80, vh+80);
-  if(gameMode==='challenger'){
+  if(infiniteMapMode()){
     renderInfiniteGround(vx0-40, vy0-40, vx1+40, vy1+40);
   } else {
     if(!groundCanvas || groundFor!==curTheme) buildGround();
@@ -3433,7 +3469,7 @@ function render(){
   }
 
   // minimap (screen space)
-  if(state!==ST.MENU && !IS_TOUCH && gameMode!=='challenger') drawMinimap();   // minimap is PC-only; hidden in challenger (infinite map)
+  if(state!==ST.MENU && !IS_TOUCH && !infiniteMapMode()) drawMinimap();   // minimap is PC-only; hidden whenever the map is infinite
 
   // hurt vignette
   if(hitFlash>0){ cx.fillStyle=`rgba(220,40,40,${hitFlash*0.22})`; cx.fillRect(0,0,W,H); }
@@ -3692,6 +3728,7 @@ setInterval(()=>{
 requestAnimationFrame(loop);
 
 $('startbtn').addEventListener('click', ()=>{
+  if(gameMode==='practice'){ openPracticeSetup(); return; }
   const m=$('menu'); m.classList.add('leaving');
   setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
 });
@@ -3727,6 +3764,137 @@ $('startbtn').addEventListener('click', ()=>{
     refreshWorldSel();
     closePop(); sfx.pick();
   });
+  const practiceBtn=$('gm-practice');
+  if(practiceBtn) practiceBtn.addEventListener('click', ()=>{
+    closePop(); sfx.pick();
+    const cp=$('practice-confirm-popup'); if(cp) cp.classList.remove('hidden');
+  });
+})();
+
+// ===== PRACTICE MODE: confirm popup + customize popup + enemy/boss pickers =====
+(function(){
+  const confirmPop=$('practice-confirm-popup');
+  function closeConfirm(){ if(confirmPop) confirmPop.classList.add('hidden'); }
+  const okBtn=$('practice-confirm-ok');
+  if(okBtn) okBtn.addEventListener('click', ()=>{
+    gameMode='practice'; refreshWorldSel(); closeConfirm(); sfx.pick();
+  });
+  const cancelBtn=$('practice-confirm-cancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', closeConfirm);
+  if(confirmPop) confirmPop.addEventListener('click', e=>{ if(e.target===confirmPop) closeConfirm(); });
+
+  // ---- foe/boss table grouping: many WORLDS entries share the same table reference
+  // (e.g. FOES_DIRT is reused by 5 worlds) — group by reference so each enemy/boss shows once. ----
+  function groupedTables(key){   // key: 'foes' or 'bosses'
+    const groups=[]; const byRef=new Map();
+    for(let i=0;i<=unlockedMax && i<WORLDS.length;i++){
+      const w=WORLDS[i], table=w[key];
+      if(byRef.has(table)) byRef.get(table).names.push(w.name);
+      else { const g={names:[w.name], list:table}; byRef.set(table,g); groups.push(g); }
+    }
+    return groups;
+  }
+
+  function setupPracticeDefaults(){
+    if(practiceCfg._foeSet && practiceCfg._bossSet) return;   // already chosen this session
+    practiceCfg._foeSet = new Set(); practiceCfg._bossSet = new Set();
+    for(const g of groupedTables('foes'))   for(const f of g.list) practiceCfg._foeSet.add(f);
+    for(const g of groupedTables('bosses')) for(const b of g.list) practiceCfg._bossSet.add(b);
+  }
+
+  function buildPickList(listEl, key, set){
+    let html='';
+    for(const g of groupedTables(key)){
+      html += '<div class="banner"><span>'+g.names.join(' / ')+'</span></div>';
+      for(let idx=0; idx<g.list.length; idx++){
+        const def=g.list[idx], on=set.has(def);
+        const ic = SP[def.spr] ? SP[def.spr].toDataURL() : '';
+        html += '<div class="pickrow'+(on?' on':'')+'" data-gi="'+(listEl._groups.push(g)-1)+'" data-idx="'+idx+'">'+
+          (ic?'<img src="'+ic+'" alt="">':'')+'<span class="pickname">'+def.name+'</span><span class="pickmark">'+(on?'✓':'')+'</span></div>';
+      }
+    }
+    listEl.innerHTML=html;
+  }
+
+  // delegated click handler shared by both picker lists: toggle membership in the live Set
+  function wirePickList(listEl, getSet){
+    listEl.addEventListener('click', e=>{
+      const row=e.target.closest('.pickrow'); if(!row) return;
+      const g=listEl._groups[+row.dataset.gi], def=g.list[+row.dataset.idx], set=getSet();
+      if(set.has(def)) set.delete(def); else set.add(def);
+      row.classList.toggle('on'); row.querySelector('.pickmark').textContent=set.has(def)?'✓':'';
+      sfx.pick();
+    });
+  }
+
+  const enemyPop=$('practice-enemy-popup'), enemyList=$('pcfg-enemy-list');
+  const bossPop=$('practice-boss-popup'),   bossList=$('pcfg-boss-list');
+  const enemyCountEl=$('pcfg-enemy-count'), bossCountEl=$('pcfg-boss-count');
+  enemyList._groups=[]; bossList._groups=[];
+  wirePickList(enemyList, ()=>practiceCfg._foeSet);
+  wirePickList(bossList,  ()=>practiceCfg._bossSet);
+
+  function openEnemyPicker(){
+    setupPracticeDefaults();
+    enemyList._groups=[];
+    buildPickList(enemyList, 'foes', practiceCfg._foeSet);
+    enemyPop.classList.remove('hidden');
+  }
+  function openBossPicker(){
+    setupPracticeDefaults();
+    bossList._groups=[];
+    buildPickList(bossList, 'bosses', practiceCfg._bossSet);
+    bossPop.classList.remove('hidden');
+  }
+
+  const ecBtn=$('pcfg-enemies-btn'); if(ecBtn) ecBtn.addEventListener('click', openEnemyPicker);
+  const bcBtn=$('pcfg-bosses-btn');  if(bcBtn) bcBtn.addEventListener('click', openBossPicker);
+  function closeEnemyPicker(){ enemyPop.classList.add('hidden'); if(enemyCountEl) enemyCountEl.textContent=practiceCfg._foeSet.size; }
+  function closeBossPicker(){ bossPop.classList.add('hidden'); if(bossCountEl) bossCountEl.textContent=practiceCfg._bossSet.size; }
+  const ecClose=$('pcfg-enemy-close'); if(ecClose) ecClose.addEventListener('click', closeEnemyPicker);
+  const ecDone=$('pcfg-enemy-done');   if(ecDone) ecDone.addEventListener('click', closeEnemyPicker);
+  const bcClose=$('pcfg-boss-close');  if(bcClose) bcClose.addEventListener('click', closeBossPicker);
+  const bcDone=$('pcfg-boss-done');    if(bcDone) bcDone.addEventListener('click', closeBossPicker);
+  enemyPop.addEventListener('click', e=>{ if(e.target===enemyPop) closeEnemyPicker(); });
+  bossPop.addEventListener('click', e=>{ if(e.target===bossPop) closeBossPicker(); });
+
+  // ---- toggles ----
+  function wireToggle(id, label, getVal, setVal){
+    const btn=$(id); if(!btn) return;
+    function refresh(){ const v=getVal(); btn.textContent=label+': '+(v?'On':'Off'); btn.classList.toggle('off', !v); }
+    btn.addEventListener('click', ()=>{ setVal(!getVal()); refresh(); sfx.pick(); onChange(); });
+    refresh();
+  }
+  const mapNote=$('pcfg-mapnote');
+  function onChange(){ if(mapNote) mapNote.textContent = practiceCfg.infiniteMap ? 'Infinite map disables the minimap.' : ''; }
+  wireToggle('pcfg-infwaves','Infinite Waves', ()=>practiceCfg.infiniteWaves, v=>practiceCfg.infiniteWaves=v);
+  wireToggle('pcfg-timer','Timer-Based', ()=>practiceCfg.timerBased, v=>practiceCfg.timerBased=v);
+  wireToggle('pcfg-infmap','Infinite Map', ()=>practiceCfg.infiniteMap, v=>practiceCfg.infiniteMap=v);
+  onChange();
+
+  const setupPop=$('practice-setup-popup');
+  window.openPracticeSetup = function(){
+    setupPracticeDefaults();
+    if(enemyCountEl) enemyCountEl.textContent=practiceCfg._foeSet.size;
+    if(bossCountEl) bossCountEl.textContent=practiceCfg._bossSet.size;
+    setupPop.classList.remove('hidden');
+  };
+  function closeSetup(){ setupPop.classList.add('hidden'); }
+  const setupClose=$('practice-setup-close'); if(setupClose) setupClose.addEventListener('click', closeSetup);
+  setupPop.addEventListener('click', e=>{ if(e.target===setupPop) closeSetup(); });
+
+  const confirmBtn=$('pcfg-confirm');
+  if(confirmBtn) confirmBtn.addEventListener('click', ()=>{
+    if(practiceCfg._foeSet.size===0 || practiceCfg._bossSet.size===0){ shake=Math.max(shake,6); sfx.pick(); return; }
+    practiceCfg.foes=[...practiceCfg._foeSet];
+    practiceCfg.bosses=[...practiceCfg._bossSet];
+    TRAINING_WORLD.foes=practiceCfg.foes;
+    TRAINING_WORLD.bosses=practiceCfg.bosses;
+    TRAINING_WORLD.endless=practiceCfg.infiniteWaves;
+    closeSetup(); sfx.pick();
+    const m=$('menu'); m.classList.add('leaving');
+    setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
+  });
 })();
 $('wprev').addEventListener('click', ()=>{ if(selWorld>0){ selWorld--; refreshWorldSel(); sfx.pick(); } });
 $('wnext').addEventListener('click', ()=>{
@@ -3737,8 +3905,8 @@ refreshWorldSel();
 $('retrybtn').addEventListener('click', startGame);
 $('wc-continue').addEventListener('click', ()=>{
   $('world-cleared').classList.add('hidden');
-  const wasChal = gameMode==='challenger';
+  const wasChal = gameMode==='challenger', wasPractice = gameMode==='practice';
   gameMode='story';
   quitToMenu();
-  if(wasChal){ refreshWorldSel(); } else { triggerUnlockReveal(); }
+  if(wasChal || wasPractice){ refreshWorldSel(); } else { triggerUnlockReveal(); }
 });

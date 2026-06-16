@@ -94,7 +94,7 @@
         <span id="wname">WORLD 1 · GRASSLANDS</span>
         <button id="wnext" type="button" aria-label="Next world">▶</button>
       </div>
-      <div class="worldsub">the italian invasion</div>
+      <div class="worldsub" id="worldsub">the italian invasion</div>
       <div id="stage">
         <div id="charplat"></div>
         <img id="charimg" draggable="false" alt="">
@@ -219,13 +219,62 @@
       <div class="gmpop-mname">MAIN / STORY</div>
       <div class="gmpop-mdesc">Classic wave-based survival. Clear all waves to unlock the next world.</div>
     </button>
-    <div class="gmpop-divider">— or —</div>
     <button class="gmpop-mode gmpop-chal" id="gm-challenger" type="button">
       <div class="gmpop-mlock" id="gmpop-lockbadge"></div>
       <div class="gmpop-mname">CHALLENGER</div>
       <div class="gmpop-mbadge">HARD MODE</div>
       <div class="gmpop-mdesc">Infinite arena, 20 minutes.</div>
     </button>
+    <button class="gmpop-mode gmpop-practice" id="gm-practice" type="button">
+      <div class="gmpop-mname">PRACTICE</div>
+      <div class="gmpop-mbadge">SANDBOX</div>
+      <div class="gmpop-mdesc">Fully customizable training. No rewards.</div>
+    </button>
+  </div>
+</div>
+
+<!-- Practice mode confirm popup -->
+<div id="practice-confirm-popup" class="overlay hidden" style="z-index:36">
+  <div class="panel">
+    <div class="title" style="color:#4aa3df;font-size:clamp(24px,5vmin,40px)">PRACTICE</div>
+    <p class="loginsub">THIS IS PURELY FOR TRAINING, YOU WILL NOT GET ANY REWARDS FROM THIS GAMEMODE.</p>
+    <button class="bigbtn green" id="practice-confirm-ok" type="button">SELECT</button>
+    <button class="bigbtn quit" id="practice-confirm-cancel" type="button">CANCEL</button>
+  </div>
+</div>
+
+<!-- Practice mode customize popup -->
+<div id="practice-setup-popup" class="overlay hidden" style="z-index:36">
+  <div class="sdrop-inner" style="width:clamp(300px,90vw,460px);max-height:90vh;overflow-y:auto">
+    <div class="sdrop-title">CUSTOMIZE PRACTICE</div>
+    <button class="sdrop-close" id="practice-setup-close" type="button" aria-label="Close">✕</button>
+    <div class="sdrop-row"><button class="sdrop-toggle" id="pcfg-infwaves" type="button">Infinite Waves: On</button></div>
+    <div class="sdrop-row"><button class="sdrop-toggle" id="pcfg-timer" type="button">Timer-Based: Off</button></div>
+    <div class="sdrop-row"><button class="sdrop-toggle" id="pcfg-infmap" type="button">Infinite Map: Off</button></div>
+    <div class="hint" id="pcfg-mapnote" style="margin:0"></div>
+    <button class="sdrop-btn" id="pcfg-enemies-btn" type="button">Select Enemies (<span id="pcfg-enemy-count">0</span>)</button>
+    <button class="sdrop-btn" id="pcfg-bosses-btn" type="button">Select Bosses (<span id="pcfg-boss-count">0</span>)</button>
+    <button class="bigbtn green" id="pcfg-confirm" type="button">CONFIRM &amp; START</button>
+  </div>
+</div>
+
+<!-- Practice mode enemy picker -->
+<div id="practice-enemy-popup" class="overlay hidden" style="z-index:37">
+  <div class="sdrop-inner" style="width:clamp(300px,92vw,500px);max-height:90vh">
+    <div class="sdrop-title">SELECT ENEMIES</div>
+    <button class="sdrop-close" id="pcfg-enemy-close" type="button" aria-label="Close">✕</button>
+    <div id="pcfg-enemy-list"></div>
+    <button class="bigbtn green" id="pcfg-enemy-done" type="button">DONE</button>
+  </div>
+</div>
+
+<!-- Practice mode boss picker -->
+<div id="practice-boss-popup" class="overlay hidden" style="z-index:37">
+  <div class="sdrop-inner" style="width:clamp(300px,92vw,500px);max-height:90vh">
+    <div class="sdrop-title">SELECT BOSSES</div>
+    <button class="sdrop-close" id="pcfg-boss-close" type="button" aria-label="Close">✕</button>
+    <div id="pcfg-boss-list"></div>
+    <button class="bigbtn green" id="pcfg-boss-done" type="button">DONE</button>
   </div>
 </div>
 

@@ -212,17 +212,18 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 
 /* ===== Gamemode popup ===== */
 #gamemode-popup { z-index:35; background:rgba(20,14,8,.78); }
+.gmpop, .gmpop * { touch-action:pan-y; }
 .gmpop {
   background:#fbf3df; border:5px solid #3a2d22; border-radius:22px;
-  padding:clamp(22px,4.5vmin,38px) clamp(20px,4vmin,34px);
-  width:clamp(300px,88vw,420px);
+  padding:clamp(24px,4.8vmin,42px) clamp(22px,4.4vmin,38px);
+  width:clamp(320px,90vw,580px);
   max-height:90vh; overflow-y:auto;
   display:flex; flex-direction:column; gap:clamp(12px,2.4vmin,18px);
   position:relative; animation:popIn .26s cubic-bezier(.2,.9,.35,1.2);
   box-shadow:0 10px 0 rgba(58,45,34,.35); color:#3a2d22;
 }
 .gmpop-title {
-  font-size:clamp(24px,5vmin,38px); font-weight:900; color:#e8552d;
+  font-size:clamp(26px,5.4vmin,42px); font-weight:900; color:#e8552d;
   -webkit-text-stroke:1px #3a2d22; text-align:center;
 }
 .gmpop-close {
@@ -242,16 +243,43 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
   -webkit-text-stroke:.8px #2a1c10; box-shadow:0 6px 0 #b87a1a;
 }
 .gmpop-mode:active { transform:translateY(4px); box-shadow:0 2px 0 #b87a1a; }
-.gmpop-mname { font-size:clamp(20px,4.4vmin,32px); font-weight:900; letter-spacing:1px; }
+.gmpop-mname { font-size:clamp(20px,4.6vmin,34px); font-weight:900; letter-spacing:1px; }
 .gmpop-mdesc { font-size:clamp(10px,1.8vmin,14px); font-weight:700; color:rgba(255,255,255,.88); -webkit-text-stroke:.3px rgba(42,28,16,.4); line-height:1.4; text-align:center; }
 .gmpop-chal { background:linear-gradient(#ff5a70,#c0284a); box-shadow:0 6px 0 #8a1a30; }
 .gmpop-chal:active { box-shadow:0 2px 0 #8a1a30; }
 .gmpop-mbadge { font-size:clamp(9px,1.6vmin,13px); background:#fff; color:#c0284a; border-radius:8px; padding:1px 8px; font-weight:900; -webkit-text-stroke:0; letter-spacing:.05em; }
 .gmpop-chal .gmpop-mdesc { color:rgba(255,210,210,.88); -webkit-text-stroke:.3px rgba(80,14,24,.3); }
-.gmpop-divider { text-align:center; font-size:clamp(12px,2.2vmin,17px); font-weight:800; color:#8a7a5a; }
 .gmpop-locked { opacity:.55; cursor:not-allowed !important; }
 .gmpop-locked:active { transform:none !important; box-shadow:0 6px 0 #8a1a30 !important; }
 .gmpop-mlock { font-size:clamp(10px,1.9vmin,14px); font-weight:900; color:rgba(255,210,210,.9); -webkit-text-stroke:0; }
+.gmpop-practice { background:linear-gradient(#4ad0c0,#2a9a8c); box-shadow:0 6px 0 #1c6a60; }
+.gmpop-practice:active { box-shadow:0 2px 0 #1c6a60; }
+.gmpop-practice .gmpop-mbadge { color:#2a9a8c; }
+.gmpop-practice .gmpop-mdesc { color:rgba(220,255,250,.88); -webkit-text-stroke:.3px rgba(14,60,52,.3); }
+
+/* ===== Practice mode popups (reuse .sdrop-inner shell) ===== */
+#practice-confirm-popup, #practice-setup-popup, #practice-enemy-popup, #practice-boss-popup {
+  background:rgba(20,14,8,.78);
+}
+#practice-setup-popup .sdrop-inner, #practice-enemy-popup .sdrop-inner, #practice-boss-popup .sdrop-inner,
+#practice-setup-popup .sdrop-inner *, #practice-enemy-popup .sdrop-inner *, #practice-boss-popup .sdrop-inner * {
+  touch-action:pan-y;
+}
+#pcfg-mapnote { color:#8a7a5a; font-weight:700; }
+#pcfg-enemy-list, #pcfg-boss-list {
+  max-height:50vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+  margin:4px 0; padding-right:2px;
+}
+.pickrow {
+  display:flex; align-items:center; gap:clamp(8px,1.6vmin,12px);
+  padding:clamp(8px,1.6vmin,12px) clamp(10px,2vmin,14px);
+  border:2px solid #2a1c10; border-radius:12px; cursor:pointer;
+  background:#e8e0cc; font-weight:800; font-size:clamp(13px,2.4vmin,17px); color:#3a2d22;
+}
+.pickrow.on { background:#bfe6c0; border-color:#3f8a36; }
+.pickrow img { width:clamp(26px,5vmin,34px); height:clamp(26px,5vmin,34px); flex:0 0 auto; }
+.pickrow .pickname { flex:1; text-align:left; }
+.pickrow .pickmark { font-weight:900; width:1.4em; text-align:center; }
 
 /* SHOP item cards (vertical, ribboned) */
 #shopgrid { display:flex; flex-direction:column; gap:clamp(8px,1.8vmin,15px); width:100%; }
