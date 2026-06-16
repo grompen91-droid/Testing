@@ -452,7 +452,7 @@ const PETS = [
       onHook('playerShoot', (target) => {
         if(typeof P==='undefined'||!target||target.hp<=0) return;
         if(typeof petBullets!=='undefined')
-          petBullets.push({x:P.x, y:P.y, tx:target.x, ty:target.y, target, dmg:P.dmg*0.25});
+          petBullets.push({x:P.petX, y:P.petY, tx:target.x, ty:target.y, target, dmg:P.dmg*0.25});
       });
     },
     draw(ctx, size, t) { _drawScudetto(ctx, size, t); }
