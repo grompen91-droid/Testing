@@ -85,9 +85,17 @@ function popLucky(lb){
     floatText(lb.x,lb.y-lb.r-10,'LUCKY!','#ffd23a',18);
     return;
   }
-  if(P.luckyXpOnly){  // Fortunato: lucky blocks only drop 1-5 gold XP orbs, no hearts/magnets
-    const _r=Math.random(); const n=_r<0.40?1:_r<0.70?2:_r<0.88?3:_r<0.96?4:5;
-    for(let g=0;g<n;g++){ const a=rand(0,TAU), s=rand(100,260); gems.push({x:lb.x,y:lb.y,tier:4,v:ORB[4].v,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
+  if(P.luckyXpOnly){  // Fortunato: XP only, scales with wave
+    const w=typeof wave!=='undefined'?wave:1;
+    let tier,n;
+    if(w<=5){    // waves 1-5: small green orbs, 1-2
+      tier=1; n=Math.random()<0.4?2:1;
+    } else if(w<=9){  // waves 6-9: large orbs, 1-3
+      tier=3; const _r=Math.random(); n=_r<0.45?1:_r<0.78?2:3;
+    } else {          // waves 10+: gold orbs, 1-5 weighted low
+      tier=4; const _r=Math.random(); n=_r<0.40?1:_r<0.70?2:_r<0.88?3:_r<0.96?4:5;
+    }
+    for(let g=0;g<n;g++){ const a=rand(0,TAU),s=rand(100,260); gems.push({x:lb.x,y:lb.y,tier,v:ORB[tier].v,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
     floatText(lb.x,lb.y-lb.r-10,'+'+n+' XP!','#ffd23a',18);
     return;
   }
