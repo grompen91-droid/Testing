@@ -396,30 +396,31 @@ const PETS = [
   {
     id: 'gattino',
     name: 'Gattino',
-    desc: 'Drops a 25 HP heart at wave start.',
+    desc: 'Drops a heart (+25 HP) at every wave start. Every 20 kills: drops another heart.',
     rarity: 'common',
     register() {
-      onHook('waveStart', () => {
-        if(typeof dropHeart==='function' && typeof P!=='undefined') dropHeart(P.x, P.y, 25);
-      });
+      function _dropSmallHeart(){
+        if(typeof gems==='undefined'||typeof P==='undefined'||typeof rand==='undefined') return;
+        const a=rand(0,Math.PI*2), s=rand(60,110);
+        gems.push({x:P.x,y:P.y,heart:true,heal:25,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+      }
+      let gKills=0;
+      onHook('waveStart', () => { gKills=0; _dropSmallHeart(); });
+      onHook('onKill', () => { gKills++; if(gKills%20===0) _dropSmallHeart(); });
     },
     draw(ctx, size, t) { _drawGattino(ctx, size, t); }
   },
   {
     id: 'uccellino',
     name: 'Uccellino',
-    desc: 'Every 5 waves: XP orb cluster at wave start.',
+    desc: 'Drops 3 XP orbs at every wave start. Boss waves drop 8 bonus XP orbs.',
     rarity: 'common',
     register() {
       onHook('waveStart', () => {
-        const wv = typeof wave!=='undefined' ? wave : 0;
-        if(wv>0 && wv%5===0){
-          if(typeof dropOrb==='function' && typeof P!=='undefined'){
-            dropOrb(P.x, P.y, 2);
-            dropOrb(P.x+20, P.y, 2);
-            dropOrb(P.x-20, P.y, 2);
-          }
-        }
+        if(typeof dropOrb==='undefined'||typeof P==='undefined') return;
+        const isBoss = typeof wave!=='undefined' && wave%5===0;
+        const n = isBoss ? 8 : 3;
+        for(let i=0;i<n;i++) dropOrb(P.x+(i%3-1)*28, P.y, 2);
       });
     },
     draw(ctx, size, t) { _drawUccellino(ctx, size, t); }
@@ -427,15 +428,17 @@ const PETS = [
   {
     id: 'orbino',
     name: 'Orbino',
-    desc: 'Converts 15% of wave XP into a bonus burst at wave end.',
+    desc: 'Every 3 kills: stores 1 XP orb. Releases all stored orbs visibly at wave end.',
     rarity: 'rare',
     register() {
-      onHook('waveStart', () => { if(typeof P!=='undefined') P.petWaveXP=0; });
-      onHook('onXpGain', (amount) => { if(typeof P!=='undefined') P.petWaveXP=(P.petWaveXP||0)+amount; });
+      let stored=0;
+      onHook('waveStart', () => { stored=0; });
+      onHook('onKill', () => { stored++; });
       onHook('waveEnd', () => {
-        if(typeof P==='undefined') return;
-        const bonus = Math.floor((P.petWaveXP||0)*0.15);
-        if(bonus>0 && typeof P.xp!=='undefined'){ P.xp+=bonus; }
+        if(typeof dropOrb==='undefined'||typeof P==='undefined') return;
+        const n=Math.min(Math.floor(stored/3), 20);
+        for(let i=0;i<n;i++) dropOrb(P.x, P.y, 3);
+        if(n>0 && typeof floatText==='function') floatText(P.x,P.y-50,'+'+n+' XP','#9fe0ff',18);
       });
     },
     draw(ctx, size, t) { _drawOrbino(ctx, size, t); }
@@ -443,45 +446,60 @@ const PETS = [
   {
     id: 'scudetto',
     name: 'Scudetto',
-    desc: 'Orbits player, blocks 1 projectile every 8s.',
+    desc: 'Every 5s: fires a shockwave ring that damages all nearby enemies (80% dmg).',
     rarity: 'rare',
     register() {
-      onHook('waveStart', () => { if(typeof P!=='undefined') P.petShieldCd=0; });
+      let cd=5;
+      onHook('petTick', (dt) => {
+        if(typeof P==='undefined') return;
+        cd-=dt;
+        if(cd<=0){
+          cd=5;
+          if(typeof novaBlast==='function') novaBlast(P.x,P.y,220,P.dmg*0.8);
+          if(typeof floatText==='function') floatText(P.x,P.y-44,'SHIELD PULSE','#6be8ff',14);
+        }
+      });
     },
     draw(ctx, size, t) { _drawScudetto(ctx, size, t); }
   },
   {
     id: 'calamita',
     name: 'Calamita',
-    desc: 'Magnet pull for first 4s of each wave.',
+    desc: 'Triples magnet range permanently. Every wave start: pulls all pickups for 3s.',
     rarity: 'rare',
     register() {
-      onHook('waveStart', () => { if(typeof P!=='undefined') P.magnetT=4; });
+      if(typeof P!=='undefined') P.magnet*=3;
+      onHook('waveStart', () => { if(typeof P!=='undefined') P.magnetT=3; });
     },
     draw(ctx, size, t) { _drawCalamita(ctx, size, t); }
   },
   {
     id: 'draghetto',
     name: 'Draghetto',
-    desc: 'Attacks nearest enemy every 3s for 15% player dmg.',
+    desc: 'Every 3s: breathes fire at nearest enemy (120% dmg), spreading to 2 nearby foes (60% dmg).',
     rarity: 'epic',
     register() {
-      if(typeof P!=='undefined') P.petDragonCd=3;
+      let cd=3;
       onHook('petTick', (dt) => {
-        if(typeof P==='undefined') return;
-        P.petDragonCd=(P.petDragonCd||3)-dt;
-        if(P.petDragonCd<=0){
-          P.petDragonCd=3;
-          if(typeof enemies!=='undefined' && enemies.length){
-            let nearest=null, nd=Infinity;
-            for(const e of enemies){
-              const dx=e.x-P.x, dy=e.y-P.y;
-              const d=dx*dx+dy*dy;
-              if(d<nd){ nd=d; nearest=e; }
-            }
-            if(nearest){
-              nearest.hp-=P.dmg*0.15;
-              if(nearest.hp<=0 && typeof killEnemy==='function') killEnemy(nearest);
+        if(typeof P==='undefined'||typeof enemies==='undefined') return;
+        cd-=dt;
+        if(cd<=0){
+          cd=3;
+          let near=null, nd=Infinity;
+          for(const e of enemies){ if(e.iv>0||e.under) continue; const d=(e.x-P.x)**2+(e.y-P.y)**2; if(d<nd){nd=d;near=e;} }
+          if(near){
+            const dmg=P.dmg*1.2;
+            near.hp-=dmg; near.hitT=Math.max(near.hitT||0,0.15);
+            if(typeof burst==='function') burst(near.x,near.y,'#ff5010',12,200);
+            if(typeof floatText==='function') floatText(near.x,near.y-near.r-4,Math.round(dmg),'#ff6020',15);
+            let spread=0;
+            for(const o of enemies){
+              if(o===near||o.iv>0||o.under) continue;
+              if((o.x-near.x)**2+(o.y-near.y)**2<180*180){
+                o.hp-=P.dmg*0.6; o.hitT=Math.max(o.hitT||0,0.1);
+                if(typeof burst==='function') burst(o.x,o.y,'#ff5010',6,130);
+                if(++spread>=2) break;
+              }
             }
           }
         }
@@ -492,15 +510,30 @@ const PETS = [
   {
     id: 'stellina',
     name: 'Stellina',
-    desc: 'Once per run: when HP→0, spawn emergency lucky block. Adds XP-burst as 4th lucky reward.',
+    desc: 'Every 8s: fires a starburst of 8 shots in all directions. Every 5 kills: drops a small heal.',
     rarity: 'epic',
     register() {
-      let used=false;
-      onHook('onHpZero', () => {
-        if(used) return false; // returning false signals "don't consume HP=0"
-        used=true;
-        if(typeof spawnLucky==='function') spawnLucky();
-        return true; // consumed
+      let cd=8, killCount=0;
+      onHook('petTick', (dt) => {
+        if(typeof P==='undefined') return;
+        cd-=dt;
+        if(cd<=0){
+          cd=8;
+          if(typeof bullets!=='undefined'){
+            for(let i=0;i<8;i++){
+              const a=(i/8)*Math.PI*2;
+              bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*440,vy:Math.sin(a)*440,r:7,pierce:2,hit:new Set(),dist:420,dmgMul:0.65,lucky:false,luckyCrit:false});
+            }
+          }
+          if(typeof burst==='function') burst(P.x,P.y,'#ffe14d',14,200);
+        }
+      });
+      onHook('onKill', () => {
+        killCount++;
+        if(killCount%5===0 && typeof gems!=='undefined'&&typeof P!=='undefined'&&typeof rand!=='undefined'){
+          const a=rand(0,Math.PI*2), s=rand(50,100);
+          gems.push({x:P.x,y:P.y,heart:true,heal:15,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
+        }
       });
     },
     draw(ctx, size, t) { _drawStellina(ctx, size, t); }
@@ -508,21 +541,13 @@ const PETS = [
   {
     id: 'anima_gemella',
     name: 'Anima Gemella',
-    desc: 'After dash: pet dashes through nearest 3 enemies dealing 40% dmg.',
+    desc: 'After each dash: shockwave blasts all enemies within 500px for 100% dmg.',
     rarity: 'legendary',
     register() {
       onHook('onDash', () => {
-        if(typeof P==='undefined'||typeof enemies==='undefined') return;
-        // find 3 nearest enemies within 300px
-        const sorted = enemies
-          .map(e=>({ e, d:(e.x-P.x)**2+(e.y-P.y)**2 }))
-          .filter(o=>o.d<=300*300)
-          .sort((a,b)=>a.d-b.d)
-          .slice(0,3);
-        for(const { e } of sorted){
-          e.hp-=P.dmg*0.40;
-          if(e.hp<=0 && typeof killEnemy==='function') killEnemy(e);
-        }
+        if(typeof P==='undefined') return;
+        if(typeof novaBlast==='function') novaBlast(P.x,P.y,500,P.dmg*1.0);
+        if(typeof floatText==='function') floatText(P.x,P.y-50,'SOUL DASH!','#ff97ff',18);
       });
     },
     draw(ctx, size, t) { _drawAnimaGemella(ctx, size, t); }
