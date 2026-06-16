@@ -1248,6 +1248,7 @@ function update(dt){
         }
       }
       sfx.shoot();
+      if(typeof fireHook==='function') fireHook('playerShoot', best);
     }
   }
 

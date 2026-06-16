@@ -446,18 +446,15 @@ const PETS = [
   {
     id: 'scudetto',
     name: 'Scudetto',
-    desc: 'Every 8s: fires a shockwave ring that pushes back nearby enemies (30% dmg).',
+    desc: 'Fires at the same enemy you\'re shooting at for 25% of your damage.',
     rarity: 'rare',
     register() {
-      let cd=8;
-      onHook('petTick', (dt) => {
-        if(typeof P==='undefined') return;
-        cd-=dt;
-        if(cd<=0){
-          cd=8;
-          if(typeof novaBlast==='function') novaBlast(P.x,P.y,150,P.dmg*0.3);
-          if(typeof floatText==='function') floatText(P.x,P.y-44,'SHIELD PULSE','#6be8ff',14);
-        }
+      onHook('playerShoot', (target) => {
+        if(typeof P==='undefined'||!target||target.hp<=0) return;
+        const dmg = P.dmg * 0.25;
+        target.hp -= dmg;
+        target.hitT = Math.max(target.hitT||0, 0.1);
+        if(typeof floatText==='function') floatText(target.x, target.y-target.r-4, Math.round(dmg), '#6be8ff', 13);
       });
     },
     draw(ctx, size, t) { _drawScudetto(ctx, size, t); }
