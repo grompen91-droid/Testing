@@ -125,11 +125,13 @@ function drawPlayerGear(x,y,size,rot,flip){
 function compositeCharURL(){
   if(typeof compositeCharCanvasURL==='function') return compositeCharCanvasURL(200);
   const base = SP['player']; if(!base) return '';
-  const c = document.createElement('canvas'); c.width=base.width; c.height=base.height;
-  const g = c.getContext('2d'); g.drawImage(base,0,0);
+  const nom = base._nom || base.width; // use nominal (pre-padding) size so content fills the canvas
+  const c = document.createElement('canvas'); c.width=nom; c.height=nom;
+  const g = c.getContext('2d');
+  g.drawImage(base, (nom-base.width)/2, (nom-base.height)/2);
   for(const cat of GEAR_CATS){ const id=gearEquip[cat]; if(!id) continue;
     const spr = (typeof tintedSprite==='function' && tintedSprite('gear_'+cat, RAR[itemRar(id)].color)) || SP['gear_'+cat];
-    if(spr) g.drawImage(spr,0,0);
+    if(spr) g.drawImage(spr, (nom-spr.width)/2, (nom-spr.height)/2);
   }
   return c.toDataURL();
 }

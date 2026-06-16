@@ -1,6 +1,7 @@
 'use strict';
 // ============ GAME STATE ============
 let shake = 0, hitFlash = 0, hitstop = 0, tPrev = 0, elapsed = 0;
+let _abHudT = 0;
 
 const P = {}; // player
 let bullets=[], ebullets=[], petBullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[], luckies=[];
@@ -496,7 +497,7 @@ function worldEmblemURL(i){
   for(let y=0;y<sz;y+=T) for(let x=0;x<sz;x+=T) if(((x/T+y/T)&1)) g.fillRect(x,y,T,T);
   const bdef = w.bosses[w.bosses.length-1];                           // headliner = the world's end-boss
   const spr = bdef && SP[bdef.spr];
-  if(spr){ const s=sz*0.72, im=(w.enemyTint && tintedSprite(bdef.spr,w.enemyTint))||spr;
+  if(spr){ const pad=spr._nom?spr.width/spr._nom:1, s=sz*0.72*pad, im=(w.enemyTint && tintedSprite(bdef.spr,w.enemyTint))||spr;
     g.drawImage(im, (sz-s)/2, (sz-s)/2+8, s, s); }
   const u=c.toDataURL(); _emblemURL[i]=u; return u;
 }
@@ -837,6 +838,8 @@ function _doStartGame(wi){
   $('hud').classList.remove('hidden');
   $('zoomctl').classList.remove('hidden');
   if(IS_TOUCH) $('dashbtn').classList.remove('hidden');   // mobile-only on-screen dash
+  _abHudIds = '';   // force fresh DOM build for this run
+  $('ability-hud').classList.remove('hidden');
   startWave();
 }
 
@@ -1057,7 +1060,12 @@ function openLevelUp(){
   // weighted draw of 3 distinct by rarity (rarer = lower weight); evolve-ready cards stay prioritised
   const opts = []; const bag = cands.slice();
   while(opts.length<3 && bag.length){
-    const w = bag.map(x => (RARITY[x.u.rarity||'common']||RARITY.common).w * (x.m.evolve ? 8 : 1));
+    const w = bag.map(x => {
+      const base = (RARITY[x.u.rarity||'common']||RARITY.common).w;
+      // 8× if this pick triggers evolution; 3× if player has already invested in this evo path
+      const evoMul = x.m.evolve ? 8 : (x.u.evo && (P.up[x.u.id]||0) > 0 ? 3 : 1);
+      return base * evoMul;
+    });
     let total=0; for(const v of w) total+=v;
     let r = Math.random()*total, idx=0;
     while(idx<w.length-1 && (r-=w[idx])>0) idx++;
@@ -1115,6 +1123,7 @@ function gameOver(){
   $('fkills').textContent = kills;
   $('hud').classList.add('hidden');
   $('dashbtn').classList.add('hidden');
+  $('ability-hud').classList.add('hidden');
   $('zoomctl').classList.add('hidden');
   $('bossbar').classList.add('hidden');
   setTimeout(()=>$('gameover').classList.remove('hidden'), 600);
@@ -1187,6 +1196,90 @@ function separate(e){
 }
 
 // ============ UPDATE ============
+const _AB_C = 5.53;   // SVG ring circumference (2*PI*0.88)
+let _abHudIds = '';   // slot-id fingerprint; rebuild DOM only when this changes
+
+function _abSlots(){
+  const s = [];
+  // Dash / Phase Shift — always present
+  {
+    const cd = P.dashCd, max = P.dashMax || 2.2;
+    const active = !!P.phaseShifting;
+    const prog = active ? Math.max(0, (P.phaseShiftT||0)/0.8)
+                        : (max > 0 ? Math.max(0, 1 - cd/max) : 1);
+    const ready = !active && cd <= 0;
+    s.push({ id:'dash', ik:'ab_dashcd', prog, ready, active,
+      lbl: active ? ((P.phaseShiftT||0)>0.05 ? (P.phaseShiftT).toFixed(1) : 'SHIFT')
+                  : (ready ? 'READY' : cd.toFixed(1)) });
+  }
+  if(P.nova){
+    const cd = Math.max(0,P.novaCd), max = P.novaCdBase||5;
+    const prog = Math.max(0, 1-cd/max), ready = cd<=0;
+    s.push({ id:'nova', ik:'ab_nova', prog, ready, active:false,
+      lbl: ready ? 'READY' : cd.toFixed(1) });
+  }
+  if(P.knives && !P.knifeEvo){
+    const cd = Math.max(0,P.knifeCd), max = P.knifeCdBase||3.5;
+    const prog = Math.max(0, 1-cd/max), ready = cd<=0;
+    s.push({ id:'knives', ik:'ab_knives', prog, ready, active:false,
+      lbl: ready ? 'READY' : cd.toFixed(1) });
+  }
+  if(P.shieldMax > 0){
+    const has = P.shield > 0;
+    const prog = has ? 1 : Math.max(0, 1-P.shieldCd/(P.shieldCdBase||8));
+    s.push({ id:'shield', ik:'ab_aegis', prog, ready:has, active:has,
+      lbl: has ? 'x'+P.shield : (P.shieldCd>0 ? P.shieldCd.toFixed(1) : 'READY') });
+  }
+  if(P.swCdBase && (P.secondWind>0 || P.swCd>0)){
+    const has = P.secondWind>0 && P.swCd<=0;
+    const prog = has ? 1 : Math.max(0, 1-P.swCd/(P.swCdBase||60));
+    s.push({ id:'sw', ik:'ab_secondwind', prog, ready:has, active:false,
+      lbl: has ? 'x'+P.secondWind : (P.swCd>0 ? Math.ceil(P.swCd)+'s' : 'READY') });
+  }
+  return s;
+}
+
+function updateAbilityHUD(dt){
+  _abHudT -= dt;
+  if(_abHudT > 0) return;
+  _abHudT = 0.05;   // 20 fps is plenty for timer text; SVG transition fills the gap visually
+
+  const el = $('ability-hud');
+  if(!el) return;
+  const slots = _abSlots();
+  const newIds = slots.map(s=>s.id).join(',');
+
+  if(newIds !== _abHudIds){
+    _abHudIds = newIds;
+    el.innerHTML = slots.map(s=>{
+      const src = (typeof SP!=='undefined' && SP[s.ik]) ? SP[s.ik].toDataURL() : '';
+      const off = (_AB_C*(1-s.prog)).toFixed(3);
+      return `<div class="ab-slot${s.active?' active':s.ready?' ready':''}" id="abs-${s.id}">`+
+        `<div class="ab-ring">`+
+        `<svg class="ab-svg" viewBox="-1 -1 2 2">`+
+        `<circle class="ab-track" r="0.88"/>`+
+        `<circle class="ab-fill" id="abf-${s.id}" r="0.88" stroke-dasharray="${_AB_C}" stroke-dashoffset="${off}"/>`+
+        `</svg>`+
+        (src ? `<img class="ab-icon" src="${src}" alt="" draggable="false">` : '')+
+        `</div>`+
+        `<div class="ab-timer" id="abt-${s.id}">${s.lbl}</div>`+
+        `</div>`;
+    }).join('');
+  } else {
+    for(const s of slots){
+      const fill = document.getElementById('abf-'+s.id);
+      const timer = document.getElementById('abt-'+s.id);
+      const slot  = document.getElementById('abs-'+s.id);
+      if(fill){
+        fill.setAttribute('stroke-dashoffset', (_AB_C*(1-s.prog)).toFixed(3));
+        fill.style.stroke = s.active ? '#5ab0ff' : (s.ready ? '#4ad85a' : '#ffd24a');
+      }
+      if(timer) timer.textContent = s.lbl;
+      if(slot)  slot.className = 'ab-slot'+(s.active?' active':s.ready?' ready':'');
+    }
+  }
+}
+
 function update(dt){
   elapsed += dt;
   if(typeof fireHook==='function') fireHook('petTick', dt);
@@ -1230,6 +1323,7 @@ function update(dt){
   if(P.inv>0) P.inv-=dt;
   if(P.slowT>0) P.slowT-=dt;
   if(P.dashCd>0){ P.dashCd-=dt; $('dashbtn').classList.toggle('cool', P.dashCd>0); }
+  updateAbilityHUD(dt);
 
   // camera follows, clamped to world (zoom-aware)
   computeCamera();
@@ -1740,6 +1834,7 @@ function update(dt){
         const nLarge=8+(bossNum-1)*3, nCoin=2+(bossNum-1);     // coins now scarce; escalate slowly per boss
         for(let g=0; g<nLarge; g++) dropOrb(e.x, e.y, 3, 120, 300);
         for(let g=0; g<nCoin; g++){ const a=rand(0,TAU), s=rand(120,300); gems.push({x:e.x,y:e.y,coin:true,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
+        if(!P.hasMagnetPet){ const a=rand(0,TAU), s=rand(60,120); gems.push({x:e.x,y:e.y,magnet:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
         ebullets=[];
         enemies = enemies.filter(o=>o.isBoss);   // clear summoned adds so the boss wave can clear (else it stalls)
         zones=[];                                 // drop lingering boss hazard zones
@@ -1883,7 +1978,11 @@ function update(dt){
 }
 
 function damageEnemy(e,dmg,fx,fy,crit){
-  if(e.iv>0 || e.under) return;      // shelled / invulnerable / burrowed
+  if(e.iv>0 || e.under){
+    // scripted stages can allow partial damage via vulnMul (0 = immune, 0.3 = 30% damage etc.)
+    if(!(e.scriptVulnMul > 0)) return;
+    dmg *= e.scriptVulnMul;
+  }
   if(e.lead){ damageEnemy(e.lead,dmg,fx,fy,crit); e.hitT=0.12; e.sq=1; return; }  // duo partner routes to the lead's shared HP
   if(!P.trueDmg && e.front!=null && fx!=null){     // frontal armor: hits from the player-facing arc are softened
     const toSrc=Math.atan2(fy-e.y,fx-e.x), toP=Math.atan2(P.y-e.y,P.x-e.x);
@@ -2521,8 +2620,8 @@ const FINAL_SCRIPT = {
           addZone(P.x,P.y,60,{tele:0.7,life:0.5,dps:16,col:'#8d6e63'});      // a coconut lobbed at your feet
           mRingGap(e,12+e.loop*2,120,'#8d6e63',0.34); } },
     },
-    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
-    { name:'COCONUT MONSOON', col:'#8d6e63', dur:7.5, iv:true, hold:'center',
+    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
+    { name:'COCONUT MONSOON', col:'#8d6e63', dur:7.5, iv:true, vulnMul:0.35, hold:'center',
       enter(e){ e.sCd=0.5; e.sk=0; },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=0.95; e.sk++;
         const band=(arena?arena.y:0)+((e.sk*0.21)%1)*(arena?arena.h:600);   // a drifting row of falling coconuts
@@ -2530,15 +2629,15 @@ const FINAL_SCRIPT = {
         zoneLine(true, band, gx, 70, '#8d6e63', 9, 0.8);
         mRingGap(e,16+e.loop*2,130,'#a06a4a',0.30); } },
     },
-    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
-    { name:'STAMPEDE GAUNTLET', col:'#6d4c41', dur:7.0, iv:true,
+    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
+    { name:'STAMPEDE GAUNTLET', col:'#6d4c41', dur:7.0, iv:true, vulnMul:0.45,
       enter(e){ e.dst='wind'; e.dwin=0.45; e.da=Math.atan2(P.y-e.y,P.x-e.x); e.kb=true;
         e.landFx={type:'pounce'}; e.dashTrail={kind:'guac',col:'#8d6e63'}; e.dashRepeat=4+e.loop; sfx.warn(); },
       tick(e,dt){ if(e.dst==='idle' && (e.dashRepeat||0)<=0 && e.sT>1.4){   // re-charge if it finishes the set early
         e.dst='wind'; e.dwin=0.4; e.da=Math.atan2(P.y-e.y,P.x-e.x); e.kb=true;
         e.landFx={type:'pounce'}; e.dashTrail={kind:'guac',col:'#8d6e63'}; e.dashRepeat=2; } },
     },
-    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
+    { name:'AFTERSHOCK — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
   ],
   // ===== WORLD 4 · ICE ICE BEARLINI — "ZERO ASSOLUTO" : a frost-storm colossus =====
   icebearlini: [
@@ -2548,8 +2647,8 @@ const FINAL_SCRIPT = {
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.2;   // frost drifts settle as slowing patches
         if(arena) for(let k=0;k<2;k++) addZone(rand(arena.x+50,arena.x+arena.w-50),rand(arena.y+50,arena.y+arena.h-50),56,{tele:0.7,life:2.4,dps:8,slow:true,col:'#bfe6ff'}); } },
     },
-    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
-    { name:'AVALANCHE WALLS', col:'#bfe6ff', dur:8.0, iv:true,
+    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
+    { name:'AVALANCHE WALLS', col:'#bfe6ff', dur:8.0, iv:true, vulnMul:0.4,
       enter(e){ e.sCd=0.4; e.sk=0; },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(1.3,1.8-e.loop*0.15); e.sk++;
         const a=arena; if(!a) return;
@@ -2558,14 +2657,14 @@ const FINAL_SCRIPT = {
         const gapAt= horiz ? rand(a.y+90,a.y+a.h-90) : rand(a.x+90,a.x+a.w-90);
         mWall(side,150+e.loop*15,'#9fd0ff',gapAt,64,14); } },
     },
-    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
+    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
     { name:'ORANGE SUPERNOVA', col:'#ff8f2e', dur:5.5, iv:true, hold:'center',
       enter(e){ e.sk=0; e.sCd=1.0; burst(e.x,e.y,'#ff8f2e',30,360); shake=Math.max(shake,10); },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0 && e.sk<3){ e.sCd=1.4; e.sk++;   // three huge nested orange shockwaves, each with a gap
         mRing(e,26,200,'#ff8f2e'); mRingGap(e,22,150,'#ffb15a',0.20); mRingGap(e,18,100,'#ff8f2e',0.24);
         shake=Math.max(shake,8); sfx.hit(); } },
     },
-    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
+    { name:'THAW — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
   ],
   // ===== WORLD 5 · IL GRAN PAGLIACCIO — "GRAN FINALE" : the ringmaster's three-act spectacle =====
   granpagliaccio: [
@@ -2574,8 +2673,8 @@ const FINAL_SCRIPT = {
         e.stormCol='#ff5ea8'; e.stormCd=0.13; e.stormTwin=true; e.stormRainbow=false; e.sCd=1.1; sfx.warn(); },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.1; mRingGap(e,14,110,'#ffd24a',0.32); } },
     },
-    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
-    { name:'BALLOON BARRAGE', col:'#ff5ea8', dur:7.5, iv:true,
+    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
+    { name:'BALLOON BARRAGE', col:'#ff5ea8', dur:7.5, iv:true, vulnMul:0.35,
       enter(e){ e.sCd=0.4; e.sk=0; },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(1.4,1.9-e.loop*0.15); e.sk++;
         const a=arena; if(!a) return;
@@ -2585,14 +2684,14 @@ const FINAL_SCRIPT = {
         mWall(side,140+e.loop*15,'#ff5ea8',gapAt,68,12);
         if(e.sk%2===0) summonAdds(e,'clownino',1,4); } },
     },
-    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
+    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
     { name:'THE GRAND FINALE', col:'#ffd24a', dur:6.0, iv:true, hold:'center',
       enter(e){ e.sk=0; e.sCd=0.8; burst(e.x,e.y,'#ffd24a',30,360); shake=Math.max(shake,10); summonAdds(e,'clownino',3,6); },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.0; e.sk++;
         mRingGap(e,18,160,'#ff5ea8',0.24); mRingGap(e,14,105,'#ffd24a',0.28);
         shake=Math.max(shake,6); sfx.hit(); } },
     },
-    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:5.0, iv:false },
+    { name:'INTERMISSION — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
   ],
 };
 // drive one scripted-finale stage; advances + loops + escalates when the stage timer runs out
@@ -2603,13 +2702,14 @@ function runFinalScript(e,dt){
     e.storm=0; e.spin=0; e.pull=0; e.gsweep=null; e.echo=null; e.wd=null; e.carpet=0;
     e.dst='idle'; e.dashRepeat=0; e.landFx=null; e.dashTrail=null; e.warpT=0;
     e.scriptPause = !st.iv;                            // pause the persistent gimmick during DPS windows
+    e.scriptVulnMul = st.vulnMul != null ? st.vulnMul : (st.iv ? 0 : 1);
     if(st.iv){ e.iv=Math.max(e.iv, st.dur+0.3); }
     else { ebullets=[]; burst(e.x,e.y,'#7ed957',22,220); }   // DPS window: wipe the screen, drop the guard
     bigText(st.name, st.col); sfx.boss();
     if(st.enter) st.enter(e);
   }
   const st=stages[e.si];
-  if(st.iv) e.iv=Math.max(e.iv,0.25);
+  if(st.iv){ e.iv=Math.max(e.iv,0.25); e.scriptVulnMul = st.vulnMul != null ? st.vulnMul : 0; }
   if(st.hold==='center' && arena){ const cxw=arena.x+arena.w/2, cyw=arena.y+arena.h/2;
     e.x += (cxw-e.x)*2.4*dt; e.y += (cyw-e.y)*2.4*dt; }
   if(st.tick) st.tick(e,dt);
@@ -2843,9 +2943,11 @@ function drawSprite(name, x, y, size, rot, sq, hitT, flip, tint){
   let sxk=1, syk=1;
   if(sq>0){ const k=Math.sin(sq*Math.PI)*0.22; sxk=1+k; syk=1-k; }
   cx.scale(sxk,syk);
+  // compensate for canvas padding added in makeSprite (img._nom stores nominal pre-pad size)
+  const dsz = img._nom ? size * img.width / img._nom : size;
   const drawImg = (tint && tintedSprite(name,tint)) || img;
-  cx.drawImage(drawImg, -size/2, -size/2, size, size);
-  if(hitT>0){ cx.globalAlpha=Math.min(1,hitT/0.12); cx.drawImage(SPW[name], -size/2, -size/2, size, size); cx.globalAlpha=1; }
+  cx.drawImage(drawImg, -dsz/2, -dsz/2, dsz, dsz);
+  if(hitT>0){ cx.globalAlpha=Math.min(1,hitT/0.12); cx.drawImage(SPW[name], -dsz/2, -dsz/2, dsz, dsz); cx.globalAlpha=1; }
   cx.restore();
 }
 
@@ -3044,7 +3146,7 @@ function render(){
     if(e.frz>0){ cx.globalAlpha=0.4; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
     else if(e.chillT>0){ cx.globalAlpha=0.22; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
     if(e.fire){ cx.globalAlpha=0.38; cx.fillStyle='#ff6a00'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.08,0,TAU); cx.fill(); cx.globalAlpha=1; }
-    if(e.iv>0){ cx.strokeStyle='#d8b46a'; cx.lineWidth=4; cx.globalAlpha=0.85; cx.beginPath(); cx.arc(e.x,e.y,e.r+6,0,TAU); cx.stroke(); cx.globalAlpha=1; }
+    if(e.iv>0){ const partVuln=e.scriptVulnMul>0; cx.strokeStyle=partVuln?'#e07030':'#d8b46a'; cx.lineWidth=4; cx.globalAlpha=0.85; cx.beginPath(); cx.arc(e.x,e.y,e.r+6,0,TAU); cx.stroke(); cx.globalAlpha=1; }
     if(e.hp<e.maxHp){
       const w=e.r*1.9;
       cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(e.x-w/2,e.y-e.r-12,w,5);
@@ -3386,6 +3488,7 @@ function quitToMenu(){
   $('pause').classList.add('hidden');
   $('hud').classList.add('hidden');
   $('dashbtn').classList.add('hidden');
+  $('ability-hud').classList.add('hidden');
   $('zoomctl').classList.add('hidden');
   $('bossbar').classList.add('hidden');
   $('menu').classList.remove('hidden');

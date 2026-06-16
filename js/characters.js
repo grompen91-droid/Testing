@@ -526,7 +526,7 @@ function renderCharThumb(offCtx, charId, size) {
     // Draw a simple placeholder silhouette using the player sprite
     const sp = typeof SP!=='undefined' ? SP['player'] : null;
     if(sp){
-      offCtx.drawImage(sp, -size/2, -size/2, size, size);
+      const dsz=sp._nom?size*sp.width/sp._nom:size; offCtx.drawImage(sp, -dsz/2, -dsz/2, dsz, dsz);
     } else {
       offCtx.fillStyle='#7a8896';
       offCtx.beginPath();

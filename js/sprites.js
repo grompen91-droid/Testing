@@ -4,14 +4,17 @@ const OUT = '#33272a';           // outline color used across all sprites
 const SP = {};                   // sprite canvases
 const SPW = {};                  // white flash versions
 function makeSprite(name, size, draw){
-  const c = document.createElement('canvas'); c.width=size; c.height=size;
+  const PAD = 1.3; // 30% padding on each side so drawings up to ±65u don't get clipped
+  const full = Math.round(size * PAD);
+  const c = document.createElement('canvas'); c.width=full; c.height=full;
+  c._nom = size;                // nominal size for drawSprite to compensate
   const g = c.getContext('2d');
-  g.translate(size/2, size/2); g.lineJoin='round'; g.lineCap='round';
-  draw(g, size/100);            // u = size/100 unit scale
+  g.translate(full/2, full/2); g.lineJoin='round'; g.lineCap='round';
+  draw(g, size/100);            // u = size/100 unit scale (unchanged)
   SP[name] = c;
-  const w = document.createElement('canvas'); w.width=size; w.height=size;
+  const w = document.createElement('canvas'); w.width=full; w.height=full;
   const wg = w.getContext('2d');
-  wg.drawImage(c,0,0); wg.globalCompositeOperation='source-in'; wg.fillStyle='#fff'; wg.fillRect(0,0,size,size);
+  wg.drawImage(c,0,0); wg.globalCompositeOperation='source-in'; wg.fillStyle='#fff'; wg.fillRect(0,0,full,full);
   SPW[name] = w;
   return c;
 }
@@ -34,6 +37,7 @@ function tintedSprite(name, tint){
   const key=name+'|'+tint; if(TINTED[key]) return TINTED[key];
   const src=SP[name]; if(!src) return null;
   const c=document.createElement('canvas'); c.width=src.width; c.height=src.height;
+  c._nom=src._nom;              // propagate nominal size so drawSprite can compensate
   const g=c.getContext('2d'); g.drawImage(src,0,0);
   g.globalCompositeOperation='source-atop'; g.globalAlpha=0.42; g.fillStyle=tint;
   g.fillRect(0,0,c.width,c.height);
@@ -988,6 +992,19 @@ makeSprite('ab_glassphx',64,(g,u)=>{ _flame(g,u,'#ff7a3a','#ffd24a'); sh(g,'#bfe
 makeSprite('ab_orbstorm',64,(g,u)=>{ for(let i=0;i<4;i++){ g.save(); g.rotate(i*Math.PI/2+Math.PI/4); g.translate(0,-20*u); _bolt(g,u*0.45,'#ffd24a'); g.restore(); } dot(g,0,0,12*u,'#5fe6ff'); g.strokeStyle=OUT; g.lineWidth=2*u; g.beginPath(); g.arc(0,0,12*u,0,TAU); g.stroke(); });
 makeSprite('ab_overdrive',64,(g,u)=>{ g.lineCap='round'; g.strokeStyle='#46566f'; g.lineWidth=5*u; g.beginPath(); g.arc(0,8*u,22*u,Math.PI,0); g.stroke(); g.strokeStyle='#e0392e'; g.beginPath(); g.arc(0,8*u,22*u,Math.PI*0.62,0); g.stroke(); g.lineCap='butt'; g.strokeStyle=OUT; g.lineWidth=3*u; g.beginPath(); g.moveTo(0,8*u); g.lineTo(15*u,-9*u); g.stroke(); dot(g,0,8*u,4*u,OUT); });
 makeSprite('ab_aegisnova',64,(g,u)=>{ _shield(g,u,'#7ecbff'); g.strokeStyle='#fff'; g.lineWidth=2.4*u; for(const r of [26,31]){ g.beginPath(); g.arc(0,0,r*u,-0.55,0.55); g.stroke(); } });
+makeSprite('ab_knives',64,(g,u)=>{
+  for(const s of [1,-1]){
+    g.save(); g.rotate(s*0.48);
+    sh(g,'#bfc5cf',2.8*u,(g)=>{ g.moveTo(0,-28*u); g.lineTo(4*u,-18*u); g.lineTo(3*u,14*u); g.lineTo(-3*u,14*u); g.lineTo(-4*u,-18*u); g.closePath(); });
+    sh(g,'#caa12f',2.6*u,(g)=>{ g.roundRect(-5.5*u,13*u,11*u,7*u,2*u); });
+    sh(g,'#8a5d2c',2.4*u,(g)=>{ g.roundRect(-4*u,19*u,8*u,10*u,2*u); });
+    g.restore();
+  }
+});
+makeSprite('ab_secondwind',64,(g,u)=>{
+  _heart(g,u,'#e07a30');
+  sh(g,'#ffd24a',2.8*u,(g)=>{ g.moveTo(0,6*u); g.lineTo(0,-10*u); g.moveTo(-7*u,-4*u); g.lineTo(0,-10*u); g.lineTo(7*u,-4*u); });
+});
 
 // ============================================================
 // WORLD 3 — FORESTA FRUTOSA sprites
