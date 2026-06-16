@@ -496,8 +496,8 @@ const CHARACTERS = [
         lx = P.x; ly = P.y;
         const nowStill = !moved;
         if(nowStill !== wasStill){
-          if(nowStill)  P.fireRate /= 1.5;   // standing still: 50% faster
-          else          P.fireRate *= 1.5;   // moving: restore rate
+          if(nowStill){ P.fireRate /= 1.95; P.dmg *= 1.25; }   // standing still: 95% faster (50% base + 30% buff), +25% damage
+          else        { P.fireRate *= 1.95; P.dmg /= 1.25; }   // moving: restore rate/damage
           wasStill = nowStill;
         }
         P.soldierStill = nowStill;
