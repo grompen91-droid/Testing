@@ -99,13 +99,14 @@ function getCharWeeklyShop() {
   return shuffled[0];
 }
 const CHAR_SHOP_PRICE={ rare:50, epic:100, legendary:150, common:20 };
+let charShopDailyIdx=0;
 function buyCharacter(id) {
   const char=CHARACTERS.find(c=>c.id===id); if(!char) return;
   const price=CHAR_SHOP_PRICE[char.rarity]||50;
   if(isCharOwned(id)){ alert('Already owned'); return; }
   if(!spendGems(price)){ alert('Not enough gems!'); return; }
   grantChar(id);
-  renderShopCharSection&&renderShopCharSection();
+  if(typeof renderShop==='function') renderShop();
   if(typeof sfx!=='undefined') sfx.evolve();
 }
 
@@ -160,53 +161,52 @@ function renderShopCharSection() {
   const daysLeft=_daysUntilMonday();
   const hoursLeft=_hoursUntilMidnightUTC();
   let html='<div class="shopsec">';
+  html+='<div class="banner"><span>CHARACTER SHOP</span></div>';
 
   // ---- WEEKLY LEGENDARY ----
-  html+='<div class="banner"><span>CHARACTER SHOP</span></div>';
   if(weekly){
     const owned=isCharOwned(weekly.id);
-    const thumbURL=_renderCharThumbDataURL(weekly.id,72);
     const price=CHAR_SHOP_PRICE[weekly.rarity]||150;
     const poor=gemBalance<price;
     html+='<div class="scard charshopcard weeklycard">';
-    html+='<div class="charport-sm"><canvas width="72" height="72"></canvas></div>';
+    html+='<div class="charport-sm" data-petcanvas="'+weekly.id+'"><canvas width="72" height="72"></canvas></div>';
     html+='<div class="csinfo">';
     html+='<div class="csname">'+weekly.name+'<span class="weeklybadge" style="margin-left:6px">WEEKLY</span></div>';
     html+='<div class="csdesc">'+weekly.desc.substring(0,80)+(weekly.desc.length>80?'…':'')+'</div>';
     html+='<div class="cstags"><span class="rtag r-legendary">LEGENDARY</span>';
     html+='<span class="shoptimer">Resets in '+daysLeft+'d</span></div>';
     html+='</div>';
-    if(owned){
-      html+='<div class="scheck">✓</div>';
-    } else {
-      html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+weekly.id+'" data-price="'+price+'">'+gem+price+'</button>';
-    }
+    if(owned) html+='<div class="scheck">✓</div>';
+    else html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+weekly.id+'" data-price="'+price+'">'+gem+price+'</button>';
     html+='</div>';
   }
 
-  // ---- DAILY CHARS ----
+  // ---- DAILY CAROUSEL ----
   html+='<div class="shopsub">Daily · Resets in '+hoursLeft+'h</div>';
-  html+='<div class="ggrid">';
-  for(const char of daily){
-    const owned=isCharOwned(char.id);
-    const price=CHAR_SHOP_PRICE[char.rarity]||50;
+  if(daily.length){
+    if(charShopDailyIdx>=daily.length) charShopDailyIdx=0;
+    const card=daily[charShopDailyIdx];
+    const owned=isCharOwned(card.id);
+    const price=CHAR_SHOP_PRICE[card.rarity]||50;
     const poor=gemBalance<price;
-    const rarLabel=(typeof RAR!=='undefined'&&RAR[char.rarity])?RAR[char.rarity].name:char.rarity.toUpperCase();
-    html+='<div class="scard charshopcard r-'+char.rarity+'">';
-    html+='<div class="charport-sm" data-petcanvas="'+char.id+'"><canvas width="64" height="64"></canvas></div>';
-    html+='<div class="csinfo">';
-    html+='<div class="csname">'+char.name+'</div>';
-    html+='<div class="csdesc">'+char.desc.substring(0,60)+(char.desc.length>60?'…':'')+'</div>';
-    html+='<div class="cstags"><span class="rtag r-'+char.rarity+'">'+rarLabel+'</span></div>';
+    const rarLabel=(typeof RAR!=='undefined'&&RAR[card.rarity])?RAR[card.rarity].name:card.rarity.toUpperCase();
+    html+='<div class="charcarousel">';
+    html+='<button class="charav" id="charcaroprev">◀</button>';
+    html+='<div id="charcarowrap">';
+    html+='<div class="charcarousel-card scard r-'+card.rarity+'">';
+    html+='<div class="charport-lg"><canvas width="100" height="100" id="charcarocanvas"></canvas></div>';
+    html+='<div class="csname-lg">'+card.name+'</div>';
+    html+='<div class="csdesc-full">'+card.desc+'</div>';
+    html+='<div class="cstags cstags-center"><span class="rtag r-'+card.rarity+'">'+rarLabel+'</span></div>';
+    if(owned) html+='<div class="scheck">✓</div>';
+    else html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+card.id+'" data-price="'+price+'">'+gem+price+'</button>';
     html+='</div>';
-    if(owned){
-      html+='<div class="scheck">✓</div>';
-    } else {
-      html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+char.id+'" data-price="'+price+'">'+gem+price+'</button>';
-    }
-    html+='</div>';
+    html+='</div>'; // charcarowrap
+    html+='<button class="charav" id="charcaronext">▶</button>';
+    html+='</div>'; // charcarousel
+    html+='<div class="carcounter">'+(charShopDailyIdx+1)+' / '+daily.length+'</div>';
   }
-  html+='</div>'; // ggrid
+
   html+='</div>'; // shopsec
   return html;
 }
@@ -269,18 +269,64 @@ function initRecruitUI(container) {
   if(!container) container=document.getElementById('shopgrid');
   if(!container) return;
 
-  // Wire char buy buttons
-  container.querySelectorAll('.charshop-buy[data-buychar]').forEach(btn=>{
+  // Wire weekly charshop-buy button
+  container.querySelectorAll('.weeklycard .charshop-buy[data-buychar]').forEach(btn=>{
     btn.addEventListener('click',()=>{ buyCharacter(btn.dataset.buychar); });
   });
+
+  // Wire daily carousel nav + buy
+  const charPrev=container.querySelector('#charcaroprev');
+  const charNext=container.querySelector('#charcaronext');
+  const charWrap=container.querySelector('#charcarowrap');
+  const charCounter=container.querySelector('.carcounter');
+  if(charPrev&&charNext&&charWrap){
+    const daily=getCharDailyShop();
+
+    function _wireCaroBuy(){
+      const buyBtn=charWrap.querySelector('.charshop-buy[data-buychar]');
+      if(buyBtn) buyBtn.addEventListener('click',()=>{ buyCharacter(buyBtn.dataset.buychar); });
+    }
+
+    function _renderCaroCard(){
+      const card=daily[charShopDailyIdx]; if(!card) return;
+      const gem='<span class="gemico-sm">◆</span>';
+      const owned=isCharOwned(card.id);
+      const price=CHAR_SHOP_PRICE[card.rarity]||50;
+      const poor=gemBalance<price;
+      const rarLabel=(typeof RAR!=='undefined'&&RAR[card.rarity])?RAR[card.rarity].name:card.rarity.toUpperCase();
+      let html='<div class="charcarousel-card scard r-'+card.rarity+'">';
+      html+='<div class="charport-lg"><canvas width="100" height="100" id="charcarocanvas"></canvas></div>';
+      html+='<div class="csname-lg">'+card.name+'</div>';
+      html+='<div class="csdesc-full">'+card.desc+'</div>';
+      html+='<div class="cstags cstags-center"><span class="rtag r-'+card.rarity+'">'+rarLabel+'</span></div>';
+      if(owned) html+='<div class="scheck">✓</div>';
+      else html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+card.id+'" data-price="'+price+'">'+gem+price+'</button>';
+      html+='</div>';
+      charWrap.innerHTML=html;
+      if(charCounter) charCounter.textContent=(charShopDailyIdx+1)+' / '+daily.length;
+      const cv=document.getElementById('charcarocanvas');
+      if(cv&&typeof renderCharThumb==='function') renderCharThumb(cv.getContext('2d'),card.id,100);
+      _wireCaroBuy();
+    }
+
+    // Render initial canvas (HTML already present from renderShopCharSection)
+    const initCv=document.getElementById('charcarocanvas');
+    if(initCv&&typeof renderCharThumb==='function'){
+      const card=daily[charShopDailyIdx];
+      if(card) renderCharThumb(initCv.getContext('2d'),card.id,100);
+    }
+    _wireCaroBuy();
+
+    charPrev.addEventListener('click',()=>{ charShopDailyIdx=(charShopDailyIdx-1+daily.length)%daily.length; _renderCaroCard(); });
+    charNext.addEventListener('click',()=>{ charShopDailyIdx=(charShopDailyIdx+1)%daily.length; _renderCaroCard(); });
+  }
 
   // Wire pet pull button
   const pullBtn=container.querySelector('#petpullbtn');
   if(pullBtn){
     pullBtn.addEventListener('click',()=>{
       const result=recruitPet();
-      if(!result){ return; }
-      // Re-render shop to update pity/owned display
+      if(!result) return;
       if(typeof renderShop==='function') renderShop();
       _showPullResult(result);
     });
@@ -306,29 +352,14 @@ function initRecruitUI(container) {
     const pet=PETS.find(p=>p.id===petId);
     if(!pet||!pet.draw) return;
     const g=canvas.getContext('2d');
-    g.save();
-    g.translate(28,28);
-    pet.draw(g,56,0);
-    g.restore();
+    g.save(); g.translate(28,28); pet.draw(g,56,0); g.restore();
   });
 
-  // Render char thumbnails in shop
-  container.querySelectorAll('.charshopcard .charport-sm canvas, .charshopcard .charport-sm canvas').forEach(canvas=>{
-    const wrap=canvas.closest('[data-petcanvas]');
-    const charId=wrap?wrap.dataset.petcanvas:null;
-    if(!charId) {
-      // weekly — find from weekly data
-      const weekly=getCharWeeklyShop();
-      if(weekly && typeof renderCharThumb==='function'){
-        const g=canvas.getContext('2d');
-        renderCharThumb(g, weekly.id, canvas.width);
-      }
-      return;
-    }
-    if(typeof renderCharThumb==='function'){
-      const g=canvas.getContext('2d');
-      renderCharThumb(g, charId, canvas.width);
-    }
+  // Render weekly char thumbnail
+  container.querySelectorAll('.charshopcard .charport-sm[data-petcanvas]').forEach(wrap=>{
+    const charId=wrap.dataset.petcanvas;
+    const cv=wrap.querySelector('canvas');
+    if(cv&&charId&&typeof renderCharThumb==='function') renderCharThumb(cv.getContext('2d'),charId,cv.width);
   });
 }
 

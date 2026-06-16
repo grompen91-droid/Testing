@@ -609,3 +609,20 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .pullbtn.poor { background:linear-gradient(#888,#666); box-shadow:0 6px 0 #444; }
 .pitytxt { color:#c0a0e0; font-size:clamp(11px,1.9vmin,15px); font-weight:800; text-align:center; }
 .petownedgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.2vmin,10px); width:100%; }
+
+/* Character shop daily carousel */
+.charcarousel { display:flex; align-items:stretch; gap:clamp(6px,1.2vmin,10px); width:100%; }
+.charav { flex:0 0 auto; width:clamp(36px,7vmin,52px); border-radius:12px; border:3px solid #1a2540;
+  background:#2a3550; color:#fff; font-size:clamp(16px,3.2vmin,24px); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 4px 0 rgba(0,0,0,.3); }
+.charav:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.3); }
+#charcarowrap { flex:1; min-width:0; }
+.charcarousel-card { width:100%; text-align:center; }
+.charport-lg { width:clamp(90px,18vmin,130px); height:clamp(90px,18vmin,130px); border-radius:14px;
+  border:3px solid #2a3550; background:linear-gradient(#5a6b86,#46566f);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; margin:0 auto; }
+.charport-lg canvas { width:100%; height:100%; }
+.csname-lg { font-weight:900; font-size:clamp(15px,2.8vmin,22px); color:#26313f; margin-top:2px; }
+.csdesc-full { font-size:clamp(10px,1.9vmin,15px); color:#5a6b7a; font-weight:700; line-height:1.35; }
+.cstags-center { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+.carcounter { text-align:center; font-size:clamp(11px,2vmin,15px); font-weight:900; color:#9fb0c8; margin-top:2px; }

@@ -919,6 +919,11 @@ makeSprite('ic_crate', 64, (g,u)=>{
 makeSprite('ic_bolt', 64, (g,u)=>{
   sh(g,'#ffd24a',3.4*u,(g)=>{ g.moveTo(7*u,-30*u); g.lineTo(-17*u,7*u); g.lineTo(-1*u,7*u); g.lineTo(-8*u,30*u); g.lineTo(18*u,-8*u); g.lineTo(2*u,-8*u); g.closePath(); });
 });
+makeSprite('ic_char', 64, (g,u)=>{
+  sh(g,'#5fbf52',3.2*u,(g)=>{ g.roundRect(-15*u,-2*u,30*u,28*u,5*u); }); // body
+  sh(g,'#f0c890',3.4*u,(g)=>{ g.arc(0,-16*u,13*u,0,TAU); });            // head
+  dot(g,-5*u,-18*u,2.8*u,OUT); dot(g,5*u,-18*u,2.8*u,OUT);              // eyes
+});
 function _spk(g,u){ sh(g,'#fbf3df',3*u,(g)=>{ g.moveTo(-20*u,-9*u); g.lineTo(-7*u,-9*u); g.lineTo(7*u,-22*u); g.lineTo(7*u,22*u); g.lineTo(-7*u,9*u); g.lineTo(-20*u,9*u); g.closePath(); }); }
 makeSprite('ic_snd', 64, (g,u)=>{
   g.translate(-7*u,0);   // content spans -20..33 -> shift left so it sits centred in the canvas
