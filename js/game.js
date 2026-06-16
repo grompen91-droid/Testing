@@ -2893,8 +2893,8 @@ function render(){
     if(b.x<vx0-30||b.x>vx1+30||b.y<vy0-30||b.y>vy1+30) continue;
     if(b.boom){ drawBoomerangCroc(b); continue; }
     if(b.lucky){
-      if(b.luckyCrit){ cx.filter='grayscale(1) contrast(1.1)'; drawSprite('luckyblock',b.x,b.y,b.r*3.4,0,0,0,false,null); cx.filter='none'; }
-      else drawSprite('luckyblock',b.x,b.y,b.r*2.4,0,0,0,false,null);
+      if(b.luckyCrit){ cx.filter='grayscale(1) contrast(1.1)'; drawSprite('luckyblock',b.x,b.y,b.r*7,0,0,0,false,null); cx.filter='none'; }
+      else drawSprite('luckyblock',b.x,b.y,b.r*5,0,0,0,false,null);
       continue;
     }
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(b.x,b.y,b.r+2,0,TAU); cx.fill();
