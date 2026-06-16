@@ -435,7 +435,11 @@ function worldCleared(boss){
     bigText('+5 ◆ GEMS','#b06ff0');
   }
   const newChars = typeof CHARACTERS!=='undefined'
-    ? CHARACTERS.filter(c=>c.rarity==='world' && c.worldUnlock>prevUnlocked && c.worldUnlock<=unlockedMax)
+    ? CHARACTERS.filter(c => {
+        if(c.rarity!=='world' || c.worldUnlock==null) return false;
+        const hadBefore = c.worldUnlock<=prevUnlocked || (typeof isCharOwned==='function' && isCharOwned(c.id));
+        return !hadBefore && c.worldUnlock<=unlockedMax;
+      })
     : [];
   _clearData = { worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars };
   state = ST.CUTSCENE;
