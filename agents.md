@@ -192,5 +192,5 @@ _stroke(ctx, size)  // apply the standard dark outline to whatever path is open
 | `la_strega` | La Strega | legendary | 10% bullets → XP, nearby dmg reduction |
 | `il_professore` | Il Professore | world (7) | 2× XP range, 20% XP pre-fill per wave |
 | `fantasma` | Fantasma | world (9) | Phase shift dash (invincible, slows time) |
-| `il_cecchino` | Il Cecchino | rare | 3× dmg, 5× fire delay, 60 HP, no split shots |
+| `il_cecchino` | Il Cecchino | world (4) | 3× dmg, 5× fire delay, 60 HP, 1.5× gear dmg, no split shots |
 | `il_campione` | Il Campione | world (10) | 12% kills → mini lucky block, boss kills → +2 dmg |
