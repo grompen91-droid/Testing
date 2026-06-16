@@ -55,7 +55,9 @@ function currentBlob(){
 }
 function applyProfile(b){
   b = b || EMPTY_PROFILE();
-  localStorage.setItem('br_gold',          b.gold!=null? b.gold : 0);
+  const restoredGold = Math.max(0, Math.floor(b.gold!=null? b.gold : 0));
+  localStorage.setItem('br_gold', restoredGold);
+  if(typeof _saveHash==='function') localStorage.setItem('br_gold_sig', _saveHash(restoredGold));
   localStorage.setItem('br_unlocked',      b.unlocked!=null? b.unlocked : 0);
   localStorage.setItem('br_items_owned',   JSON.stringify(b.owned||[]));
   localStorage.setItem('br_gear_equipped', JSON.stringify(b.equipped||{}));
