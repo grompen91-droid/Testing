@@ -29,7 +29,7 @@
 const SUPA_URL  = (typeof window!=='undefined' && window.SUPA_URL)  || 'PASTE_SUPABASE_URL';
 const SUPA_ANON = (typeof window!=='undefined' && window.SUPA_ANON) || 'PASTE_SUPABASE_ANON_KEY';
 
-const EMPTY_PROFILE = () => ({ gold:0, unlocked:0, owned:[], equipped:{}, seen:[] });
+const EMPTY_PROFILE = () => ({ gold:0, unlocked:0, owned:[], equipped:{}, seen:[], gems:0, chars:[], pets:[], petPity:0, activeChar:'gianni', activePet:null });
 
 let sb = null;                // supabase client
 let authMode = null;          // 'guest' | 'account'
@@ -46,22 +46,47 @@ function supaConfigured(){
 // ---- profile <-> the live localStorage working keys ----
 function currentBlob(){
   return {
-    gold:     +(localStorage.getItem('br_gold')||0),
-    unlocked: +(localStorage.getItem('br_unlocked')||0),
-    owned:    JSON.parse(localStorage.getItem('br_items_owned')||'[]'),
-    equipped: JSON.parse(localStorage.getItem('br_gear_equipped')||'{}'),
-    seen:     JSON.parse(localStorage.getItem('br_gear_seen')||'[]'),
+    gold:       +(localStorage.getItem('br_gold')||0),
+    unlocked:   +(localStorage.getItem('br_unlocked')||0),
+    owned:      JSON.parse(localStorage.getItem('br_items_owned')||'[]'),
+    equipped:   JSON.parse(localStorage.getItem('br_gear_equipped')||'{}'),
+    seen:       JSON.parse(localStorage.getItem('br_gear_seen')||'[]'),
+    gems:       +(localStorage.getItem('br_gems')||0),
+    chars:      JSON.parse(localStorage.getItem('br_owned_chars')||'[]'),
+    pets:       JSON.parse(localStorage.getItem('br_owned_pets')||'[]'),
+    petPity:    +(localStorage.getItem('br_pet_pity')||0),
+    activeChar: localStorage.getItem('br_active_char')||'gianni',
+    activePet:  localStorage.getItem('br_active_pet')||null,
   };
 }
 function applyProfile(b){
   b = b || EMPTY_PROFILE();
+  // gold
   const restoredGold = Math.max(0, Math.floor(b.gold!=null? b.gold : 0));
   localStorage.setItem('br_gold', restoredGold);
   if(typeof _saveHash==='function') localStorage.setItem('br_gold_sig', _saveHash(restoredGold));
+  // world progress
   localStorage.setItem('br_unlocked',      b.unlocked!=null? b.unlocked : 0);
+  // gear
   localStorage.setItem('br_items_owned',   JSON.stringify(b.owned||[]));
   localStorage.setItem('br_gear_equipped', JSON.stringify(b.equipped||{}));
   localStorage.setItem('br_gear_seen',     JSON.stringify(b.seen||[]));
+  // gems
+  const restoredGems = Math.max(0, Math.floor(b.gems!=null? b.gems : 0));
+  localStorage.setItem('br_gems', restoredGems);
+  if(typeof _gemHash==='function') localStorage.setItem('br_gems_sig', _gemHash(restoredGems));
+  if(typeof gemBalance!=='undefined') gemBalance = restoredGems;
+  // characters
+  localStorage.setItem('br_owned_chars', JSON.stringify(b.chars||[]));
+  // pets
+  localStorage.setItem('br_owned_pets', JSON.stringify(b.pets||[]));
+  localStorage.setItem('br_pet_pity', b.petPity!=null? b.petPity : 0);
+  // active selections
+  const ac = b.activeChar||'gianni';
+  localStorage.setItem('br_active_char', ac);
+  if(typeof activeCharId!=='undefined') activeCharId = ac;
+  if(b.activePet){ localStorage.setItem('br_active_pet', b.activePet); if(typeof activePetId!=='undefined') activePetId=b.activePet; }
+  else { localStorage.removeItem('br_active_pet'); if(typeof activePetId!=='undefined') activePetId=null; }
   rehydrate();
 }
 // push the freshly-written working keys into the live game globals + refresh the menu UI
@@ -79,7 +104,10 @@ function rehydrate(){
   if(typeof refreshMenuChar==='function')  refreshMenuChar();
   if(typeof renderShop==='function')       renderShop();
   if(typeof renderInventory==='function')  renderInventory();
+  if(typeof renderPetSection==='function') renderPetSection();
+  if(typeof renderCharacterTab==='function') renderCharacterTab();
   if(typeof updateInvBadge==='function')   updateInvBadge();
+  if(typeof refreshGemsUI==='function')    refreshGemsUI();
   const gt=$('goldtxt'); if(gt) gt.textContent = (typeof gold!=='undefined'?gold:0);
 }
 

@@ -703,6 +703,7 @@ let activePetId  = localStorage.getItem('br_active_pet')||null;
 function setActiveChar(id) {
   activeCharId = id;
   localStorage.setItem('br_active_char', id);
+  if(window.markDirty) window.markDirty();
   if(typeof refreshCharTab==='function') refreshCharTab();
 }
 
@@ -710,6 +711,7 @@ function setActivePet(id) {
   activePetId = id;
   if(id) localStorage.setItem('br_active_pet', id);
   else localStorage.removeItem('br_active_pet');
+  if(window.markDirty) window.markDirty();
   if(typeof refreshEquipTab==='function') refreshEquipTab();
 }
 
