@@ -20,7 +20,19 @@ function refreshHUD(){
 let waveGapT=0;   // countdown between a cleared wave and the next
 // One-time coin reset (2026-06-12): wipe every existing player's gold exactly once.
 if(!localStorage.getItem('br_reset_20260612')){ localStorage.setItem('br_gold','0'); localStorage.setItem('br_reset_20260612','1'); }
-let gold = +(localStorage.getItem('br_gold')||0);   // persistent currency (saved)
+// Lightweight hash used for save integrity checks
+function _saveHash(v){ let h=0x811c9dc5; const s=String(v)+'brrumble'; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*0x1000193)>>>0; } return h.toString(36); }
+// Load gold with signature check; accept legacy saves (no sig yet) so existing players keep progress
+(function(){
+  const raw=+(localStorage.getItem('br_gold')||0), sig=localStorage.getItem('br_gold_sig');
+  const valid = sig===null ? true : sig===_saveHash(Math.floor(raw));   // first run = no sig = trusted
+  const safeGold = valid ? Math.max(0, Math.floor(raw)) : 0;
+  if(sig===null) localStorage.setItem('br_gold_sig', _saveHash(safeGold));  // stamp new install
+  // evaluated via let initialiser below; store result on window so the IIFE can pass it out
+  window.__initGold = safeGold;
+})();
+let gold = window.__initGold||0;   // persistent currency (saved)
+function saveGold(){ localStorage.setItem('br_gold', gold); localStorage.setItem('br_gold_sig', _saveHash(gold)); }
 // boss arena: the field locks to a small bounded square a few seconds before the boss arrives
 let arena=null, bossPending=0;
 const ARENA_SIZE=1000, ARENA_LEAD=4, ARENA_ZOOM=1.3;
@@ -209,28 +221,36 @@ const BOSSES_W2 = [   // each uses its own original moveset (keyed on spr in bos
 const FOES_W3 = [
   // Tier I — fodder
   { spr:'bobritto',      name:'Bobritto Bandito',    hp:5,  sp:90, r:19, xp:1, score:11,
-    range:260, shoot:{type:'aim',n:1,cd:2.2,spd:170,col:'#c0392b'}, dash:true },
+    range:260, shoot:{type:'aim',n:1,cd:2.2,spd:170,col:'#c0392b'}, dash:true,
+    death:{type:'ring',n:5} },                                       // bandit pops on death
   { spr:'garamaraman',   name:'Garamaraman',          hp:4,  sp:100,r:16, xp:1, score:10,
+    range:180, shoot:{type:'aim',n:2,cd:2.8,spd:130,col:'#ff5a40'}, // shoots while alive before splitting
     death:{type:'split'} },
   // Tier II — infantry
   { spr:'burbaloni',     name:'Burbaloni Luliloli',   hp:8,  sp:58, r:22, xp:2, score:18,
-    range:320, shoot:{type:'aim',n:1,cd:3.0,spd:95,col:'#b48adf'} },
+    range:320, shoot:{type:'aim',n:1,cd:3.0,spd:95,col:'#b48adf'},
+    pullAura:30 },                                                    // weak gravity pulls player in
   { spr:'bonecaambalabu',name:'Boneca Ambalabu',       hp:10, sp:68, r:24, xp:2, score:22,
-    dash:true, range:240, shoot:{type:'aim',n:2,cd:3.5,spd:138,col:'#2e7d32'} },
+    dash:true, range:240, shoot:{type:'aim',n:2,cd:3.5,spd:138,col:'#2e7d32'},
+    death:{type:'ring',n:4} },                                       // ambush explosion
   // Tier III — casters
   { spr:'girafassassina',name:'Girafa Assassina',     hp:9,  sp:38, r:28, xp:3, score:28,
-    range:500, front:0.6, shoot:{type:'aim',n:3,cd:2.5,spd:180,col:'#d4ac0d'} },
+    range:500, front:0.6, shoot:{type:'aim',n:3,cd:2.5,spd:180,col:'#d4ac0d'},
+    cast:{kind:'debris',cd:4.2,n:2,col:'#d4ac0d'} },                // rains debris when in range
   { spr:'glorbo',        name:'Glorbo Frutabaga',     hp:9,  sp:52, r:23, xp:2, score:20,
     range:350, shoot:{type:'aim',n:1,cd:2.8,spd:110,col:'#8e44ad'},
-    aoe:{r:44,tele:0.1,life:1.2,dps:4,slow:true,cd:4.0} },
+    cast:{kind:'geyser',cd:4.5,range:380,n:3,col:'#8e44ad'},        // vine eruptions
+    aoe:{r:44,tele:0.1,life:1.2,dps:7,slow:true,cd:4.0} },
   // Tier IV — heavy
   { spr:'cocofanto',     name:'Cocofanto Elephanto',  hp:30, sp:34, r:40, xp:5, score:60,
-    front:0.55, dash:true, death:{type:'ring',n:4} },
+    front:0.55, dash:true, death:{type:'ring',n:4},
+    trail:{cd:0.4,r:36,life:1.8,dps:7,col:'#3a2616'} },             // leaves coconut-debris trail
   // Tier V — elite (support)
   { spr:'kikkurimi',     name:'Kikkurimi Kikkurone',  hp:20, sp:56, r:26, xp:4, score:55,
     support:true,
     aoe:{r:34,tele:0,life:0.4,dps:0,slow:true,cd:4.2},
-    range:260, shoot:{type:'aim',n:1,cd:4.5,spd:125,col:'#27ae60'} },
+    range:260, shoot:{type:'aim',n:1,cd:4.5,spd:125,col:'#27ae60'},
+    cast:{kind:'summon',cd:8,spr:'bobritto',n:2,cap:4} },           // calls in bandit reinforcements
 ];
 const BOSSES_W3 = [
   { spr:'subrosa',       name:'SUBROSA CAMBRIANA',           hp:140, r:52, phased:true },
@@ -244,17 +264,23 @@ const FOES_W4 = [
   { spr:'gelatogattino',     name:'Gelato Gattino',       hp:4,  sp:96,  r:15, xp:1, score:11 },
   { spr:'pinguinocaramelino',name:'Pinguino Caramelino',  hp:5,  sp:78,  r:17, xp:1, score:12 },
   { spr:'trulimero',         name:'Trulimero Trulicina',  hp:4,  sp:104, r:15, xp:1, score:11 },
-  // Tier II — infantry (one dasher, one light shooter)
-  { spr:'americanopenguino', name:'Americano Penguino',   hp:8,  sp:84,  r:18, xp:2, score:18, dash:true },
-  { spr:'ghiacciolospaziale',name:'Ghiacciolo Spaziale',  hp:7,  sp:60,  r:17, xp:2, score:18, range:300, shoot:{type:'aim',n:1,cd:2.8,spd:150,col:'#7ec8ff'} },
-  // Tier III — caster (mobile dasher + twin shot)
-  { spr:'frullifrulla',      name:'Frulli Frulla',        hp:10, sp:66,  r:19, xp:3, score:26, dash:true, range:320, shoot:{type:'aim',n:2,cd:3.2,spd:140,col:'#4aa3df'} },
+  // Tier II — infantry (one dasher that explodes, one ice-debris caster)
+  { spr:'americanopenguino', name:'Americano Penguino',   hp:8,  sp:84,  r:18, xp:2, score:18, dash:true,
+    death:{type:'ring',n:5} },                                       // cannonball penguin detonates on death
+  { spr:'ghiacciolospaziale',name:'Ghiacciolo Spaziale',  hp:7,  sp:60,  r:17, xp:2, score:18,
+    range:300, shoot:{type:'aim',n:1,cd:2.8,spd:150,col:'#7ec8ff'},
+    cast:{kind:'debris',cd:3.5,n:2,col:'#7ec8ff'} },                // drops ice shards from orbit
+  // Tier III — caster (mobile dasher + twin shot that leaves cold patches)
+  { spr:'frullifrulla',      name:'Frulli Frulla',        hp:10, sp:66,  r:19, xp:3, score:26, dash:true,
+    range:320, shoot:{type:'aim',n:2,cd:3.2,spd:140,col:'#4aa3df'},
+    aoe:{r:36,dps:5,life:1.2,tele:0.5,slow:true,cd:3.8,col:'#9fd0ff'} }, // leaves ice patch on cooldown
   // Tier IV — heavy (armored, leaves a cold slow-zone, pops a death ring)
   { spr:'sorbettoleonino',   name:'Sorbetto Leonino',     hp:30, sp:36,  r:38, xp:5, score:60, front:0.55, death:{type:'ring',n:5},
     aoe:{r:44,tele:0.5,life:1.6,dps:8,slow:true,cd:4.2} },
-  // Tier V — elite (support: heals nearby foes -> priority kill)
+  // Tier V — elite (support: heals nearby foes + wing sweep -> priority kill)
   { spr:'granitagabbiano',   name:'Granita Gabbiano',     hp:20, sp:62,  r:24, xp:4, score:55, support:true,
-    range:280, shoot:{type:'aim',n:1,cd:4.0,spd:120,col:'#9fd0ff'} },
+    range:280, shoot:{type:'aim',n:1,cd:4.0,spd:120,col:'#9fd0ff'},
+    cast:{kind:'sweep',cd:4.2,dur:1.2,col:'#9fd0ff'} },             // icy wing-sweep attack
 ];
 const BOSSES_W4 = [   // original frozen-dessert movesets (keyed on spr in bossMoves); telegraphed melee/zone (band 2, forgiving)
   { spr:'tiramisubmarini', name:'TIRAMISUBMARINI',                 hp:135, r:54, phased:true },
@@ -264,21 +290,29 @@ const BOSSES_W4 = [   // original frozen-dessert movesets (keyed on spr in bossM
 ];
 // ============ WORLD 5 — CIRCO BRAINROTTO roster (house-built carnival hybrids). band 3: tankier, first bounce/teleport gimmicks. ============
 const FOES_W5 = [
-  // Tier I — fodder (one pops into bullets, one splits)
+  // Tier I — fodder
   { spr:'burbalonidog',   name:'Burbaloni Dogolini',  hp:4,  sp:88,  r:17, xp:1, score:12, death:{type:'ring',n:3} },
-  { spr:'popcorrino',     name:'Popcorrino Bucketto',  hp:5,  sp:74,  r:17, xp:1, score:12, death:{type:'split'} },
-  { spr:'zuccherofilino', name:'Zucchero Filino',      hp:4,  sp:108, r:15, xp:1, score:12 },
-  // Tier II — infantry (two dashers: clown lunge + human-cannonball launch)
-  { spr:'clownino',       name:'Clownino Honkhonk',    hp:8,  sp:80,  r:18, xp:2, score:20, dash:true },
-  { spr:'cannonino',      name:'Cannonino Umano',      hp:10, sp:64,  r:18, xp:2, score:22, dash:true, kb:true },
-  // Tier III — caster (juggler lobs arcing balls)
-  { spr:'giocoliere',     name:'Giocoliere Scimmino',  hp:11, sp:58,  r:19, xp:3, score:28, range:340, shoot:{type:'aim',n:3,cd:3.0,arc:true,col:'#ffd24a'} },
-  // Tier IV — heavy (armored strongman: slam zone + death ring)
+  { spr:'popcorrino',     name:'Popcorrino Bucketto',  hp:5,  sp:74,  r:17, xp:1, score:12,
+    death:{type:'ring',n:5} },                                       // pops like kernels instead of splitting
+  { spr:'zuccherofilino', name:'Zucchero Filino',      hp:4,  sp:108, r:15, xp:1, score:12,
+    death:{type:'split',n:2} },                                      // cotton candy tears in two
+  // Tier II — infantry (clown explodes on death, cannonino leaves a crater ring)
+  { spr:'clownino',       name:'Clownino Honkhonk',    hp:8,  sp:80,  r:18, xp:2, score:20, dash:true,
+    death:{type:'ring',n:6} },                                       // clown-car confetti explosion
+  { spr:'cannonino',      name:'Cannonino Umano',      hp:10, sp:64,  r:18, xp:2, score:22, dash:true, kb:true,
+    death:{type:'ring',n:4} },                                       // human cannonball detonates on death
+  // Tier III — caster (juggler lobs 5 arcing balls, drops them all on death)
+  { spr:'giocoliere',     name:'Giocoliere Scimmino',  hp:11, sp:58,  r:19, xp:3, score:28,
+    range:340, shoot:{type:'aim',n:5,cd:3.0,arc:true,col:'#ffd24a'},
+    death:{type:'ring',n:5} },
+  // Tier IV — heavy (armored strongman with gravitational pull + slam zone + death ring)
   { spr:'forzutoorsino',  name:'Forzuto Orsino',       hp:34, sp:34,  r:40, xp:5, score:64, front:0.5, death:{type:'ring',n:5},
-    aoe:{r:46,tele:0.55,life:0.7,dps:18,cd:4.0} },
-  // Tier V — elite (ringmaster support: heals nearby + whistle shot)
+    aoe:{r:46,tele:0.55,life:0.7,dps:18,cd:4.0},
+    pullAura:40 },                                                    // strongman draws you in
+  // Tier V — elite (ringmaster: heals + summons clowns + whistle shot)
   { spr:'maestrofoccino', name:'Maestro Foccino',      hp:22, sp:60,  r:24, xp:4, score:58, support:true,
-    range:300, shoot:{type:'aim',n:2,cd:3.8,spd:130,col:'#e8463c'} },
+    range:300, shoot:{type:'aim',n:2,cd:3.8,spd:130,col:'#e8463c'},
+    cast:{kind:'summon',cd:7,spr:'clownino',n:2,cap:4} },           // ringmaster calls in backup clowns
 ];
 const BOSSES_W5 = [   // original carnival movesets; telegraphed melee/zone with bounce/teleport flourishes (band 3)
   { spr:'trapezino',     name:'TRAPEZINO VOLANTINO',  hp:150, r:54, phased:true },
@@ -347,7 +381,7 @@ function curWorld(){ return WORLDS[worldIdx]; }
 let curFoes   = WORLDS[0].foes;
 let curBosses = WORLDS[0].bosses;
 let curTheme  = WORLDS[0].theme;
-let unlockedMax = +(localStorage.getItem('br_unlocked')||0);
+let unlockedMax = clamp(Math.floor(+(localStorage.getItem('br_unlocked')||0)), 0, WORLDS.length-1);
 let selWorld = Math.min(unlockedMax, WORLDS.length-1);
 function loadWorld(idx){
   worldIdx = clamp(idx,0,WORLDS.length-1);
@@ -358,6 +392,8 @@ function loadWorld(idx){
     WORLD.w=mw; WORLD.h=mh;
   }
   document.body.style.background = curTheme.bg;
+  // Free tinted-sprite cache between worlds (significant memory win across world changes)
+  for(const k of Object.keys(TINTED)) delete TINTED[k];
   buildGround();   // pre-render this world's ground once (avoids per-frame tile loops)
 }
 let cut = null;   // cutscene state
@@ -697,7 +733,16 @@ function resetPlayer(){
 }
 
 function startGame(idx){
-  loadWorld(Number.isInteger(idx) ? idx : selWorld);
+  const wi = Number.isInteger(idx) ? idx : selWorld;
+  const wl=$('worldload'), wlt=$('worldloadtxt');
+  if(wl){
+    if(wlt) wlt.textContent = 'entering ' + (WORLDS[wi]?.name||'world').toLowerCase() + '…';
+    wl.classList.remove('hidden');
+    setTimeout(()=>{ _doStartGame(wi); wl.classList.add('hidden'); }, 550);
+  } else { _doStartGame(wi); }
+}
+function _doStartGame(wi){
+  loadWorld(wi);
   initAudio();
   playMusic(curTheme.music);
   resetPlayer();
@@ -1059,6 +1104,12 @@ function separate(e){
 // ============ UPDATE ============
 function update(dt){
   elapsed += dt;
+  // Anti-cheat: per-frame sanity clamp — values beyond legitimate upgrade caps indicate console tampering
+  if(state===ST.PLAY){
+    if(P.dmg>18000||P.maxHp>4000||P.speed>2800||P.shots>32){ quitToMenu(); return; }
+    if(P.hp>P.maxHp) P.hp=P.maxHp;
+    if(boss && boss.hp > boss.maxHp) boss.hp = boss.maxHp;   // reject console-up of boss HP
+  }
   if(bossPending>0){ bossPending-=dt; if(bossPending<=0){ bossPending=0; spawnBoss(); } }
 
   // --- player move ---
@@ -1628,7 +1679,7 @@ function update(dt){
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
       if(g.heart){ const h=g.heal||(g.big?50:25); P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
-      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; localStorage.setItem('br_gold',gold); if(window.markDirty) window.markDirty(); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
+      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; saveGold(); if(window.markDirty) window.markDirty(); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else if(g.magnet){ for(const o of gems) o.vac=true; floatText(P.x,P.y-24,'MAGNET','#9fe0ff',16); burst(P.x,P.y,'#9fe0ff',12,160); sfx.level(); }   // pull in every pickup on the map
       else { gainXp(g.v); sfx.gem(2); }
     }
@@ -1831,16 +1882,16 @@ function bossMoves(e){
     // ---- World 3 (FORESTA FRUTOSA) — telegraphed melee/zone fights ----
     case 'subrosa':                        // B1: thorn garden
       if(e.vph>=3) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','BLOOM_STORM','THORN_RING'];
-      if(e.vph>=2) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','THORN_RING'];
-      return ['ROSE_LUNGE','THORN_RING','PETAL_FAN'];
+      if(e.vph>=2) return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','BLOOM_STORM'];
+      return ['ROSE_LUNGE','THORN_RING','PETAL_FAN','ROSE_LUNGE'];   // extra ROSE_LUNGE to vary p1 loop
     case 'bobritoboss':                    // B2: blades perpetually orbit it (gimmick) — ranged fan + dashes
       if(e.vph>=3) return ['BLADE_FAN','KNIFE_VOLLEY','MACHETE_DASH','DOUBLE_DASH'];
-      if(e.vph>=2) return ['BLADE_FAN','KNIFE_VOLLEY','MACHETE_DASH'];
-      return ['BLADE_FAN','MACHETE_DASH','KNIFE_VOLLEY'];
+      if(e.vph>=2) return ['BLADE_FAN','KNIFE_VOLLEY','MACHETE_DASH','DOUBLE_DASH'];
+      return ['BLADE_FAN','MACHETE_DASH','KNIFE_VOLLEY','BLADE_FAN']; // extra BLADE_FAN weight keeps pressure up
     case 'frullone':                       // B3: centrifuge
       if(e.vph>=3) return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE','VORTEX_PULL'];
       if(e.vph>=2) return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE'];
-      return ['BLADE_SPRAY','BLENDER_CHARGE'];
+      return ['BLADE_SPRAY','BLENDER_CHARGE','GRIND_ZONE'];          // p1 now has 3 moves
     case 'cocofantoboss':                  // B4 FINAL: armoured colossus w/ arena quake gimmick + coconut bullet-hell
       if(e.vph>=3) return ['COCONUT_STORM','QUAKE_RING','STAMPEDE','TREMOR_STOMP','COCONUT_BARRAGE'];
       if(e.vph>=2) return ['STOMP_QUAKE','QUAKE_RING','COCONUT_BARRAGE','TUSK_SWEEP'];
@@ -1853,7 +1904,7 @@ function bossMoves(e){
     case 'frigocamello':                   // B2: ice-fridge camel
       if(e.vph>=3) return ['FROST_CONE','ICE_FAN','BODY_SLAM','ICE_SUMMON','ICE_FAN'];
       if(e.vph>=2) return ['FROST_CONE','ICE_FAN','BODY_SLAM'];
-      return ['ICE_FAN','BODY_SLAM'];
+      return ['ICE_FAN','BODY_SLAM','FROST_CONE'];                   // p1 now has 3 moves
     case 'magotiramisu':                   // B3: tiramisu frost-wizard
       if(e.vph>=3) return ['ARCANE_SPIRAL','FROST_BOLTS','HEX_FIELD','CONJURE','ARCANE_RING'];
       if(e.vph>=2) return ['FROST_BOLTS','HEX_FIELD','ARCANE_RING','CONJURE'];
@@ -1866,15 +1917,15 @@ function bossMoves(e){
     case 'trapezino':                      // B1: acrobat (gimmick: swings across the arena)
       if(e.vph>=3) return ['RING_TOSS','HOOP_RING','CONFETTI_TOSS','TRAPEZE_SWING'];
       if(e.vph>=2) return ['RING_TOSS','HOOP_RING','CONFETTI_TOSS','TRAPEZE_SWING'];
-      return ['RING_TOSS','HOOP_RING'];
+      return ['RING_TOSS','HOOP_RING','CONFETTI_TOSS','TRAPEZE_SWING']; // full acrobatic kit from p1
     case 'giostra':                        // B2: living carousel (gimmick: orbits the arena firing spokes)
       if(e.vph>=3) return ['CALLIOPE_RING','HORSE_CHARGE','CALLIOPE_ZONE','CAROUSEL_SPIN'];
       if(e.vph>=2) return ['CALLIOPE_RING','HORSE_CHARGE','CALLIOPE_ZONE'];
-      return ['CALLIOPE_RING','CALLIOPE_ZONE'];
+      return ['CALLIOPE_RING','CALLIOPE_ZONE','HORSE_CHARGE'];        // p1 now has 3 moves
     case 'mangiafuoco':                    // B3: fire-eater (gimmick: embers orbit it)
       if(e.vph>=3) return ['EMBER_JUGGLE','FIRE_JUGGLE','FIRE_BREATH','EMBER_RING'];
       if(e.vph>=2) return ['FIRE_BREATH','EMBER_RING','EMBER_JUGGLE','FIRE_JUGGLE'];
-      return ['FIRE_BREATH','EMBER_RING'];
+      return ['FIRE_BREATH','EMBER_RING','EMBER_JUGGLE'];             // p1 now has 3 moves
     case 'granpagliaccio':                 // B4 FINAL: the Great Ringmaster (gimmick: blinks + summons acts)
       if(e.vph>=3) return ['CONFETTI_SPIRAL','BALLOON_RING','SUMMON_ACT','CONFETTI_SPIRAL'];
       if(e.vph>=2) return ['BALLOON_RING','CONFETTI_SPIRAL','SUMMON_ACT'];
@@ -2231,10 +2282,12 @@ function updateGimmick(e,dt){
         const off=Math.atan2(P.y-e.y,P.x-e.x); for(let k=0;k<n;k++)
           fireEB(e.x,e.y,0,0,'#e0e0e0',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/n,rad:92,angV:2.2,radV:42}}); }
       break;
-    case 'centrifuge':{                                 // constant gentle drag toward the blender
+    case 'centrifuge':{                                 // constant gentle drag toward the blender + periodic blade ring
       const a=Math.atan2(e.y-P.y,e.x-P.x), str=(ph>=3?70:ph>=2?52:38);
       P.x=clamp(P.x+Math.cos(a)*str*dt,WALL+P.r,WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*str*dt,WALL+P.r,WORLD.h-WALL-P.r);
       if(Math.random()<0.25) parts.push({x:P.x,y:P.y,vx:0,vy:0,life:0.2,max:0.2,color:'#bdbdbd',r:3});
+      e.gT-=dt; if(e.gT<=0){ e.gT=(ph>=3?1.8:ph>=2?2.4:3.0)*gm;
+        mRingGap(e, ph>=3?10:8, 120, '#bdbdbd', 0.35); }
       break; }
     case 'quake':                                       // arena-wide ground cracks erupting outward (final)
       e.gT-=dt; if(e.gT<=0){ e.gT = ph>=3?3.2:4.0; const off=rand(0,TAU), arms=ph>=3?8:6;
@@ -2271,8 +2324,8 @@ function updateGimmick(e,dt){
       e.gT-=dt; if(e.gT<=0){ e.gT=0.5*gm; const spokes=ph>=3?6:4, base=(e.gA||0)*2;
         for(let k=0;k<spokes;k++) fireEB(e.x,e.y,base+k*TAU/spokes,120,'#ffd24a'); }
       break; }
-    case 'juggle':                                      // fire-eater keeps embers orbiting it
-      e.gT-=dt; if(e.gT<=0){ e.gT=1.4*gm; const n=ph>=3?3:2, off=rand(0,TAU);
+    case 'juggle':                                      // fire-eater keeps embers orbiting it (quickens with phase)
+      e.gT-=dt; if(e.gT<=0){ e.gT=(ph>=3?0.9:ph>=2?1.1:1.4)*gm; const n=ph>=3?3:2, off=rand(0,TAU);
         for(let k=0;k<n;k++) fireEB(e.x,e.y,0,0,'#ff7a2a',{orbit:{cx:e.x,cy:e.y,ang:off+k*TAU/n,rad:70,angV:2.6,radV:30}}); }
       break;
     case 'showtime':                                    // ringmaster blinks + keeps a rotating cast of clowns (final)
@@ -3174,6 +3227,16 @@ document.addEventListener('visibilitychange', ()=>{
 setInterval(()=>{
   if(state===ST.MENU && enemies.length<6){ spawnEnemy(); const e=enemies[enemies.length-1]; e.sp=0; }
 }, 700);
+
+// ---- Anti-cheat: disable console in production (blocks the most common "open devtools, type cheat" attacks) ----
+(function(){
+  const dev = location.protocol==='file:' || location.hostname==='localhost' || location.hostname==='127.0.0.1';
+  if(dev) return;
+  const noop=()=>{};
+  ['log','warn','error','info','debug','dir','table','group','groupEnd','groupCollapsed','time','timeEnd','trace','assert','count'].forEach(k=>{
+    try{ Object.defineProperty(console,k,{value:noop,writable:false,configurable:false}); }catch(_){}
+  });
+})();
 
 requestAnimationFrame(loop);
 

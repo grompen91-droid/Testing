@@ -150,7 +150,7 @@ function statTag(stat){ return '<span class="stag s-'+stat+'">'+STAT[stat].short
 function ownItem(id){ gearOwned.add(id); saveOwned(); updateInvBadge(); }   // badge the Inventory tab
 function buyItem(id, price){
   if(gearOwned.has(id) || gold<price) return false;
-  gold-=price; localStorage.setItem('br_gold',gold);
+  gold-=price; saveGold();
   ownItem(id);
   if(typeof sfx!=='undefined') sfx.coin();
   refreshGoldUI(); renderShop(); renderInventory();
@@ -205,11 +205,11 @@ function rollCrateItem(key){ const r=rollCrateRarity(key); const pool=catalogByR
 
 function openCrate(key){
   const cr=CRATES[key]; if(gold<cr.price) return;
-  gold-=cr.price; localStorage.setItem('br_gold',gold); refreshGoldUI();
+  gold-=cr.price; saveGold(); refreshGoldUI();
   if(typeof sfx!=='undefined') sfx.pick();
   const won = rollCrateItem(key);
   const dup = gearOwned.has(won);
-  if(dup){ const refund=Math.round(itemPrice(won)*0.4); gold+=refund; localStorage.setItem('br_gold',gold); if(window.markDirty) window.markDirty(); }
+  if(dup){ const refund=Math.round(itemPrice(won)*0.4); gold+=refund; saveGold(); if(window.markDirty) window.markDirty(); }
   else ownItem(won);
 
   const ov=$('crate'); if(!ov){ // headless / no overlay: just resolve instantly
