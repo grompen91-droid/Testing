@@ -447,7 +447,7 @@ const CHARACTERS = [
     desc: 'Sniper, low firerate, high damage.',
     rarity: 'world',
     worldUnlock: 3,
-    baseStats: { dmg:30, fireRate:1.6, maxHp:60, range:480, gearDmgMul:1.5 },
+    baseStats: { dmg:75, fireRate:1.6, maxHp:60, range:480, gearDmgMul:1.5 },
     register() {
       P.bannedCards = (P.bannedCards||[]).concat(['shots']);
       P.trueDmg = true;
