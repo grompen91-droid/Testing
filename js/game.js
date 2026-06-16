@@ -827,6 +827,7 @@ function startGame(idx){
 }
 function _doStartGame(wi){
   loadWorld(wi);
+  if(gameMode==='challenger'){ WORLD.w=999999; WORLD.h=999999; }   // effectively infinite; ground drawn per-frame
   initAudio();
   playMusic(curTheme.music);
   resetPlayer();
@@ -3046,18 +3047,32 @@ function render(){
   const vw=W/zoom, vh=H/zoom;
   const vx0=camera.x, vy0=camera.y, vx1=vx0+vw, vy1=vy0+vh;
 
-  // --- ground: outside-world void ---
+  // --- ground ---
   cx.fillStyle=curTheme.void;
   cx.fillRect(vx0-40, vy0-40, vw+80, vh+80);
-
-  // --- ground: blit the pre-rendered world (tiles + tufts + debris), only the visible slice ---
-  if(!groundCanvas || groundFor!==curTheme) buildGround();
-  const sx0=clamp(vx0-2,0,WORLD.w), sy0=clamp(vy0-2,0,WORLD.h);
-  const sx1=clamp(vx1+2,0,WORLD.w), sy1=clamp(vy1+2,0,WORLD.h);
-  if(sx1>sx0 && sy1>sy0) cx.drawImage(groundCanvas, sx0,sy0,sx1-sx0,sy1-sy0, sx0,sy0,sx1-sx0,sy1-sy0);
-
-  // --- fence border (wooden wall) ---
-  drawBorder(vx0,vy0,vx1,vy1);
+  if(gameMode==='challenger'){
+    // Infinite tiling ground — draw only visible tiles per-frame (no canvas limit)
+    const gx0=Math.floor(vx0/TILE)*TILE, gy0=Math.floor(vy0/TILE)*TILE;
+    for(let gy=gy0; gy<=vy1+TILE; gy+=TILE){
+      for(let gx=gx0; gx<=vx1+TILE; gx+=TILE){
+        cx.fillStyle=((((gx/TILE)|0)+((gy/TILE)|0))&1)?curTheme.tile1:curTheme.tile2;
+        cx.fillRect(gx,gy,TILE,TILE);
+      }
+    }
+    cx.fillStyle=curTheme.tuft;
+    for(let gy=gy0; gy<=vy1+TILE; gy+=TILE){
+      for(let gx=gx0; gx<=vx1+TILE; gx+=TILE){
+        const h=((gx*31+gy*17)%97)/97;
+        if(h<0.3){ cx.fillRect((gx+((gx>>>3)%60))+10,(gy+((gy>>>2)%60))+12,3,7); }
+      }
+    }
+  } else {
+    if(!groundCanvas || groundFor!==curTheme) buildGround();
+    const sx0=clamp(vx0-2,0,WORLD.w), sy0=clamp(vy0-2,0,WORLD.h);
+    const sx1=clamp(vx1+2,0,WORLD.w), sy1=clamp(vy1+2,0,WORLD.h);
+    if(sx1>sx0 && sy1>sy0) cx.drawImage(groundCanvas, sx0,sy0,sx1-sx0,sy1-sy0, sx0,sy0,sx1-sx0,sy1-sy0);
+    drawBorder(vx0,vy0,vx1,vy1);
+  }
 
   // --- ground hazard zones (telegraph + active) ---
   renderZones();
@@ -3414,17 +3429,31 @@ function drawMinimap(){
   const pad = 18;
   const mx=pad, my=H-ms-pad;
   cx.globalAlpha=0.9;
-  cx.fillStyle=curTheme.void||'#3a2d22'; cx.fillRect(mx-3,my-3,ms+6,ms+6);   // frame = world's dark/void tone
-  cx.fillStyle=curTheme.tile1||'#6fae3d'; cx.fillRect(mx,my,ms,ms);          // playfield = world's ground tone
-  const sxk=ms/WORLD.w, syk=ms/WORLD.h;
-  cx.fillStyle='#4ab3ff';   // XP orbs = blue
-  for(const g of gems){ if(g.coin||g.heart||g.magnet) continue; cx.fillRect(mx+g.x*sxk, my+g.y*syk, 2,2); }
-  cx.fillStyle='#e54d4d';
-  for(const e of enemies){ cx.fillRect(mx+e.x*sxk-1, my+e.y*syk-1, e.isBoss?4:2, e.isBoss?4:2); }
-  cx.fillStyle='#ffd23a';   // lucky blocks = yellow
-  for(const lb of luckies){ cx.fillRect(mx+lb.x*sxk-2, my+lb.y*syk-2, 4,4); }
-  cx.fillStyle='#fff'; cx.fillRect(mx+P.x*sxk-2, my+P.y*syk-2, 4,4);
-  cx.strokeStyle='#fff'; cx.lineWidth=2; cx.strokeRect(mx+camera.x*sxk, my+camera.y*syk, (W/zoom)*sxk, (H/zoom)*syk);
+  cx.fillStyle=curTheme.void||'#3a2d22'; cx.fillRect(mx-3,my-3,ms+6,ms+6);
+  cx.fillStyle=curTheme.tile1||'#6fae3d'; cx.fillRect(mx,my,ms,ms);
+  if(gameMode==='challenger'){
+    // Infinite map: show 2400-unit radius centered on player
+    const view=2400, sxk=ms/view, syk=ms/view, ox=P.x-view/2, oy=P.y-view/2;
+    cx.fillStyle='#4ab3ff';
+    for(const g of gems){ if(g.coin||g.heart||g.magnet) continue; cx.fillRect(mx+(g.x-ox)*sxk, my+(g.y-oy)*syk, 2,2); }
+    cx.fillStyle='#e54d4d';
+    for(const e of enemies){ cx.fillRect(mx+(e.x-ox)*sxk-1, my+(e.y-oy)*syk-1, e.isBoss?4:2, e.isBoss?4:2); }
+    cx.fillStyle='#ffd23a';
+    for(const lb of luckies){ cx.fillRect(mx+(lb.x-ox)*sxk-2, my+(lb.y-oy)*syk-2, 4,4); }
+    cx.fillStyle='#fff'; cx.fillRect(mx+ms/2-2, my+ms/2-2, 4,4);   // player always center
+    cx.strokeStyle='rgba(255,255,255,0.6)'; cx.lineWidth=2;
+    cx.strokeRect(mx+(camera.x-ox)*sxk, my+(camera.y-oy)*syk, (W/zoom)*sxk, (H/zoom)*syk);
+  } else {
+    const sxk=ms/WORLD.w, syk=ms/WORLD.h;
+    cx.fillStyle='#4ab3ff';
+    for(const g of gems){ if(g.coin||g.heart||g.magnet) continue; cx.fillRect(mx+g.x*sxk, my+g.y*syk, 2,2); }
+    cx.fillStyle='#e54d4d';
+    for(const e of enemies){ cx.fillRect(mx+e.x*sxk-1, my+e.y*syk-1, e.isBoss?4:2, e.isBoss?4:2); }
+    cx.fillStyle='#ffd23a';
+    for(const lb of luckies){ cx.fillRect(mx+lb.x*sxk-2, my+lb.y*syk-2, 4,4); }
+    cx.fillStyle='#fff'; cx.fillRect(mx+P.x*sxk-2, my+P.y*syk-2, 4,4);
+    cx.strokeStyle='#fff'; cx.lineWidth=2; cx.strokeRect(mx+camera.x*sxk, my+camera.y*syk, (W/zoom)*sxk, (H/zoom)*syk);
+  }
   cx.globalAlpha=1;
 }
 
