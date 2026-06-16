@@ -1626,6 +1626,7 @@ function update(dt){
         $('bossbar').classList.add('hidden');
         playMusic(curTheme.music); sfx.win();
         bigText('BOSS DOWN','#4aa3df');
+        if(typeof addGems==='function'){ const bg=3+Math.floor(wave/10); addGems(bg); floatText(P.x,P.y-P.r-30,'+'+bg+'◆','#b06ff0',18); }
         const bossNum=Math.max(1,Math.floor(wave/5));          // 1st boss=1, 2nd=2, ...
         const nLarge=8+(bossNum-1)*3, nCoin=2+(bossNum-1);     // coins now scarce; escalate slowly per boss
         for(let g=0; g<nLarge; g++) dropOrb(e.x, e.y, 3, 120, 300);
@@ -1651,6 +1652,7 @@ function update(dt){
   if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0){
     betweenWaves=true; waveGapT=2.2;
     bigText('WAVE CLEARED','#5fbf52');
+    if(typeof addGems==='function'){ addGems(1); floatText(P.x,P.y-P.r-24,'+1◆','#b06ff0',14); }
     if(typeof fireHook==='function') fireHook('waveEnd');
   }
 

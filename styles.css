@@ -592,8 +592,14 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .charshopcard .cstags { display:flex; gap:4px; margin-top:3px; flex-wrap:wrap; }
 .gemshopcost { display:flex; align-items:center; gap:4px; font-weight:900; font-size:clamp(12px,2.2vmin,17px); color:#7a3ab8; }
 .gemshopcost .gemico-sm { color:#b06ff0; font-size:1.1em; }
-.weeklycard { border-color:#e0a92e; box-shadow:0 0 10px rgba(224,169,46,.35); background:#fef8e8; }
-.weeklycard .charport-sm { border-color:#e0a92e; }
+.weeklycard { border-color:#e0a92e; box-shadow:0 0 14px rgba(224,169,46,.5); background:linear-gradient(160deg,#fef8e8 0%,#fff7d0 100%); }
+/* Big vertical weekly legendary card */
+.weeklycard-v { flex-direction:column; align-items:center; gap:clamp(8px,1.6vmin,14px); text-align:center; padding:clamp(14px,2.8vmin,22px); }
+.weekly-header { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; width:100%; }
+.weekly-timer { font-size:clamp(10px,1.8vmin,14px); color:#8a6a2a; font-weight:800; }
+.weekly-port { border-color:#e0a92e; }
+.weekly-name { font-weight:900; font-size:clamp(17px,3.2vmin,26px); color:#2a1c10; -webkit-text-stroke:.3px #2a1c10; }
+.weekly-desc { font-size:clamp(11px,2vmin,16px); color:#5a4a2a; font-weight:700; line-height:1.4; max-width:clamp(240px,60vmin,400px); }
 .weeklybadge { background:linear-gradient(#e0a92e,#c47f12); color:#fff; font-size:clamp(9px,1.6vmin,13px); font-weight:900; padding:2px 8px; border-radius:8px; border:2px solid #2a1c10; -webkit-text-stroke:.3px #2a1c10; }
 .shoptimer { font-size:clamp(10px,1.7vmin,13px); color:#8a7a5a; font-weight:800; }
 .gemico-sm { color:#b06ff0; }
@@ -626,3 +632,15 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 .csdesc-full { font-size:clamp(10px,1.9vmin,15px); color:#5a6b7a; font-weight:700; line-height:1.35; }
 .cstags-center { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
 .carcounter { text-align:center; font-size:clamp(11px,2vmin,15px); font-weight:900; color:#9fb0c8; margin-top:2px; }
+
+/* Carousel slide-in animations */
+@keyframes caroSlideRight {
+  from { transform:translateX(38px); opacity:0; }
+  to   { transform:translateX(0);    opacity:1; }
+}
+@keyframes caroSlideLeft {
+  from { transform:translateX(-38px); opacity:0; }
+  to   { transform:translateX(0);     opacity:1; }
+}
+.caro-slide-right { animation:caroSlideRight 0.22s cubic-bezier(.2,.8,.3,1) both; }
+.caro-slide-left  { animation:caroSlideLeft  0.22s cubic-bezier(.2,.8,.3,1) both; }

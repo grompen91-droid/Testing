@@ -78,6 +78,16 @@ function _daysUntilMonday() {
   const days=d===0?1:(8-d)%7||7;
   return days;
 }
+function _weeklyResetStr() {
+  const now=new Date();
+  const d=now.getUTCDay();
+  const daysToMon=d===0?1:(8-d)%7||7;
+  const msInDay=now.getUTCHours()*3600000+now.getUTCMinutes()*60000+now.getUTCSeconds()*1000;
+  const msLeft=daysToMon*86400000-msInDay;
+  const totalH=Math.max(1,Math.ceil(msLeft/3600000));
+  const days=Math.floor(totalH/24); const hrs=totalH%24;
+  return days>0 ? days+'d '+hrs+'h' : hrs+'h';
+}
 
 // ---- Character Shop data ----
 function getCharDailyShop() {
@@ -163,20 +173,19 @@ function renderShopCharSection() {
   let html='<div class="shopsec">';
   html+='<div class="banner"><span>CHARACTER SHOP</span></div>';
 
-  // ---- WEEKLY LEGENDARY ----
+  // ---- WEEKLY LEGENDARY (tall vertical card) ----
   if(weekly){
     const owned=isCharOwned(weekly.id);
     const price=CHAR_SHOP_PRICE[weekly.rarity]||150;
     const poor=gemBalance<price;
-    html+='<div class="scard charshopcard weeklycard">';
-    html+='<div class="charport-sm" data-petcanvas="'+weekly.id+'"><canvas width="72" height="72"></canvas></div>';
-    html+='<div class="csinfo">';
-    html+='<div class="csname">'+weekly.name+'<span class="weeklybadge" style="margin-left:6px">WEEKLY</span></div>';
-    html+='<div class="csdesc">'+weekly.desc.substring(0,80)+(weekly.desc.length>80?'…':'')+'</div>';
-    html+='<div class="cstags"><span class="rtag r-legendary">LEGENDARY</span>';
-    html+='<span class="shoptimer">Resets in '+daysLeft+'d</span></div>';
-    html+='</div>';
-    if(owned) html+='<div class="scheck">✓</div>';
+    const resetStr=_weeklyResetStr();
+    html+='<div class="scard weeklycard weeklycard-v">';
+    html+='<div class="weekly-header"><span class="weeklybadge">WEEKLY LEGENDARY</span><span class="shoptimer weekly-timer">⏱ '+resetStr+'</span></div>';
+    html+='<div class="charport-lg weekly-port" data-petcanvas="'+weekly.id+'"><canvas width="120" height="120" id="weeklyCanvas"></canvas></div>';
+    html+='<div class="weekly-name">'+weekly.name+'</div>';
+    html+='<div class="weekly-desc">'+weekly.desc+'</div>';
+    html+='<div class="cstags cstags-center"><span class="rtag r-legendary">LEGENDARY</span></div>';
+    if(owned) html+='<div class="scheck">✓ OWNED</div>';
     else html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+weekly.id+'" data-price="'+price+'">'+gem+price+'</button>';
     html+='</div>';
   }
@@ -191,7 +200,7 @@ function renderShopCharSection() {
     const poor=gemBalance<price;
     const rarLabel=(typeof RAR!=='undefined'&&RAR[card.rarity])?RAR[card.rarity].name:card.rarity.toUpperCase();
     html+='<div class="charcarousel">';
-    html+='<button class="charav" id="charcaroprev">◀</button>';
+    html+='<button class="charav" id="charcaroprev" aria-label="Previous">&#9664;</button>';
     html+='<div id="charcarowrap">';
     html+='<div class="charcarousel-card scard r-'+card.rarity+'">';
     html+='<div class="charport-lg"><canvas width="100" height="100" id="charcarocanvas"></canvas></div>';
@@ -202,7 +211,7 @@ function renderShopCharSection() {
     else html+='<button class="sbuy charshop-buy'+(poor?' poor':'')+'" data-buychar="'+card.id+'" data-price="'+price+'">'+gem+price+'</button>';
     html+='</div>';
     html+='</div>'; // charcarowrap
-    html+='<button class="charav" id="charcaronext">▶</button>';
+    html+='<button class="charav" id="charcaronext" aria-label="Next">&#9654;</button>';
     html+='</div>'; // charcarousel
     html+='<div class="carcounter">'+(charShopDailyIdx+1)+' / '+daily.length+'</div>';
   }
@@ -287,14 +296,14 @@ function initRecruitUI(container) {
       if(buyBtn) buyBtn.addEventListener('click',()=>{ buyCharacter(buyBtn.dataset.buychar); });
     }
 
-    function _renderCaroCard(){
+    function _renderCaroCard(dir){
       const card=daily[charShopDailyIdx]; if(!card) return;
       const gem='<span class="gemico-sm">◆</span>';
       const owned=isCharOwned(card.id);
       const price=CHAR_SHOP_PRICE[card.rarity]||50;
       const poor=gemBalance<price;
       const rarLabel=(typeof RAR!=='undefined'&&RAR[card.rarity])?RAR[card.rarity].name:card.rarity.toUpperCase();
-      let html='<div class="charcarousel-card scard r-'+card.rarity+'">';
+      let html='<div class="charcarousel-card scard r-'+card.rarity+(dir===1?' caro-slide-right':dir===-1?' caro-slide-left':'')+'">';
       html+='<div class="charport-lg"><canvas width="100" height="100" id="charcarocanvas"></canvas></div>';
       html+='<div class="csname-lg">'+card.name+'</div>';
       html+='<div class="csdesc-full">'+card.desc+'</div>';
@@ -317,8 +326,8 @@ function initRecruitUI(container) {
     }
     _wireCaroBuy();
 
-    charPrev.addEventListener('click',()=>{ charShopDailyIdx=(charShopDailyIdx-1+daily.length)%daily.length; _renderCaroCard(); });
-    charNext.addEventListener('click',()=>{ charShopDailyIdx=(charShopDailyIdx+1)%daily.length; _renderCaroCard(); });
+    charPrev.addEventListener('click',()=>{ charShopDailyIdx=(charShopDailyIdx-1+daily.length)%daily.length; _renderCaroCard(-1); });
+    charNext.addEventListener('click',()=>{ charShopDailyIdx=(charShopDailyIdx+1)%daily.length; _renderCaroCard(1); });
   }
 
   // Wire pet pull button
@@ -356,11 +365,12 @@ function initRecruitUI(container) {
   });
 
   // Render weekly char thumbnail
-  container.querySelectorAll('.charshopcard .charport-sm[data-petcanvas]').forEach(wrap=>{
-    const charId=wrap.dataset.petcanvas;
-    const cv=wrap.querySelector('canvas');
-    if(cv&&charId&&typeof renderCharThumb==='function') renderCharThumb(cv.getContext('2d'),charId,cv.width);
-  });
+  const weeklyCv=container.querySelector('#weeklyCanvas');
+  if(weeklyCv){
+    const wrap=weeklyCv.closest('[data-petcanvas]');
+    const charId=wrap?wrap.dataset.petcanvas:null;
+    if(charId&&typeof renderCharThumb==='function') renderCharThumb(weeklyCv.getContext('2d'),charId,weeklyCv.width);
+  }
 }
 
 // init gem UI on load
