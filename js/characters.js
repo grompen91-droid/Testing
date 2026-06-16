@@ -350,8 +350,8 @@ const CHARACTERS = [
     id: 'fortunato',
     name: 'Fortunato',
     desc: 'More lucky blocks, more RNG. Can one-tap any lucky block.',
-    rarity: 'world',
-    worldUnlock: 3,
+    rarity: 'epic',
+    worldUnlock: 2,   // unlocked by beating World 2
     baseStats: { maxHp:70, speed:230, fireRate:0.46, dmg:12, gearDmgMul:1.0 },
     register() {
       P.fortunatoLuckyCap = 5 + Math.floor(Math.random()*4); // 5-8, fixed for the run
@@ -593,13 +593,15 @@ function renderCharThumb(offCtx, charId, size) {
 function charIsUnlocked(charId) {
   const char = CHARACTERS.find(c=>c.id===charId);
   if(!char) return false;
-  if(char.rarity==='world'){
+  // gating is decided by which threshold field is set, not by the cosmetic rarity tag —
+  // lets a character carry a real rarity (e.g. Fortunato is 'epic') while still being a world/challenger unlock
+  if(char.worldUnlock!=null){
     const unlocked = parseInt(localStorage.getItem('br_unlocked')||'0');
-    return char.worldUnlock!=null && char.worldUnlock<=unlocked;
+    return char.worldUnlock<=unlocked;
   }
-  if(char.rarity==='challenger'){
+  if(char.chalWorldUnlock!=null){
     const ch = parseInt(localStorage.getItem('br_ch_unlocked')||'0');
-    return char.chalWorldUnlock!=null && ch >= char.chalWorldUnlock;
+    return ch >= char.chalWorldUnlock;
   }
   return isCharOwned(charId);
 }

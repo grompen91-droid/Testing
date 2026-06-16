@@ -92,7 +92,9 @@ function _weeklyResetStr() {
 // ---- Character Shop data ----
 function getCharDailyShop() {
   const seed=dailyCharSeed();
-  const pool=CHARACTERS.filter(c=>c.rarity!=='world'&&c.rarity!=='legendary'&&c.rarity!=='challenger');
+  // progression-gated characters (world/challenger unlocks, regardless of cosmetic rarity tag) aren't pullable;
+  // legendary has its own separate pool (getCharLegendaryShop)
+  const pool=CHARACTERS.filter(c=>c.worldUnlock==null&&c.chalWorldUnlock==null&&c.rarity!=='legendary');
   // Use mulberry32/hashStr from shop.js (loaded after recruit.js at runtime)
   const rng=mulberry32(hashStr(String(seed)));
   const shuffled=pool.slice();

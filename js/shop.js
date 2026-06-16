@@ -583,10 +583,12 @@ function renderCharacterTab() {
   if(typeof CHARACTERS==='undefined') return;
   const rarRank={common:0,uncommon:1,rare:2,epic:3,legendary:4,mythic:5,world:-1};
   // Sort into 4 groups
+  // gating (progression-locked) is decided by which threshold field is set, not by the cosmetic rarity tag —
+  // lets a character carry a real rarity (e.g. Fortunato is 'epic') while still being a world/challenger unlock
   const owned=[], worldLocked=[], chalLocked=[], shopLocked=[];
   for(const char of CHARACTERS){
-    const isWorld=char.rarity==='world';
-    const isChal=char.rarity==='challenger';
+    const isWorld=char.worldUnlock!=null;
+    const isChal=char.chalWorldUnlock!=null;
     const unlocked=typeof charIsUnlocked==='function'?charIsUnlocked(char.id):(isWorld||isChal?false:isCharOwned(char.id));
     if(unlocked) owned.push(char);
     else if(isWorld) worldLocked.push(char);
@@ -594,7 +596,7 @@ function renderCharacterTab() {
     else shopLocked.push(char);
   }
   owned.sort((a,b)=>{
-    const aw=a.rarity==='world'||a.rarity==='challenger', bw=b.rarity==='world'||b.rarity==='challenger';
+    const aw=a.worldUnlock!=null||a.chalWorldUnlock!=null, bw=b.worldUnlock!=null||b.chalWorldUnlock!=null;
     if(aw&&bw) return ((a.worldUnlock??a.chalWorldUnlock??0))-(b.worldUnlock??b.chalWorldUnlock??0);
     if(aw) return -1; if(bw) return 1;
     return (rarRank[b.rarity]||0)-(rarRank[a.rarity]||0);
@@ -604,15 +606,18 @@ function renderCharacterTab() {
   shopLocked.sort((a,b)=>(rarRank[b.rarity]||0)-(rarRank[a.rarity]||0));
 
   function buildCard(char, locked){
-    const isWorld=char.rarity==='world';
-    const isChal=char.rarity==='challenger';
+    const isWorld=char.worldUnlock!=null;
+    const isChal=char.chalWorldUnlock!=null;
+    // 'world'/'challenger' are placeholder rarity tags (no real tier) and get a forced badge color;
+    // a gated character with a real rarity (e.g. Fortunato: epic) keeps its own color/tag.
+    const placeholderRar=char.rarity==='world'?'uncommon':char.rarity==='challenger'?'rare':char.rarity;
+    const rarClass='r-'+placeholderRar;
     const selected=(typeof activeCharId!=='undefined')&&activeCharId===char.id;
-    const rarClass=isWorld?'r-uncommon':isChal?'r-rare':'r-'+char.rarity;
     const thumbId='charport_'+char.id;
     const portHtml='<div class="charport"><canvas id="'+thumbId+'" width="80" height="80"></canvas></div>';
     let selBtn='';
     if(locked&&isWorld){
-      selBtn='<button class="charselbtn locked" disabled>World '+(char.worldUnlock+1)+' unlock</button>';
+      selBtn='<button class="charselbtn locked" disabled>World '+char.worldUnlock+' unlock</button>';
     } else if(locked&&isChal){
       selBtn='<button class="charselbtn locked" disabled>Challenger World '+char.chalWorldUnlock+' unlock</button>';
     } else if(locked){
@@ -622,13 +627,13 @@ function renderCharacterTab() {
     } else {
       selBtn='<button class="charselbtn" data-selchar="'+char.id+'">SELECT</button>';
     }
-    const lockBadge=locked&&isWorld?'<span class="charlockbadge">Beat World '+(char.worldUnlock+1)+'</span>'
+    const lockBadge=locked&&isWorld?'<span class="charlockbadge">Beat World '+char.worldUnlock+'</span>'
       :locked&&isChal?'<span class="charlockbadge">Beat Challenger World '+char.chalWorldUnlock+'</span>':'';
     let html='<div class="charcard '+rarClass+(selected?' selected':'')+(locked?' locked':'')+'" id="charcard_'+char.id+'">';
     html+=portHtml;
     html+='<div class="charinfo"><div class="charname">'+char.name+'</div>';
     html+='<div class="chardesc">'+char.desc+'</div>';
-    html+='<div class="chartags">'+rtagHTML(isWorld?'uncommon':isChal?'rare':char.rarity)+lockBadge+'</div>';
+    html+='<div class="chartags">'+rtagHTML(placeholderRar)+lockBadge+'</div>';
     html+='</div>';
     html+=selBtn+'</div>';
     return html;
