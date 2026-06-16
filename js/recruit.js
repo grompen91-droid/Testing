@@ -237,6 +237,16 @@ function renderPetRecruitSection() {
   return html;
 }
 
+// Pick 3 diverse character sprites for the cutscene crowd
+function _getCutsceneChars() {
+  const arr=typeof CHARACTERS!=='undefined'?CHARACTERS:[];
+  if(!arr.length) return ['','',''];
+  const picks=arr.length>=3
+    ?[arr[0],arr[Math.floor(arr.length/2)],arr[arr.length-1]]
+    :[arr[0%arr.length],arr[1%arr.length],arr[2%arr.length]];
+  return picks.map(c=>c?_renderCharThumbDataURL(c.id,88):'');
+}
+
 // ---- Gacha cinematic reveal ----
 function _showPullResult(result) {
   if(!result) return;
@@ -244,11 +254,20 @@ function _showPullResult(result) {
   const ov=document.getElementById('itempop'); if(!ov) return;
   const rarLabel=(typeof RAR!=='undefined'&&RAR[pet.rarity])?RAR[pet.rarity].name:pet.rarity.toUpperCase();
   const thumbURL=_renderPetThumbDataURL(pet.id,140);
+  const chars=_getCutsceneChars();
+  const ci=(s,cl)=>'<img class="gacha-cs-char '+cl+'" src="'+s+'" alt="">';
 
   ov.innerHTML=
     '<div class="gacha-scene r-'+pet.rarity+'" id="gachaScene">'+
     '<div class="gacha-bg"></div>'+
-    '<div class="gacha-orb" id="gachaOrb"></div>'+
+    '<div class="gacha-cs" id="gachaCS">'+
+      '<div class="gacha-cs-title">RECRUIT!</div>'+
+      ci(chars[0],'pos-l')+
+      ci(chars[1],'pos-r')+
+      ci(chars[2],'pos-b')+
+      '<div class="gacha-cs-orb" id="gachaOrb"></div>'+
+      '<button class="gacha-skip" id="gachaSkip">SKIP ▶</button>'+
+    '</div>'+
     '<div class="gacha-card hidden" id="gachaCard">'+
       '<div class="gacha-portrait r-'+pet.rarity+'"><img src="'+thumbURL+'" alt=""></div>'+
       '<div class="gacha-pname">'+pet.name+'</div>'+
@@ -262,29 +281,36 @@ function _showPullResult(result) {
   ov.classList.remove('hidden');
 
   const scene=document.getElementById('gachaScene');
+  const cs=document.getElementById('gachaCS');
   const orb=document.getElementById('gachaOrb');
   const card=document.getElementById('gachaCard');
   const tap=document.getElementById('gachaTap');
-  let phase=0, autoT=null;
+  const skip=document.getElementById('gachaSkip');
+  let phase=0, csTimer=null;
 
-  function advance(){
-    if(phase===0){
-      phase=1;
-      if(autoT){ clearTimeout(autoT); autoT=null; }
-      if(orb) orb.classList.add('gacha-burst');
-      setTimeout(()=>{
-        if(card) card.classList.remove('hidden');
-        if(tap){ tap.textContent='TAP TO CLOSE'; tap.classList.remove('hidden'); }
-      },280);
-    } else if(phase===1){
-      phase=2;
-      ov.classList.add('hidden');
-    }
+  function revealCard(){
+    if(phase!==0) return;
+    phase=1;
+    if(csTimer){ clearTimeout(csTimer); csTimer=null; }
+    if(orb) orb.classList.add('gacha-burst');
+    cs.classList.add('cs-exit');
+    setTimeout(()=>{
+      cs.classList.add('hidden');
+      card.classList.remove('hidden');
+      tap.textContent='TAP TO CLOSE';
+      tap.classList.remove('hidden');
+    }, 320);
   }
 
-  // Auto-advance orb → card after 2s if player doesn't tap
-  autoT=setTimeout(advance, 2000);
+  function advance(){
+    if(phase===0) revealCard();
+    else if(phase===1){ phase=2; ov.classList.add('hidden'); }
+  }
+
+  skip.addEventListener('click',(e)=>{ e.stopPropagation(); revealCard(); });
   scene.addEventListener('click', advance);
+  // Auto-advance after full cutscene plays out
+  csTimer=setTimeout(revealCard, 3200);
 }
 
 // ---- initRecruitUI: wire buttons after renderShop ----

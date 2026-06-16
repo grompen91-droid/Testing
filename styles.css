@@ -745,3 +745,66 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 @keyframes gPortPop { from{transform:scale(.45);opacity:0} to{transform:scale(1);opacity:1} }
 @keyframes gSlideUp { from{transform:translateY(14px);opacity:0} to{transform:translateY(0);opacity:1} }
 @keyframes gNewPop  { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* ===== Gacha Cutscene ===== */
+.gacha-cs {
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+}
+.gacha-cs.cs-exit { animation:gFadeOut .32s ease forwards; }
+.gacha-cs-title {
+  position:absolute; top:clamp(22px,4.5vmin,48px); left:0; right:0;
+  text-align:center; z-index:2;
+  font-size:clamp(26px,5.5vmin,46px); font-weight:900; color:#fff;
+  letter-spacing:.12em; text-shadow:0 2px 0 rgba(0,0,0,.5);
+  animation:gFadeIn .4s .1s ease both;
+}
+.gacha-cs-char {
+  position:absolute; z-index:2;
+  width:clamp(70px,14vmin,100px); height:clamp(70px,14vmin,100px);
+  border-radius:50%; background:rgba(255,255,255,.07);
+  object-fit:contain; image-rendering:pixelated;
+}
+.gacha-cs-char.pos-l {
+  left:clamp(14px,4vmin,72px); bottom:clamp(70px,13vmin,114px);
+  animation:gCharLeft .5s .25s cubic-bezier(.2,.9,.3,1.2) both, gBob .9s .75s ease-in-out infinite alternate;
+}
+.gacha-cs-char.pos-r {
+  right:clamp(14px,4vmin,72px); bottom:clamp(70px,13vmin,114px);
+  animation:gCharRight .5s .45s cubic-bezier(.2,.9,.3,1.2) both, gBob .9s .95s ease-in-out infinite alternate;
+}
+.gacha-cs-char.pos-b {
+  left:50%; margin-left:-7vmin; bottom:clamp(12px,2.5vmin,32px);
+  animation:gCharBot .5s .65s cubic-bezier(.2,.9,.3,1.2) both, gBob .9s 1.15s ease-in-out infinite alternate;
+}
+.gacha-cs-orb {
+  position:absolute; left:50%; top:50%;
+  margin-left:-9vmin; margin-top:-9vmin;
+  width:18vmin; height:18vmin;
+  min-width:90px; min-height:90px; max-width:120px; max-height:120px;
+  border-radius:50%; z-index:3;
+  background:radial-gradient(circle at 36% 30%, rgba(255,255,255,.92) 0%, var(--gc) 55%, rgba(0,0,0,.3) 100%);
+  animation:gOrbFall .7s .8s cubic-bezier(.22,.9,.3,1) both;
+  transition:transform .28s ease-out, opacity .28s ease-out;
+}
+.gacha-cs-orb.gacha-burst { transform:scale(5)!important; opacity:0!important; transition:transform .3s ease-out, opacity .3s ease-out; animation:none!important; }
+.gacha-skip {
+  position:absolute; z-index:10; pointer-events:all;
+  top:clamp(14px,2.8vmin,26px); right:clamp(14px,2.8vmin,26px);
+  background:rgba(255,255,255,.1); border:2px solid rgba(255,255,255,.22);
+  border-radius:10px; color:rgba(255,255,255,.65); font-weight:900; letter-spacing:.05em;
+  font-size:clamp(11px,2vmin,15px); padding:clamp(5px,.9vmin,9px) clamp(10px,2vmin,18px);
+  cursor:pointer; animation:gFadeIn .4s .3s ease both; font-family:inherit;
+}
+.gacha-skip:active { background:rgba(255,255,255,.22); }
+
+@keyframes gCharLeft  { from{transform:translateX(-220px);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes gCharRight { from{transform:translateX(220px);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes gCharBot   { from{transform:translateY(130px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes gBob       { from{transform:translateY(0)} to{transform:translateY(-9px)} }
+@keyframes gOrbFall {
+  0%   {transform:translateY(-480px) scale(.3);opacity:0}
+  62%  {transform:translateY(25px) scale(1.1);opacity:1}
+  80%  {transform:translateY(-10px) scale(.96)}
+  100% {transform:translateY(0) scale(1)}
+}
+@keyframes gFadeOut { from{opacity:1} to{opacity:0} }
