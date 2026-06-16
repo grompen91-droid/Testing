@@ -468,7 +468,7 @@ const PETS = [
     desc: 'Triples magnet range permanently. Every wave start: pulls all pickups for 3s.',
     rarity: 'rare',
     register() {
-      if(typeof P!=='undefined') P.magnet*=3;
+      if(typeof P!=='undefined'){ P.magnet*=3; P.hasMagnetPet=true; }
       onHook('waveStart', () => { if(typeof P!=='undefined') P.magnetT=3; });
     },
     draw(ctx, size, t) { _drawCalamita(ctx, size, t); }

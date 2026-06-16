@@ -95,7 +95,7 @@ function popLucky(lb){
   const roll = (Math.random()*3)|0;
   if(roll===0){            // big heart, heals 50
     const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,heart:true,big:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
-  } else if(roll===1){     // magnet — vacuums every pickup on the map
+  } else if(roll===1 && !P.hasMagnetPet){  // magnet — skip if player has magnet pet
     const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,magnet:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
   } else {                 // 3 medium gold gems
     for(let g=0;g<3;g++){ const a=rand(0,TAU), s=rand(120,260); gems.push({x:lb.x,y:lb.y,tier:4,v:ORB[4].v,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
