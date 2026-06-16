@@ -4,6 +4,7 @@ let shake = 0, hitFlash = 0, hitstop = 0, tPrev = 0, elapsed = 0;
 
 const P = {}; // player
 let bullets=[], ebullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[], luckies=[];
+let timeScale=1.0;
 let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) — avoids GC churn
 let wave=1, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let worldCoins=0;   // coins collected during the CURRENT world run (in-game HUD display; total still banked in `gold`)
@@ -728,7 +729,12 @@ function resetPlayer(){
     jackpot:0, bounce:0, pinball:false, showstopper:false,
     daredevil:0, knives:false, knifeCd:0, knifeCdBase:3.5, knifeN:0, knifeBig:false, knifeEvo:false,
     // World 1 additions
-    seeker:0, laststand:0
+    seeker:0, laststand:0,
+    // Character / pet system
+    charId:(typeof activeCharId!=='undefined'?activeCharId:'gianni'),
+    petId:(typeof activePetId!=='undefined'?activePetId:null),
+    phaseShifting:false, phaseShiftT:0,
+    waveKills:0, bonusShots:0
   });
 }
 
@@ -750,6 +756,12 @@ function _doStartGame(wi){
   if(typeof equippedHp==='function'){ const h=equippedHp(); P.maxHp += h; P.hp = P.maxHp; }   // HP gear adds FLAT max HP
   if(typeof equippedSpeedMult==='function') P.speed *= equippedSpeedMult();  // speed/range gear still scale the starting stat
   if(typeof equippedRangeMult==='function') P.range *= equippedRangeMult();
+  // Character & pet system: re-register hooks each run
+  if(typeof clearHooks==='function') clearHooks();
+  if(typeof applyCharBase==='function') applyCharBase(P.charId);
+  if(typeof registerActiveChar==='function') registerActiveChar();
+  if(typeof registerActivePet==='function') registerActivePet();
+  timeScale=1.0;
   bullets=[]; ebullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[]; luckies=[];
   wave=1; kills=0; elapsed=0; boss=null; waveGapT=0; arena=null; bossPending=0;
   luckyTimer=rand(18,30);
@@ -769,9 +781,11 @@ function _doStartGame(wi){
 function startWave(){
   betweenWaves=false;
   $('wavetag').textContent = 'WAVE '+wave;
+  if(typeof fireHook==='function') fireHook('waveStart');
   if(wave % 5 === 0){ startBossArena(); waveEnemiesLeft = 0; }
   else { waveEnemiesLeft = Math.max(4, Math.round((7 + wave*3) * (curWorld().enemyMul||1))); spawnTimer = 0; sfx.wave();
-    spawnLuckyBatch(2);   // lucky blocks: spawn up to 2 only at the START of each (non-boss) wave, never during
+    const luckyCap = Math.max(2, ...(typeof queryHook==='function' ? queryHook('getLuckyCap') : [2]));
+    spawnLuckyBatch(luckyCap);
   }
   bigText(wave%5===0 ? 'BOSS WAVE' : 'WAVE '+wave, wave%5===0?'#e54d4d':'#ffe08a');
 }
@@ -961,6 +975,7 @@ function gainXp(n){
     P.xp -= P.xpNext;
     P.lv++;
     P.xpNext = Math.floor(4 + P.lv*2.6 + P.lv*P.lv*0.4);
+    if(typeof fireHook==='function') fireHook('onLevelUp');
     openLevelUp();
   }
   const lb=$('lvbadge'); if(lb) lb.textContent = P.lv;
@@ -1045,6 +1060,13 @@ function gameOver(){
 // ============ DASH ============
 function tryDash(){
   if(state!==ST.PLAY || P.dashCd>0) return;
+  if(typeof fireHook==='function') fireHook('onDash');
+  if(P.charId==='fantasma'){
+    P.dashCd=P.dashMax; P.phaseShifting=true; P.phaseShiftT=0.8; P.inv=0.8;
+    timeScale=0.3; sfx.dash();
+    if(navigator.vibrate) navigator.vibrate(20);
+    return;
+  }
   let mx=joy.dx, my=joy.dy;
   if(keys['w']||keys['arrowup']) my-=1;
   if(keys['s']||keys['arrowdown']) my+=1;
@@ -1104,6 +1126,7 @@ function separate(e){
 // ============ UPDATE ============
 function update(dt){
   elapsed += dt;
+  if(typeof fireHook==='function') fireHook('petTick', dt);
   // Anti-cheat: per-frame sanity clamp — values beyond legitimate upgrade caps indicate console tampering
   if(state===ST.PLAY){
     if(P.dmg>18000||P.maxHp>4000||P.speed>2800||P.shots>32){ quitToMenu(); return; }
@@ -1576,6 +1599,7 @@ function update(dt){
     if(e.hp<=0 && !e.lead){   // duo partner (e.lead) is never killed on its own -> damage routes to the lead
       enemies.splice(i,1);
       kills++; setKillHUD();
+      if(typeof fireHook==='function') fireHook('onKill', e);
       sfx.hit();
       shake=Math.max(shake,e.isBoss?16:5); hitstop=Math.max(hitstop,e.isBoss?0.08:0.03);
       burst(e.x,e.y,'#ff9f3a',e.isBoss?60:14,e.isBoss?420:200);
@@ -1627,6 +1651,7 @@ function update(dt){
   if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0){
     betweenWaves=true; waveGapT=2.2;
     bigText('WAVE CLEARED','#5fbf52');
+    if(typeof fireHook==='function') fireHook('waveEnd');
   }
 
   // --- enemy bullets ---
@@ -2670,6 +2695,7 @@ function hurtPlayer(dmg, src){
     P.y = clamp(P.y+Math.sin(a)*30, WALL+P.r, WORLD.h-WALL-P.r);
   }
   if(P.hp<=0){
+    if(typeof fireHook==='function') fireHook('onHpZero');
     if(P.phoenix>0){   // Phoenix: rise from the ashes instead of dying
       P.phoenix--; P.phoenixCd=P.phoenixCdBase;
       P.hp=Math.max(1,Math.round(P.maxHp*P.phoenixHeal)); P.inv=2;
@@ -2935,7 +2961,10 @@ function render(){
     if(!blink){
       const bob=Math.sin(P.walk)*0.06;
       const flip = Math.cos(P.face)<0;
-      drawSprite('player', P.x, P.y, P.r*2.6, bob, 0, 0, flip);
+      if(P.phaseShifting) cx.globalAlpha=0.35;
+      if(typeof drawCharacter==='function') drawCharacter(P.charId||'gianni', P.x, P.y, P.r*2.6, bob, flip);
+      else drawSprite('player', P.x, P.y, P.r*2.6, bob, 0, 0, flip);
+      cx.globalAlpha=1;
       if(typeof drawPlayerGear==='function') drawPlayerGear(P.x, P.y, P.r*2.6, bob, flip);   // equipped gear overlay
     }
     // Phoenix burn aura
@@ -3121,8 +3150,10 @@ function loop(t){
   let dt = Math.min(0.033, (t-tPrev)/1000 || 0.016);
   tPrev = t;
   if(hitstop>0){ hitstop-=dt; dt=0; }
-  if(state===ST.PLAY) update(dt);
-  else if(state===ST.MENU) menuUpdate(dt);
+  if(state===ST.PLAY){
+    if(P.phaseShifting){ P.phaseShiftT-=dt; if(P.phaseShiftT<=0){ P.phaseShifting=false; timeScale=1.0; } }
+    update(dt*timeScale);
+  } else if(state===ST.MENU) menuUpdate(dt);
   else if(state===ST.CUTSCENE) cutsceneUpdate(dt);
   render();
 }

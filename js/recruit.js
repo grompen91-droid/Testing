@@ -9,7 +9,7 @@ function _gemHash(v) {
   for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*0x1000193)>>>0; }
   return h.toString(36);
 }
-let gems = (()=>{
+let gemBalance = (()=>{
   const raw=+(localStorage.getItem('br_gems')||0);
   const sig=localStorage.getItem('br_gems_sig');
   const valid=sig===null?true:sig===_gemHash(Math.floor(raw));
@@ -17,10 +17,10 @@ let gems = (()=>{
   if(sig===null) localStorage.setItem('br_gems_sig',_gemHash(safe));
   return safe;
 })();
-function saveGems() { localStorage.setItem('br_gems',gems); localStorage.setItem('br_gems_sig',_gemHash(gems)); }
-function addGems(n) { gems+=Math.floor(n); saveGems(); refreshGemsUI(); }
-function spendGems(n) { if(gems<n) return false; gems-=n; saveGems(); refreshGemsUI(); return true; }
-function refreshGemsUI() { const t=document.getElementById('gemtxt'); if(t) t.textContent=gems; }
+function saveGems() { localStorage.setItem('br_gems',gemBalance); localStorage.setItem('br_gems_sig',_gemHash(gemBalance)); }
+function addGems(n) { gemBalance+=Math.floor(n); saveGems(); refreshGemsUI(); }
+function spendGems(n) { if(gemBalance<n) return false; gemBalance-=n; saveGems(); refreshGemsUI(); return true; }
+function refreshGemsUI() { const t=document.getElementById('gemtxt'); if(t) t.textContent=gemBalance; }
 
 // ---- Gem icon (cached data-URL) ----
 let _gemIconURL='';
@@ -167,7 +167,7 @@ function renderShopCharSection() {
     const owned=isCharOwned(weekly.id);
     const thumbURL=_renderCharThumbDataURL(weekly.id,72);
     const price=CHAR_SHOP_PRICE[weekly.rarity]||150;
-    const poor=gems<price;
+    const poor=gemBalance<price;
     html+='<div class="scard charshopcard weeklycard">';
     html+='<div class="charport-sm"><canvas width="72" height="72"></canvas></div>';
     html+='<div class="csinfo">';
@@ -190,7 +190,7 @@ function renderShopCharSection() {
   for(const char of daily){
     const owned=isCharOwned(char.id);
     const price=CHAR_SHOP_PRICE[char.rarity]||50;
-    const poor=gems<price;
+    const poor=gemBalance<price;
     const rarLabel=(typeof RAR!=='undefined'&&RAR[char.rarity])?RAR[char.rarity].name:char.rarity.toUpperCase();
     html+='<div class="scard charshopcard r-'+char.rarity+'">';
     html+='<div class="charport-sm" data-petcanvas="'+char.id+'"><canvas width="64" height="64"></canvas></div>';
@@ -213,7 +213,7 @@ function renderShopCharSection() {
 
 function renderPetRecruitSection() {
   const pity=+(localStorage.getItem('br_pet_pity')||0);
-  const poor=gems<PET_PULL_COST;
+  const poor=gemBalance<PET_PULL_COST;
   const gem='<span class="gemico-sm">◆</span>';
   const ownedPets=PETS.filter(p=>isPetOwned(p.id));
 
