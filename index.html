@@ -100,6 +100,7 @@
         <img id="charimg" draggable="false" alt="">
       </div>
       <div id="menubot">
+        <button class="gamemodebtn" id="gamemodebtn" type="button"><span class="gmlbl">GAMEMODE</span></button>
         <button class="startbtn" id="startbtn"><span class="startlbl">START</span></button>
         <div class="hint">drag to move • auto-fire • survive the waves</div>
       </div>
@@ -206,6 +207,25 @@
     <button class="bigbtn green" id="btn-guest">Continue as Guest</button>
     <div class="loginnote">Guest progress is saved on this device only and can't be moved to an account later.</div>
     <div id="loginmsg" class="hidden"></div>
+  </div>
+</div>
+
+<!-- Gamemode selection popup -->
+<div id="gamemode-popup" class="overlay hidden" style="z-index:35">
+  <div class="gmpop">
+    <div class="gmpop-title">GAMEMODE</div>
+    <button class="gmpop-close" id="gmpop-close" type="button" aria-label="Close">✕</button>
+    <button class="gmpop-mode gmpop-story" id="gm-story" type="button">
+      <div class="gmpop-mname">MAIN / STORY</div>
+      <div class="gmpop-mdesc">Classic wave-based survival. Clear all waves to unlock the next world.</div>
+    </button>
+    <div class="gmpop-divider">— or —</div>
+    <button class="gmpop-mode gmpop-chal" id="gm-challenger" type="button">
+      <div class="gmpop-mlock" id="gmpop-lockbadge"></div>
+      <div class="gmpop-mname">CHALLENGER</div>
+      <div class="gmpop-mbadge">HARD MODE</div>
+      <div class="gmpop-mdesc">No barriers. Infinite arena. Bosses at 5 · 10 · 15 · 20 min. 1.8× coins · 15 ◆ gems on first clear.</div>
+    </button>
   </div>
 </div>
 

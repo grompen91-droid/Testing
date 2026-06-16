@@ -10,6 +10,13 @@ let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) 
 let wave=1, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
 let worldCoins=0;   // coins collected during the CURRENT world run (in-game HUD display; total still banked in `gold`)
 let _lastSec=-1;    // throttles the survival-timer DOM update to once per second
+// ===== CHALLENGER MODE STATE =====
+let gameMode = 'story';     // 'story' | 'challenger'
+let chalElapsed = 0;        // challenger timer — pauses during boss fights
+let chalBossIdx = 0;        // index of next boss milestone (0-3 → 5/10/15/20 min)
+let chalBossActive = false; // true while a challenger boss is alive
+const CHAL_BOSS_TIMES = [300, 600, 900, 1200];  // seconds: 5/10/15/20 min
+let chalUnlocked = Math.min(10, Math.max(0, +(localStorage.getItem('br_ch_unlocked')||0)));
 function setCoinHUD(){ const c=$('coincount'); if(c){ const s=c.querySelector('span'); if(s) s.textContent=worldCoins; } }
 function setKillHUD(){ const k=$('killtag'); if(k && k.lastElementChild) k.lastElementChild.textContent=kills; }
 function fmtTime(s){ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), q=s%60; return (m<10?'0':'')+m+':'+(q<10?'0':'')+q; }
@@ -472,7 +479,7 @@ function cutsceneUpdate(dt){
 function toMenuFromClear(){
   if(!_clearData){ quitToMenu(); triggerUnlockReveal(); return; }
   const d=_clearData; _clearData=null;
-  $('wc-title').textContent = 'WORLD '+d.worldNum+' CLEARED!';
+  $('wc-title').textContent = d.isChallenger ? 'WORLD '+d.worldNum+' CHALLENGER!' : 'WORLD '+d.worldNum+' CLEARED!';
   $('wc-coins').textContent = d.coins;
   const gemRow=$('wc-gem-row');
   if(d.gems>0){ $('wc-gems').textContent='+'+d.gems; gemRow.classList.remove('hidden'); }
@@ -829,6 +836,7 @@ function _doStartGame(wi){
   wave=1; kills=0; elapsed=0; boss=null; waveGapT=0; arena=null; bossPending=0;
   luckyTimer=rand(18,30);
   worldCoins=0;
+  chalElapsed=0; chalBossIdx=0; chalBossActive=false;
   { const ci=$('coincount'); if(ci){ const img=ci.querySelector('img'); if(img && !img.getAttribute('src')) img.src=SP['coin'].toDataURL(); } }
   refreshHUD();   // reset level badge / kills / timer / coins so nothing shows last run's value
   state=ST.PLAY;
@@ -840,7 +848,7 @@ function _doStartGame(wi){
   if(IS_TOUCH) $('dashbtn').classList.remove('hidden');   // mobile-only on-screen dash
   _abHudIds = '';   // force fresh DOM build for this run
   $('ability-hud').classList.remove('hidden');
-  startWave();
+  if(gameMode==='challenger') startChallengerSpawn(); else startWave();
 }
 
 function startWave(){
@@ -853,6 +861,46 @@ function startWave(){
     spawnLuckyBatch(luckyCap);
   }
   bigText(wave%5===0 ? 'BOSS WAVE' : 'WAVE '+wave, wave%5===0?'#e54d4d':'#ffe08a');
+}
+
+function startChallengerSpawn(){
+  betweenWaves=false;
+  waveEnemiesLeft=9999;
+  spawnTimer=0;
+  const nextSec=CHAL_BOSS_TIMES[chalBossIdx]||300;
+  const nm=Math.floor(nextSec/60), ns=nextSec%60;
+  $('wavetag').textContent='BOSS IN '+(nm>0?nm+':'+(ns<10?'0':'')+ns:ns+'s');
+  sfx.wave();
+  bigText('CHALLENGER','#ff5a70');
+}
+
+function chalWorldCleared(e){
+  const prevChalUnlocked=chalUnlocked;
+  chalUnlocked=Math.min(WORLDS.length-1, Math.max(chalUnlocked, worldIdx+1));
+  localStorage.setItem('br_ch_unlocked', chalUnlocked); if(window.markDirty) window.markDirty();
+  selWorld=Math.min(WORLDS.length-1, worldIdx+1);
+  const gwKey='br_ch_gem_w'+worldIdx;
+  let gemsEarned=0;
+  if(!localStorage.getItem(gwKey) && typeof addGems==='function'){
+    gemsEarned=15; addGems(15); localStorage.setItem(gwKey,'1');
+    bigText('+15 ◆ GEMS','#b06ff0');
+  }
+  const newChars = typeof CHARACTERS!=='undefined'
+    ? CHARACTERS.filter(c=>{
+        if(c.rarity!=='world'||c.worldUnlock==null) return false;
+        const hadBefore=c.worldUnlock<=prevChalUnlocked||(typeof isCharOwned==='function'&&isCharOwned(c.id));
+        return !hadBefore&&c.worldUnlock<=chalUnlocked;
+      })
+    : [];
+  _clearData={ worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars, isChallenger:true };
+  state=ST.CUTSCENE;
+  cut={ t:0, boss:e, alpha:1, fade:0, name:curWorld().name+' CHALLENGER' };
+  e.cut=true; e.deathScale=1;
+  enemies.length=0; enemies.push(e);
+  ebullets=[]; bullets=[]; petBullets=[]; zones=[];
+  hitstop=0.25; shake=Math.max(shake,16);
+  stopMusic(); sfx.win();
+  bigText('CHALLENGER CLEARED','#ff5a70');
 }
 
 // lock the field into a small bounded arena around the player; boss arrives after a delay
@@ -876,7 +924,8 @@ function ringPos(){ // spawn point on a ring around player, clamped to world
 
 function spawnBoss(){
   const def = curBosses[(Math.floor(wave/5)-1) % curBosses.length];
-  const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.42);   // softened wave growth; world band carries the macro ramp
+  const chalMul = gameMode==='challenger' ? 2.2 : 1;
+  const mult = (1 + (wave-5)*0.12) * (curWorld().hpMul||1) * (1 + worldBand()*0.42) * chalMul;   // softened wave growth; world band carries the macro ramp
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
   const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult;
   const baseTotal = bar1+bar2;
@@ -911,6 +960,12 @@ function spawnBoss(){
   }
   bossLuckyT = 20;                              // first periodic lucky batch ~20s into the fight
   if(isFinal) spawnBossLucky(1);               // final bosses: a lucky block at the start of phase 1
+  // Challenger: much more aggressive attack timings
+  if(gameMode==='challenger'){
+    boss.gT  = (boss.gT  || 1.5) * 0.45;
+    boss.gT2 = (boss.gT2 || 2.5) * 0.45;
+    if(boss.mate){ boss.mate.gT=(boss.mate.gT||1.5)*0.45; boss.mate.gT2=(boss.mate.gT2||2.5)*0.45; }
+  }
   sfx.boss();
   playMusic('boss'+(((Math.floor(wave/5)-1)%3+3)%3));   // a different loop per boss
   $('bossname').textContent = boss.name;
@@ -1118,7 +1173,7 @@ function gameOver(){
   stopMusic();
   sfx.die();
   shake = 22; hitstop = 0.12;
-  $('fwave').textContent = 'wave '+wave;
+  $('fwave').textContent = gameMode==='challenger' ? 'time '+fmtTime(chalElapsed) : 'wave '+wave;
   $('fcoins').textContent = worldCoins;
   $('fkills').textContent = kills;
   $('hud').classList.add('hidden');
@@ -1282,6 +1337,25 @@ function updateAbilityHUD(dt){
 
 function update(dt){
   elapsed += dt;
+  // Challenger mode: advance separate timer (paused during boss), trigger milestones
+  if(gameMode==='challenger' && state===ST.PLAY){
+    if(!chalBossActive) chalElapsed += dt;
+    if(!chalBossActive && !boss && chalBossIdx<CHAL_BOSS_TIMES.length && chalElapsed>=CHAL_BOSS_TIMES[chalBossIdx]){
+      chalBossActive=true;
+      wave=(chalBossIdx+1)*5;
+      enemies.length=0; luckies=[]; ebullets=[];
+      waveEnemiesLeft=0; betweenWaves=false;
+      bigText('BOSS WAVE','#e54d4d');
+      $('wavetag').textContent='BOSS WAVE';
+      const bw=$('bosswarn'); bw.textContent='⚠ BOSS INCOMING ⚠'; bw.classList.remove('hidden');
+      sfx.warn();
+      bossPending=ARENA_LEAD;  // slight delay before boss spawns (no arena walls)
+    }
+    // Keep enemies spawning continuously between bosses
+    if(!chalBossActive && waveEnemiesLeft<50){ waveEnemiesLeft=9999; }
+    // Scale virtual wave with time for enemy variety
+    if(!chalBossActive){ const vw=Math.min(Math.floor(chalElapsed/75)+1, chalBossIdx*5+4); if(vw>wave) wave=vw; }
+  }
   if(typeof fireHook==='function') fireHook('petTick', dt);
   // Anti-cheat: per-frame sanity clamp — values beyond legitimate upgrade caps indicate console tampering
   if(state===ST.PLAY){
@@ -1820,7 +1894,30 @@ function update(dt){
           bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*420,vy:Math.sin(a)*420,r:6,pierce:1,hit:new Set(),dist:300,dmgMul:0.5}); }
         burst(e.x,e.y,'#bfe6ff',8,180);
       }
-      if(e.isBoss && !curWorld().endless && wave === curWorld().waveTarget){
+      if(e.isBoss && gameMode==='challenger'){
+        // Challenger boss kill
+        boss=null; arena=null;
+        $('bossbar').classList.add('hidden');
+        ebullets=[];
+        enemies=enemies.filter(o=>o.isBoss);
+        zones=[];
+        if(chalBossIdx>=CHAL_BOSS_TIMES.length-1){
+          chalWorldCleared(e);   // final challenger boss → world clear
+        } else {
+          chalBossIdx++;
+          chalBossActive=false;
+          playMusic(curTheme.music); sfx.win();
+          bigText('BOSS DOWN','#4aa3df');
+          const bossNum=chalBossIdx;
+          const nLarge=8+(bossNum-1)*3, nCoin=2+(bossNum-1);
+          for(let g=0;g<nLarge;g++) dropOrb(e.x,e.y,3,120,300);
+          for(let g=0;g<nCoin;g++){ const a=rand(0,TAU),s=rand(120,300); gems.push({x:e.x,y:e.y,coin:true,t:rand(0,6),vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
+          if(!P.hasMagnetPet){ const a=rand(0,TAU),s=rand(60,120); gems.push({x:e.x,y:e.y,magnet:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s}); }
+          // Resume continuous spawning
+          waveEnemiesLeft=9999; spawnTimer=0; betweenWaves=false;
+          sfx.wave();
+        }
+      } else if(e.isBoss && !curWorld().endless && wave === curWorld().waveTarget){
         boss=null; arena=null;
         $('bossbar').classList.add('hidden');
         ebullets=[];
@@ -1850,10 +1947,10 @@ function update(dt){
 
   // advance after the cleared-gap. In-update countdown (NOT a wall-clock setTimeout) so it
   // pauses with the game and can never be dropped by a pause/blur firing during the gap.
-  if(betweenWaves && waveGapT>0){ waveGapT-=dt; if(waveGapT<=0){ waveGapT=0; wave++; startWave(); } }
+  if(betweenWaves && waveGapT>0 && gameMode!=='challenger'){ waveGapT-=dt; if(waveGapT<=0){ waveGapT=0; wave++; startWave(); } }
 
-  // wave cleared? (not while the boss is still incoming)
-  if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0){
+  // wave cleared? (not while the boss is still incoming; skip in challenger — enemies spawn endlessly)
+  if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0 && gameMode!=='challenger'){
     betweenWaves=true; waveGapT=2.2;
     bigText('WAVE CLEARED','#5fbf52');
     if(typeof fireHook==='function') fireHook('waveEnd');
@@ -1909,7 +2006,7 @@ function update(dt){
     if(d < (P.r+12)*(P.r+12)){
       gems.splice(i,1);
       if(g.heart){ const h=g.heal||(g.big?50:25); P.hp=Math.min(P.maxHp,P.hp+h); floatText(P.x,P.y-24,'+'+h,'#e8556a',g.big?20:16); burst(P.x,P.y,'#ff97a6',g.big?14:8,140); sfx.coin(); }
-      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()); gold+=v; worldCoins+=v; saveGold(); if(window.markDirty) window.markDirty(); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
+      else if(g.coin){ const v=Math.round(5*(P.goldMul||1)*coinMult()*worldCoinMul()*(gameMode==='challenger'?1.8:1)); gold+=v; worldCoins+=v; saveGold(); if(window.markDirty) window.markDirty(); setCoinHUD(); floatText(g.x,g.y,'+'+v,'#f5c542',13); sfx.coin(); }
       else if(g.magnet){ for(const o of gems) o.vac=true; floatText(P.x,P.y-24,'MAGNET','#9fe0ff',16); burst(P.x,P.y,'#9fe0ff',12,160); sfx.level(); }   // pull in every pickup on the map
       else { gainXp(g.v); sfx.gem(2); }
     }
@@ -1959,7 +2056,19 @@ function update(dt){
   if(hitFlash>0) hitFlash -= dt*3;
 
   $('xpfill').style.width = (P.xp/P.xpNext)*100+'%';
-  { const sec=Math.floor(elapsed); if(sec!==_lastSec){ _lastSec=sec; const tt=$('timetag'); if(tt) tt.textContent=fmtTime(elapsed); } }
+  { const displayTime=gameMode==='challenger'?chalElapsed:elapsed;
+    const sec=Math.floor(displayTime);
+    if(sec!==_lastSec){ _lastSec=sec;
+      const tt=$('timetag'); if(tt) tt.textContent=fmtTime(displayTime);
+      if(gameMode==='challenger' && !chalBossActive && chalBossIdx<CHAL_BOSS_TIMES.length){
+        const rem=Math.max(0, Math.ceil(CHAL_BOSS_TIMES[chalBossIdx]-chalElapsed));
+        const rm=Math.floor(rem/60), rs=rem%60;
+        const wt=$('wavetag'); if(wt) wt.textContent='BOSS IN '+(rm>0?rm+':'+(rs<10?'0':'')+rs:rs+'s');
+      } else if(gameMode==='challenger' && chalBossActive){
+        const wt=$('wavetag'); if(wt) wt.textContent='BOSS FIGHT';
+      }
+    }
+  }
   if(boss){
     if(boss.finalPhase){
       // ONE bar that means phases 1+2; on entering phase 3 it REFILLS during the charge-up, then is phase 3's own bar
@@ -3526,15 +3635,52 @@ setInterval(()=>{
 requestAnimationFrame(loop);
 
 $('startbtn').addEventListener('click', ()=>{
+  gameMode='story';  // START always launches story; GAMEMODE popup picks challenger
   const m=$('menu'); m.classList.add('leaving');
   setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);   // fade the menu out, then drop into play
 });
+
+// ===== GAMEMODE POPUP =====
+(function(){
+  const pop=$('gamemode-popup');
+  function openPop(){
+    const chalBtn=$('gm-challenger');
+    if(chalBtn){
+      const locked=selWorld>chalUnlocked;
+      chalBtn.classList.toggle('gmpop-locked', locked);
+      const lb=$('gmpop-lockbadge');
+      if(lb) lb.textContent=locked?'🔒 Clear World '+(selWorld)+' Story mode first':'';
+    }
+    if(pop) pop.classList.remove('hidden');
+  }
+  function closePop(){ if(pop) pop.classList.add('hidden'); }
+  const gmBtn=$('gamemodebtn');
+  if(gmBtn) gmBtn.addEventListener('click', openPop);
+  const closeBtn=$('gmpop-close');
+  if(closeBtn) closeBtn.addEventListener('click', closePop);
+  if(pop) pop.addEventListener('click', e=>{ if(e.target===pop) closePop(); });
+  const storyBtn=$('gm-story');
+  if(storyBtn) storyBtn.addEventListener('click', ()=>{
+    gameMode='story'; closePop();
+    const m=$('menu'); m.classList.add('leaving');
+    setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
+  });
+  const chalBtn=$('gm-challenger');
+  if(chalBtn) chalBtn.addEventListener('click', ()=>{
+    if(selWorld>chalUnlocked){ sfx.pick(); return; }
+    gameMode='challenger'; closePop();
+    const m=$('menu'); m.classList.add('leaving');
+    setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
+  });
+})();
 $('wprev').addEventListener('click', ()=>{ if(selWorld>0){ selWorld--; refreshWorldSel(); sfx.pick(); } });
 $('wnext').addEventListener('click', ()=>{ if(selWorld<unlockedMax){ selWorld++; refreshWorldSel(); sfx.pick(); } });
 refreshWorldSel();
 $('retrybtn').addEventListener('click', startGame);
 $('wc-continue').addEventListener('click', ()=>{
   $('world-cleared').classList.add('hidden');
+  const wasChal = gameMode==='challenger';
+  gameMode='story';
   quitToMenu();
-  triggerUnlockReveal();
+  if(wasChal){ refreshWorldSel(); } else { triggerUnlockReveal(); }
 });
