@@ -1522,7 +1522,7 @@ function update(dt){
     if(dist<12){
       if(pb.target && pb.target.hp>0 && pb.target.iv<=0){
         pb.target.hp-=pb.dmg; pb.target.hitT=Math.max(pb.target.hitT||0,0.1);
-        if(typeof floatText==='function') floatText(pb.target.x,pb.target.y-(pb.target.r||16)-4,Math.round(pb.dmg),'#6be8ff',13);
+        if(typeof floatText==='function') floatText(pb.target.x+(Math.random()-0.5)*44,pb.target.y-(pb.target.r||16)-4-Math.random()*18,Math.round(pb.dmg),'#6be8ff',13);
         burst(pb.x,pb.y,'#6be8ff',5,60);
       }
       petBullets.splice(i,1); continue;
@@ -1855,8 +1855,9 @@ function damageEnemy(e,dmg,fx,fy,crit){
   if(P.freeze && !e.isBoss) e.frz=1.2;
   if(P.chillHit && !e.isBoss && e.frz<=0) e.chillT = Math.max(e.chillT||0, 0.8 + 0.25*P.chillHit);   // Permafrost: chill-on-hit
   sfx.hit();
-  floatText(e.x,e.y-e.r-4, (crit?'':'')+Math.round(dmg), crit?'#ffd23a':'#fff', crit?18:13);
-  if(crit) floatText(e.x,e.y-e.r-20,'CRIT','#ffd23a',15);
+  const _fx=e.x+(Math.random()-0.5)*44, _fy=e.y-e.r-4-Math.random()*18;
+  floatText(_fx,_fy, (crit?'':'')+Math.round(dmg), crit?'#ffd23a':'#fff', crit?18:13);
+  if(crit) floatText(_fx,_fy-16,'CRIT','#ffd23a',15);
 }
 
 function fireEB(x,y,a,sp,color,opts){
