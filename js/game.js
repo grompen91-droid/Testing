@@ -15,11 +15,11 @@ let chalElapsed = 0;        // challenger timer — pauses during boss fights
 let chalBossIdx = 0;        // index of next boss milestone (0-3 → 5/10/15/20 min)
 let chalBossActive = false; // true while a challenger boss is alive
 const CHAL_BOSS_TIMES = [300, 600, 900, 1200];  // seconds: 5/10/15/20 min
-// Seed challenger unlock from story progress so players who beat story worlds start unlocked
-let chalUnlocked = Math.min(10, Math.max(
-  +(localStorage.getItem('br_ch_unlocked')||0),
-  +(localStorage.getItem('br_unlocked')||0)
-));
+// Challenger needs story world 3 cleared; its own progression is independent after that
+const _storyP = +(localStorage.getItem('br_unlocked')||0);
+let chalUnlocked = _storyP >= 3
+  ? Math.max(0, Math.min(10, +(localStorage.getItem('br_ch_unlocked')||0)))
+  : -1;   // -1 = fully locked (need story world 3 first)
 function setCoinHUD(){ const c=$('coincount'); if(c){ const s=c.querySelector('span'); if(s) s.textContent=worldCoins; } }
 function setKillHUD(){ const k=$('killtag'); if(k && k.lastElementChild) k.lastElementChild.textContent=kills; }
 function fmtTime(s){ s=Math.max(0,Math.floor(s)); const m=Math.floor(s/60), q=s%60; return (m<10?'0':'')+m+':'+(q<10?'0':'')+q; }
@@ -521,8 +521,8 @@ function setStageEmblem(i){ const img=$('charimg'); if(img) img.src = worldEmble
 function refreshWorldSel(){
   $('wname').textContent = worldLabel(selWorld);
   $('wprev').disabled = selWorld<=0;
-  $('wnext').disabled = selWorld>=unlockedMax;   // can't pick locked worlds
-  setStageEmblem(selWorld);                       // Battle stage shows the world, not the player
+  $('wnext').disabled = selWorld>=(gameMode==='challenger' ? chalUnlocked : unlockedMax);
+  setStageEmblem(selWorld);
 }
 function triggerUnlockReveal(){
   refreshWorldSel();
@@ -919,7 +919,7 @@ function startBossArena(){
   arena = { x:cxw-aw/2, y:cyw-ah/2, w:aw, h:ah };
   luckies=[];                                // clear lucky blocks: they'd be stranded outside the arena
   bossPending = ARENA_LEAD;                  // no auto zoom-in on boss arrival — keep the player's current zoom
-  const bw=$('bosswarn'); bw.textContent='⚠ BOSS INCOMING ⚠'; bw.classList.remove('hidden');
+  const bw=$('bosswarn'); bw.textContent='BOSS INCOMING'; bw.classList.remove('hidden');
   sfx.warn();
 }
 
@@ -981,7 +981,7 @@ function spawnBoss(){
   $('bossfill2').style.width = '100%';
   $('bossbar2').classList.toggle('hidden', boss.bars!==2);
   $('bossbar').classList.remove('hidden');
-  const bw=$('bosswarn'); bw.textContent='⚠ BOSS ⚠'; bw.classList.remove('hidden');
+  const bw=$('bosswarn'); bw.textContent='BOSS!'; bw.classList.remove('hidden');
   setTimeout(()=>bw.classList.add('hidden'), 1700);
 }
 
@@ -1270,7 +1270,7 @@ function update(dt){
       waveEnemiesLeft=0; betweenWaves=false;
       bigText('BOSS WAVE','#e54d4d');
       $('wavetag').textContent='BOSS WAVE';
-      const bw=$('bosswarn'); bw.textContent='⚠ BOSS INCOMING ⚠'; bw.classList.remove('hidden');
+      const bw=$('bosswarn'); bw.textContent='BOSS INCOMING'; bw.classList.remove('hidden');
       sfx.warn();
       bossPending=ARENA_LEAD;  // slight delay before boss spawns (no arena walls)
     }
@@ -3556,9 +3556,8 @@ setInterval(()=>{
 requestAnimationFrame(loop);
 
 $('startbtn').addEventListener('click', ()=>{
-  gameMode='story';  // START always launches story; GAMEMODE popup picks challenger
   const m=$('menu'); m.classList.add('leaving');
-  setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);   // fade the menu out, then drop into play
+  setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
 });
 
 // ===== GAMEMODE POPUP =====
@@ -3567,10 +3566,10 @@ $('startbtn').addEventListener('click', ()=>{
   function openPop(){
     const chalBtn=$('gm-challenger');
     if(chalBtn){
-      const locked=selWorld>chalUnlocked;
+      const locked=chalUnlocked<0;
       chalBtn.classList.toggle('gmpop-locked', locked);
       const lb=$('gmpop-lockbadge');
-      if(lb) lb.textContent=locked?'LOCKED — clear World '+(selWorld)+' in Story first':'';
+      if(lb) lb.textContent=locked?'LOCKED — clear Story World 3 first':'';
     }
     if(pop) pop.classList.remove('hidden');
   }
@@ -3582,16 +3581,22 @@ $('startbtn').addEventListener('click', ()=>{
   if(pop) pop.addEventListener('click', e=>{ if(e.target===pop) closePop(); });
   const storyBtn=$('gm-story');
   if(storyBtn) storyBtn.addEventListener('click', ()=>{
-    gameMode='story'; closePop(); sfx.pick();
+    gameMode='story'; refreshWorldSel(); closePop(); sfx.pick();
   });
   const chalBtn=$('gm-challenger');
   if(chalBtn) chalBtn.addEventListener('click', ()=>{
-    if(selWorld>chalUnlocked){ sfx.pick(); return; }
-    gameMode='challenger'; closePop(); sfx.pick();
+    if(chalUnlocked<0){ sfx.pick(); return; }   // locked — need story world 3
+    gameMode='challenger';
+    selWorld=Math.min(chalUnlocked, WORLDS.length-1);
+    refreshWorldSel();
+    closePop(); sfx.pick();
   });
 })();
 $('wprev').addEventListener('click', ()=>{ if(selWorld>0){ selWorld--; refreshWorldSel(); sfx.pick(); } });
-$('wnext').addEventListener('click', ()=>{ if(selWorld<unlockedMax){ selWorld++; refreshWorldSel(); sfx.pick(); } });
+$('wnext').addEventListener('click', ()=>{
+  const maxW=gameMode==='challenger'?chalUnlocked:unlockedMax;
+  if(selWorld<maxW){ selWorld++; refreshWorldSel(); sfx.pick(); }
+});
 refreshWorldSel();
 $('retrybtn').addEventListener('click', startGame);
 $('wc-continue').addEventListener('click', ()=>{
