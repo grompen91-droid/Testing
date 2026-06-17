@@ -2151,8 +2151,10 @@ function damageEnemy(e,dmg,fx,fy,crit){
   if(P.chillHit && !e.isBoss && e.frz<=0) e.chillT = Math.max(e.chillT||0, 0.8 + 0.25*P.chillHit);   // Permafrost: chill-on-hit
   sfx.hit();
   const _dvx=(Math.random()-0.5)*120;
-  texts.push({x:e.x,y:e.y-e.r-4,str:(crit?'':'')+Math.round(dmg),color:crit?'#ffd23a':'#fff',size:crit?18:13,life:0.9,max:0.9,vy:-55,vx:_dvx});
-  if(crit) texts.push({x:e.x,y:e.y-e.r-20,str:'CRIT',color:'#ffd23a',size:15,life:0.9,max:0.9,vy:-55,vx:_dvx});
+  // spread simultaneous hits (piercing/multishot) apart from spawn so they don't stack into illegible overlap
+  const _jx=rand(-14,14), _jy=rand(-6,6);
+  texts.push({x:e.x+_jx,y:e.y-e.r-4+_jy,str:(crit?'':'')+Math.round(dmg),color:crit?'#ffd23a':'#fff',size:crit?18:13,life:0.9,max:0.9,vy:-55,vx:_dvx});
+  if(crit) texts.push({x:e.x+_jx,y:e.y-e.r-40+_jy,str:'CRIT',color:'#ffd23a',size:15,life:0.9,max:0.9,vy:-55,vx:_dvx});
 }
 
 function fireEB(x,y,a,sp,color,opts){
@@ -3340,7 +3342,11 @@ function render(){
       cx.fillRect(e.x-w/2,e.y-e.r-12,w*Math.max(0,e.hp/e.maxHp),5);
     }
     if(e.isBoss){
-      cx.font='900 13px sans-serif'; cx.fillStyle='#fff'; cx.textAlign='center';
+      cx.font='900 13px sans-serif'; cx.textAlign='center';
+      const nameW=cx.measureText(e.name).width;
+      cx.fillStyle='rgba(20,14,8,0.55)';
+      cx.fillRect(e.x-nameW/2-6, e.y-e.r-34, nameW+12, 18);
+      cx.fillStyle='#fff';
       cx.strokeStyle=OUT; cx.lineWidth=3; cx.strokeText(e.name, e.x, e.y-e.r-22); cx.fillText(e.name, e.x, e.y-e.r-22);
     }
   }
