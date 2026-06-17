@@ -1245,6 +1245,12 @@ function muzzleFlash(x,y,color){
   for(let i=0;i<5;i++){ const a=rand(0,TAU), s=rand(40,120);
     parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.12,0.28),max:0.28,color,r:rand(1.5,3)}); }
 }
+// Pulse Wave radius/damage — radius buffed to actually match how big the shockwave looks; damage nerfed and now scales off both radius and P.dmg instead of a flat number
+function novaStats(){
+  const R = P.novaEvo ? 340 : 230;
+  const dmg = R*0.10*P.dmg*P.novaPow;
+  return {R, dmg};
+}
 // shared shockwave used by Nova synergies (Aegis Nova, Event Horizon)
 function novaBlast(x,y,R,dmg){
   burst(x,y,'#9fd0ff',24,400); shake=Math.max(shake,8);
@@ -1661,13 +1667,13 @@ function update(dt){
     P.novaCd -= dt;
     if(P.novaCd<=0){
       P.novaCd = P.novaCdBase; shake = Math.max(shake, P.novaEvo?12:8);
-      const R = P.novaEvo ? 280 : 190;
+      const {R,dmg} = novaStats();
       burst(P.x,P.y,'#9fd0ff',P.novaEvo?40:26,420); sfx.boss();
       for(let k=0;k<3;k++) parts.push({x:P.x,y:P.y,vx:0,vy:0,life:0.4,max:0.4,color:'#cfeaff',r:R,ring:true});
       for(const e of enemies){
         if(dist2(P.x,P.y,e.x,e.y) < R*R){
           const fb = (P.freeze && e.frz>0) ? (P.frostfire?2.2:1.6) : 1;   // Frostfire Core amps the shatter
-          damageEnemy(e,(P.novaEvo?40:28)*P.dmg*P.novaPow*fb,P.x,P.y,false);
+          damageEnemy(e,dmg*fb,P.x,P.y,false);
         }
       }
       ebullets = ebullets.filter(b => dist2(P.x,P.y,b.x,b.y) > R*R);  // Skibidi Nuke clears bullets
@@ -3277,7 +3283,7 @@ function hurtPlayer(dmg, src){
       for(const e of enemies){ if(dist2(P.x,P.y,e.x,e.y)<R*R) damageEnemy(e,40*P.dmg,P.x,P.y,false); }
       ebullets = ebullets.filter(b=>dist2(P.x,P.y,b.x,b.y)>R*R);
     }
-    if(P.aegisNova) novaBlast(P.x,P.y,P.novaEvo?280:190,(P.novaEvo?40:28)*P.dmg*P.novaPow);   // Aegis Nova synergy
+    if(P.aegisNova){ const {R,dmg}=novaStats(); novaBlast(P.x,P.y,R,dmg); }   // Aegis Nova synergy
     return;
   }
   P.hp -= dmg*(P.shieldDR||1)*(P.armor||1)*worldDmgMul(); P.inv = 0.8;
