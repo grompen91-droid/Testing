@@ -568,6 +568,7 @@ function grantPet(id) {
     localStorage.setItem('br_owned_pets', JSON.stringify(owned));
     if(window.markDirty) window.markDirty();
   }
+  if(typeof updatePetBadge==='function') updatePetBadge();
 }
 
 function petThumbURL(petId, size) {

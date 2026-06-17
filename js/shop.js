@@ -168,6 +168,27 @@ function sellGearInstance(uid){
   return true;
 }
 function unseenCount(){ let n=0; for(const inst of gearOwned) if(!gearSeen.has(inst.uid)) n++; return n; }
+
+// ---- character/pet "new unlock" badges -- same seen-set pattern as gear's invbadge ----
+let charSeen = new Set(JSON.parse(localStorage.getItem('br_char_seen')||'[]'));
+function saveCharSeen(){ localStorage.setItem('br_char_seen', JSON.stringify([...charSeen])); }
+function unseenCharCount(){
+  if(typeof CHARACTERS==='undefined' || typeof charIsUnlocked!=='function') return 0;
+  let n=0; for(const c of CHARACTERS) if(charIsUnlocked(c.id) && !charSeen.has(c.id)) n++;
+  return n;
+}
+function updateCharBadge(){ const b=$('charbadge'); if(!b) return; const n=unseenCharCount();
+  b.textContent = n>99?'99+':n; b.classList.toggle('hidden', n<=0); }
+
+let petSeen = new Set(JSON.parse(localStorage.getItem('br_pet_seen')||'[]'));
+function savePetSeen(){ localStorage.setItem('br_pet_seen', JSON.stringify([...petSeen])); }
+function unseenPetCount(){
+  if(typeof PETS==='undefined' || typeof isPetOwned!=='function') return 0;
+  let n=0; for(const p of PETS) if(isPetOwned(p.id) && !petSeen.has(p.id)) n++;
+  return n;
+}
+function updatePetBadge(){ const b=$('petbadge'); if(!b) return; const n=unseenPetCount();
+  b.textContent = n>99?'99+':n; b.classList.toggle('hidden', n<=0); }
 function updateInvBadge(){ const b=$('invbadge'); if(!b) return; const n=unseenCount();
   b.textContent = n>99?'99+':n; b.classList.toggle('hidden', n<=0); }
 
@@ -845,9 +866,9 @@ function showTab(name){
   document.querySelectorAll('#tabbar .tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
   const menu=$('menu'); if(menu) menu.setAttribute('data-tab', name);   // per-tab background tint
   if(name==='shop') renderShop();
-  if(name==='pets') renderPetsTab();
+  if(name==='pets'){ renderPetsTab(); petSeen=new Set(PETS.filter(p=>isPetOwned(p.id)).map(p=>p.id)); savePetSeen(); updatePetBadge(); }
   if(name==='inventory'){ gearSeen=new Set(gearOwned.map(x=>x.uid)); saveSeen(); updateInvBadge(); renderInventory(); renderPetSection(); }   // mark all seen -> clear badge
-  if(name==='character') renderCharacterTab();
+  if(name==='character'){ renderCharacterTab(); charSeen=new Set(CHARACTERS.filter(c=>charIsUnlocked(c.id)).map(c=>c.id)); saveCharSeen(); updateCharBadge(); }
 }
 document.querySelectorAll('#tabbar .tabbtn').forEach(b=>b.addEventListener('click',()=>{ showTab(b.dataset.tab); if(typeof sfx!=='undefined') sfx.pick(); }));
 const _crclaim=$('crclaim'); if(_crclaim) _crclaim.addEventListener('click', closeCrate);

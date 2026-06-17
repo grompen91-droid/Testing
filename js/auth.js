@@ -137,6 +137,8 @@ function rehydrate(){
   if(typeof renderPetsTab==='function')    renderPetsTab();
   if(typeof renderCharacterTab==='function') renderCharacterTab();
   if(typeof updateInvBadge==='function')   updateInvBadge();
+  if(typeof updateCharBadge==='function')  updateCharBadge();
+  if(typeof updatePetBadge==='function')   updatePetBadge();
   if(typeof refreshGemsUI==='function')    refreshGemsUI();
   const gt=$('goldtxt'); if(gt) gt.textContent = (typeof gold!=='undefined'?gold:0);
 }

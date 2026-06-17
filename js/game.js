@@ -480,6 +480,7 @@ function worldCleared(boss){
       : [];
   }
   _clearData = { worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars, isPractice };
+  if(newChars.length && typeof updateCharBadge==='function') updateCharBadge();
   state = ST.CUTSCENE;
   cut = { t:0, boss:boss, alpha:1, fade:0, name:curWorld().name };
   boss.cut = true; boss.deathScale = 1;
@@ -1071,6 +1072,7 @@ function chalWorldCleared(e){
       })
     : [];
   _clearData={ worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars, isChallenger:true };
+  if(newChars.length && typeof updateCharBadge==='function') updateCharBadge();
   state=ST.CUTSCENE;
   cut={ t:0, boss:e, alpha:1, fade:0, name:curWorld().name+' CHALLENGER' };
   e.cut=true; e.deathScale=1;

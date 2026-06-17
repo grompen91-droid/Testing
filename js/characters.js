@@ -537,6 +537,7 @@ function grantChar(id) {
     localStorage.setItem('br_owned_chars', JSON.stringify(owned));
     if(window.markDirty) window.markDirty();
   }
+  if(typeof updateCharBadge==='function') updateCharBadge();
 }
 
 let activeCharId = localStorage.getItem('br_active_char')||'gianni';
