@@ -1355,12 +1355,14 @@ function openLevelUp(){
     const m = nextMove(u); if(m) cands.push({u,m});
   }
   // weighted draw of 3 distinct by rarity (rarer = lower weight); evolve-ready cards stay prioritised
+  const hasAbility = UPGRADES.some(u => u.evo && (P.up[u.id]||0) > 0);   // owns at least one ability card already
   const opts = []; const bag = cands.slice();
   while(opts.length<3 && bag.length){
     const w = bag.map(x => {
       const base = (RARITY[x.u.rarity||'common']||RARITY.common).w;
       // 8× if this pick triggers evolution; 3× if player has already invested in this evo path
-      const evoMul = x.m.evolve ? 8 : (x.u.evo && (P.up[x.u.id]||0) > 0 ? 3 : 1);
+      let evoMul = x.m.evolve ? 8 : (x.u.evo && (P.up[x.u.id]||0) > 0 ? 3 : 1);
+      if(x.u.evo && !hasAbility) evoMul *= 2.5;   // boost ability-card odds while the player has none yet
       return base * evoMul;
     });
     let total=0; for(const v of w) total+=v;
