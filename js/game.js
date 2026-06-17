@@ -524,6 +524,108 @@ function toMenuFromClear(){
   } else { unlockEl.classList.add('hidden'); }
   $('world-cleared').classList.remove('hidden');
 }
+
+// ============================================================
+// INTRO CUTSCENE — plays once, before the very first World 1 run.
+// Pure screen-space drawing (no world/camera), driven by a fixed stage timeline.
+// ============================================================
+const INTRO_DUR = 15;
+let introT = 0, introDone = null;
+const INTRO_HUMANS = [
+  {x:0.28,y:0.62,p:0}, {x:0.42,y:0.74,p:1.4}, {x:0.58,y:0.58,p:2.6},
+  {x:0.66,y:0.72,p:0.7}, {x:0.36,y:0.5,p:3.3}, {x:0.5,y:0.66,p:2.0},
+];
+const INTRO_ARMY = ['pigeon','chimp','penguin','flamingo','duck','pigeon'];
+function easeOut(t){ return 1-(1-t)*(1-t); }
+function startIntro(onDone){
+  introT=0; introDone=onDone; state=ST.INTRO;
+  $('menu').classList.add('hidden');
+  $('introskip').classList.remove('hidden');
+  playMusic('boss0'); shake=0;
+}
+function finishIntro(){
+  $('introskip').classList.add('hidden');
+  localStorage.setItem('br_seen_intro','1');
+  const cb=introDone; introDone=null;
+  if(cb) cb();
+}
+function introUpdate(dt){ introT+=dt; if(introT>=INTRO_DUR) finishIntro(); }
+// caption alpha: fades in over 0.4s, holds, fades out 0.4s before the window ends
+function introCaptionAlpha(t,t0,t1){
+  if(t<t0||t>t1) return 0;
+  return Math.min(1,(t-t0)/0.4,(t1-t)/0.4);
+}
+function introCaption(str,t,t0,t1,y){
+  const a=introCaptionAlpha(t,t0,t1); if(a<=0) return;
+  let fs=Math.round(Math.min(W,H)*0.045);
+  cx.textAlign='center'; cx.font='900 '+fs+'px sans-serif';
+  const maxW=W*0.92;
+  if(cx.measureText(str).width>maxW){ fs=Math.max(11,Math.floor(fs*maxW/cx.measureText(str).width)); cx.font='900 '+fs+'px sans-serif'; }
+  cx.globalAlpha=a;
+  cx.lineWidth=5; cx.strokeStyle='#000'; cx.strokeText(str,W/2,y);
+  cx.fillStyle='#fff'; cx.fillText(str,W/2,y);
+  cx.globalAlpha=1;
+}
+function introRender(){
+  const t=introT;
+  // local screen-shake (NOT the shared `shake` global — that's decayed by update(), which never
+  // runs during ST.INTRO, so writing to it here would leak a stuck shake into the real game after)
+  const introShakeAmt = (t>7 && t<11) ? Math.max(0,(t-7)/3)*10 : 0;
+  cx.save();
+  if(introShakeAmt>0) cx.translate(rand(-introShakeAmt,introShakeAmt), rand(-introShakeAmt,introShakeAmt));
+  // sky/ground backdrop (grass tones, screen-space, no world dependency)
+  cx.fillStyle='#6fae3d'; cx.fillRect(0,0,W,H);
+  cx.fillStyle='#86c64a';
+  for(let gy=0; gy<H; gy+=64) for(let gx=0; gx<W; gx+=64) if(((gx/64+gy/64)&1)) cx.fillRect(gx,gy,64,64);
+
+  // --- stage 1 (0-3s): peaceful humans wandering ---
+  if(t<8){
+    const fleeT=Math.max(0,t-7);   // they start bolting for the exits once the army gets close
+    for(const h of INTRO_HUMANS){
+      const wob=Math.sin((t+h.p)*1.6)*10;
+      const fx=fleeT>0 ? -fleeT*fleeT*260 : 0;
+      const hx=h.x*W+wob+fx, hy=h.y*H;
+      cx.fillStyle='#e0c39a'; cx.beginPath(); cx.arc(hx,hy,7,0,TAU); cx.fill();
+      cx.fillStyle='#3a2d22'; cx.beginPath(); cx.arc(hx,hy-9,5,0,TAU); cx.fill();
+    }
+  }
+  introCaption('THE WORLD WAS AT PEACE...', t, 0.3, 3.2, H*0.18);
+
+  // --- stage 2 (2.5-9s): Sahur marches in with his army ---
+  if(t>2.5 && t<11){
+    const e=easeOut(Math.min(1,(t-2.5)/5.5));
+    const bossX = W*1.15 - e*(W*0.65), bossY=H*0.56;
+    const closeness=Math.max(0,(t-7)/3);
+    for(let i=0;i<INTRO_ARMY.length;i++){
+      const lag=0.5+i*0.18, e2=easeOut(Math.min(1,Math.max(0,(t-2.5-lag*0.4))/5.5));
+      const ax=W*1.25-e2*(W*0.6)+Math.sin(i*1.7)*30, ay=bossY+70+(i%3)*26-26;
+      if(typeof SP!=='undefined' && SP[INTRO_ARMY[i]]) drawSprite(INTRO_ARMY[i], ax, ay, 46, Math.sin(t*4+i)*0.15, 0,0,false,null);
+    }
+    if(typeof SP!=='undefined' && SP['sahur']) drawSprite('sahur', bossX, bossY, 130+closeness*30, Math.sin(t*3)*0.05, 0,0,false,null);
+  }
+  introCaption('...UNTIL TUNG TUNG TUNG SAHUR\'S ARMY INVADED.', t, 3.6, 8.6, H*0.86);
+
+  // --- stage 3 (9-11.5s): chaos flash ---
+  if(t>9 && t<11.5){
+    cx.globalAlpha=0.16+0.1*Math.sin(t*16); cx.fillStyle='#ff2020'; cx.fillRect(0,0,W,H); cx.globalAlpha=1;
+  }
+  introCaption('BRAINROT IS SPREADING FAST.', t, 9.0, 11.3, H*0.5);
+
+  // --- stage 4 (11.5-15s): hero rises ---
+  if(t>11.5){
+    const a=Math.min(1,(t-11.5)/0.6);
+    cx.globalAlpha=0.5*a*(0.6+0.4*Math.sin(t*5)); cx.strokeStyle='#9fe0ff'; cx.lineWidth=4;
+    cx.beginPath(); cx.arc(W/2,H*0.58,60,0,TAU); cx.stroke(); cx.globalAlpha=1;
+    if(typeof drawCharacter==='function') drawCharacter((typeof activeCharId!=='undefined'?activeCharId:'gianni'), W/2, H*0.58, 90, 0, false);
+  }
+  introCaption('ONE HERO RISES TO STOP THEM.', t, 11.8, 14.2, H*0.86);
+  introCaption('MISSION START', t, 14.0, 15.0, H*0.5);
+
+  // fade to black at the very end, into the real game
+  if(t>14.3){ cx.globalAlpha=Math.min(1,(t-14.3)/0.7); cx.fillStyle='#000'; cx.fillRect(0,0,W,H); cx.globalAlpha=1; }
+  cx.restore();
+}
+
 // ---- world-select carousel (menu) ----
 function worldLabel(i){
   if(gameMode==='practice') return 'TRAINING GROUNDS';
@@ -3723,7 +3825,8 @@ function loop(t){
     update(dt*timeScale);
   } else if(state===ST.MENU) menuUpdate(dt);
   else if(state===ST.CUTSCENE) cutsceneUpdate(dt);
-  render();
+  else if(state===ST.INTRO) introUpdate(dt);
+  if(state===ST.INTRO) introRender(); else render();
 }
 
 // menu: gentle drifting enemies around the player anchor for vibes
@@ -3842,8 +3945,14 @@ requestAnimationFrame(loop);
 $('startbtn').addEventListener('click', ()=>{
   if(gameMode==='practice'){ openPracticeSetup(); return; }
   const m=$('menu'); m.classList.add('leaving');
-  setTimeout(()=>{ m.classList.remove('leaving'); startGame(selWorld); }, 190);
+  const wantsIntro = gameMode==='story' && selWorld===0 && !localStorage.getItem('br_seen_intro');
+  setTimeout(()=>{
+    m.classList.remove('leaving');
+    if(wantsIntro) startIntro(()=>startGame(0));
+    else startGame(selWorld);
+  }, 190);
 });
+$('introskip').addEventListener('click', finishIntro);
 
 // ===== GAMEMODE POPUP =====
 (function(){
