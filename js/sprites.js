@@ -1005,6 +1005,28 @@ makeSprite('ab_secondwind',64,(g,u)=>{
   _heart(g,u,'#e07a30');
   sh(g,'#ffd24a',2.8*u,(g)=>{ g.moveTo(0,6*u); g.lineTo(0,-10*u); g.moveTo(-7*u,-4*u); g.lineTo(0,-10*u); g.lineTo(7*u,-4*u); });
 });
+// ---- Engineer-exclusive turret cards ----
+makeSprite('ab_turretmini',64,(g,u)=>{
+  g.strokeStyle=OUT; g.lineWidth=4*u; g.lineCap='round';
+  for(const lx of [-1,0,1]){ g.beginPath(); g.moveTo(0,4*u); g.lineTo(lx*15*u,24*u); g.stroke(); }
+  g.lineCap='butt';
+  sh(g,'#c9852f',3*u,(g)=>{ g.ellipse(0,2*u,17*u,14*u,0,0,TAU); });
+  g.save(); g.rotate(-0.55);
+  for(const oy of [-5,0,5]) sh(g,'#23272e',2*u,(g)=>{ g.roundRect(-3.4*u,-26*u+oy*u,6.8*u,20*u,2*u); });
+  g.restore();
+  sh(g,'#ffe6a8',2*u,(g)=>{ g.ellipse(3*u,1*u,7*u,6*u,0,0,TAU); });
+  dot(g,4*u,0,3*u,'#ffcf5f');
+});
+makeSprite('ab_turretflame',64,(g,u)=>{
+  g.strokeStyle=OUT; g.lineWidth=4*u; g.lineCap='round';
+  for(const lx of [-1,0,1]){ g.beginPath(); g.moveTo(0,4*u); g.lineTo(lx*15*u,24*u); g.stroke(); }
+  g.lineCap='butt';
+  sh(g,'#b5432f',3*u,(g)=>{ g.ellipse(0,2*u,17*u,14*u,0,0,TAU); });
+  g.save(); g.rotate(-0.4);
+  sh(g,'#6a6a6a',2.4*u,(g)=>{ g.moveTo(-4*u,-6*u); g.lineTo(4*u,-6*u); g.lineTo(8*u,-26*u); g.lineTo(-8*u,-26*u); g.closePath(); });
+  g.restore();
+  g.save(); g.translate(7*u,-22*u); _flame(g,u*0.5,'#ff7a3a','#ffd24a'); g.restore();
+});
 
 // ============================================================
 // WORLD 3 — FORESTA FRUTOSA sprites

@@ -265,6 +265,38 @@ function _drawIlCecchino(ctx, size, t) {
   ctx.restore();
 }
 
+function _drawEngineer(ctx, size, t) {
+  t = t||0;
+  const lw=Math.max(1.5,size*0.038);
+  // Humanoid base: dark grey work pants, teal jumpsuit, grey arms, tan skin
+  _humanBase(ctx, size, '#3a4248', '#2f8fa0', '#475a60', '#d4a870');
+  // Tool belt
+  _fillR(ctx,size,'#2a1c10',-size*0.17,size*0.10,size*0.34,size*0.05,size*0.01);
+  _fillR(ctx,size,'#9aa3af',-size*0.04,size*0.085,size*0.08,size*0.06,size*0.01); // buckle
+  _eyes(ctx, size);
+  // Welding goggles
+  ctx.strokeStyle='#2a1c10'; ctx.lineWidth=Math.max(1.2,size*0.03);
+  for(const sx of [-0.075,0.075]){ ctx.beginPath(); ctx.arc(size*sx,-size*0.24,size*0.058,0,Math.PI*2); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(size*-0.017,-size*0.24); ctx.lineTo(size*0.017,-size*0.24); ctx.stroke();
+  ctx.fillStyle='rgba(95,224,255,'+(0.30+0.18*Math.sin(t*3))+')';
+  for(const sx of [-0.075,0.075]){ ctx.beginPath(); ctx.arc(size*sx,-size*0.24,size*0.046,0,Math.PI*2); ctx.fill(); }
+  // Hardhat brim
+  _fillE(ctx,size,'#e0b03a', 0,-size*0.36, size*0.20,size*0.05);
+  // Hardhat dome
+  ctx.beginPath(); ctx.ellipse(0,-size*0.38,size*0.17,size*0.14,0,Math.PI,Math.PI*2);
+  ctx.fillStyle='#e0b03a'; ctx.fill(); ctx.strokeStyle='#2a1c10'; ctx.lineWidth=lw; ctx.stroke();
+  // Held wrench
+  ctx.save();
+  ctx.translate(size*0.21,size*0.05); ctx.rotate(0.5+Math.sin(t*2)*0.08);
+  ctx.fillStyle='#9aa3af'; ctx.strokeStyle='#2a1c10'; ctx.lineWidth=Math.max(1,size*0.025);
+  ctx.beginPath(); ctx.roundRect(-size*0.025,-size*0.02,size*0.05,size*0.20,size*0.015); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,-size*0.03,size*0.045,0.3,Math.PI*2-0.3); ctx.stroke();
+  ctx.restore();
+  // Idle wrench glint
+  ctx.fillStyle='rgba(255,255,255,'+(0.15+0.12*Math.sin(t*4))+')';
+  ctx.beginPath(); ctx.arc(size*0.24,size*0.02,size*0.018,0,Math.PI*2); ctx.fill();
+}
+
 // ============ CHARACTERS ARRAY ============
 const CHARACTERS = [
   {
@@ -414,6 +446,25 @@ const CHARACTERS = [
       });
     },
     draw(ctx, size, t) { _drawIlCampione(ctx, size, t); }
+  },
+  {
+    id: 'engineer',
+    name: 'Engineer',
+    desc: 'Fires no bullets of his own. Starts with 2 turrets that share all his stats. Dash places a stationary turret instead.',
+    rarity: 'epic',
+    worldUnlock: null,
+    gemPrice: 25,
+    baseStats: {},
+    register() {
+      P.noPlayerShots = true;
+      P.engineerPlace = true;
+      P.turretCount = Math.max(P.turretCount||0, 2);
+      P.turretDmgFrac = 0.5;
+      P.turretAdaptive = true;
+      P.turretFireFromPlayer = true;
+      P.bannedCards = ['multi','pierce','orbit','nova','vamp','slow','aegis','blackhole','phoenix','knives','ricochet','chain','boomerang','frostbloom','bouncy','skibidi','gravcrush','auramonster','secondwind'];
+    },
+    draw(ctx, size, t) { _drawEngineer(ctx, size, t); }
   }
 ];
 

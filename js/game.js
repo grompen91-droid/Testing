@@ -7,6 +7,9 @@ const P = {}; // player
 let bullets=[], ebullets=[], petBullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[], luckies=[];
 let skibidiBullets=[], skibidiTimers=[];   // Skibidi Toilet card: edge-bouncing persistent bullets, own lifecycle
 let turrets=[];   // Walking Turret card: chain-follows behind the pet, each {x,y,cd,face}
+let miniTurrets=[];    // Minigun Turret card (Engineer-only): chain-follows, each {x,y,cd,face}
+let flameTurrets=[];   // Flamethrower Turret card (Engineer-only): chain-follows, each {x,y,cd,face}
+let placedTurrets=[];  // Engineer "place turret" (replaces dash): stationary, destructible, each {x,y,hp,maxHp,cd,face,inv}
 let timeScale=1.0;
 let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) — avoids GC churn
 let wave=1, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
@@ -826,6 +829,17 @@ const UPGRADES = [
       {desc:'+1 turret.', f:()=>{ P.turretCount=(P.turretCount||1)+1; }},
     ],
     evo:{name:'Turret Network', icon:'gembig', desc:'EVOLVE — +range, and turrets now scale with your current damage & range upgrades.', f:()=>{ P.turretRangeBonus=(P.turretRangeBonus||0)+130; P.turretAdaptive=true; }} },
+  { id:'turretmini', name:'Minigun Turret', icon:'gembig', rarity:'epic', charOnly:'engineer', cap:3,
+    steps:[
+      {desc:'Rapid-fire turret that follows you. Low damage, 125% more fire rate than a normal turret.', f:()=>{ P.miniTurretCount=Math.max(1,P.miniTurretCount||0); }},
+      {desc:'+50% fire rate.', f:()=>{ P.miniFireMul=(P.miniFireMul||1)*1.5; }},
+      {desc:'+1 minigun turret.', f:()=>{ P.miniTurretCount=(P.miniTurretCount||1)+1; }},
+    ] },
+  { id:'turretflame', name:'Flamethrower Turret', icon:'gembig', rarity:'epic', charOnly:'engineer', cap:2,
+    steps:[
+      {desc:'Turret that follows you and sprays a damaging flame AOE at nearby foes.', f:()=>{ P.flameTurretCount=Math.max(1,P.flameTurretCount||0); P.flameR=P.flameR||70; P.flameDmgFrac=P.flameDmgFrac||0.08; }},
+      {desc:'Larger flame radius & more damage.', f:()=>{ P.flameR=(P.flameR||70)+30; P.flameDmgFrac=(P.flameDmgFrac||0.08)+0.04; }},
+    ] },
   { id:'range', name:'Focal Lens', icon:'gem', rarity:'uncommon',
     steps:[{desc:'+20% attack range.',f:()=>P.range*=1.2},{desc:'+20% attack range.',f:()=>P.range*=1.2},{desc:'+20% attack range.',f:()=>P.range*=1.2},{desc:'+20% attack range.',f:()=>P.range*=1.2}],
     evo:{name:'Farsight Sniper', icon:'coin', desc:'EVOLVE — maximum range and +50% damage.', f:()=>{P.range*=1.8;P.dmg*=1.5;}} },
@@ -1077,6 +1091,11 @@ function resetPlayer(){
     // World 1 additions
     seeker:0, laststand:0,
     turretCount:0, turretDmgBase:0, turretDmgMul:1, turretFireMul:1, turretRangeBase:330, turretRangeBonus:0, turretAdaptive:false,
+    turretDmgFrac:0.10, turretFireFromPlayer:false,
+    // Engineer character: no normal shots, dash places a stationary turret, plus 2 exclusive turret cards
+    noPlayerShots:false, engineerPlace:false,
+    miniTurretCount:0, miniFireMul:1,
+    flameTurretCount:0, flameR:0, flameDmgFrac:0,
     // Character / pet system
     charId:(typeof activeCharId!=='undefined'?activeCharId:'gianni'),
     petId:(typeof activePetId!=='undefined'?activePetId:null),
@@ -1093,7 +1112,7 @@ function resetPlayer(){
     skibidiCount:0, skibidiBounces:6, skibidiNeverDie:false
   });
   skibidiBullets.length=0; skibidiTimers.length=0;
-  turrets.length=0;
+  turrets.length=0; miniTurrets.length=0; flameTurrets.length=0; placedTurrets.length=0;
 }
 
 function startGame(idx){
@@ -1135,6 +1154,7 @@ function _doStartGame(wi){
   $('bossbar').classList.add('hidden');
   $('hud').classList.remove('hidden');
   $('zoomctl').classList.remove('hidden');
+  $('dashbtn').textContent = P.engineerPlace ? 'Place turret.' : 'DASH';
   if(IS_TOUCH) $('dashbtn').classList.remove('hidden');   // mobile-only on-screen dash
   if(timerMode()) startChallengerSpawn(); else startWave();
 }
@@ -1465,6 +1485,7 @@ function openLevelUp(){
     if((u.minWorld||0) > worldIdx) continue;                      // world-locked ability (e.g. World 2/3 only)
     if(u.req && !u.req.every(id => (P.up[id]||0) > 0)) continue;   // synergy card still locked
     if(P.bannedCards && P.bannedCards.includes(u.id)) continue;   // character-specific card ban
+    if(u.charOnly && u.charOnly!==P.charId) continue;             // character-exclusive card (e.g. Engineer's turret cards)
     const m = nextMove(u); if(m) cands.push({u,m});
   }
   // weighted draw of 3 distinct by rarity (rarer = lower weight); evolve-ready cards stay prioritised
@@ -1544,6 +1565,14 @@ function gameOver(){
 // ============ DASH ============
 function tryDash(){
   if(state!==ST.PLAY || P.dashCd>0) return;
+  if(P.engineerPlace){
+    if(placedTurrets.length>=3) return;   // cap of 3 — wait for one to be destroyed
+    placedTurrets.push({x:P.x,y:P.y,hp:25,maxHp:25,cd:0,face:0,inv:0});
+    P.dashCd=P.dashMax;
+    sfx.dash();
+    if(navigator.vibrate) navigator.vibrate(20);
+    return;
+  }
   if(typeof fireHook==='function') fireHook('onDash');
   let mx=joy.dx, my=joy.dy;
   if(keys['w']||keys['arrowup']) my-=1;
@@ -1580,6 +1609,19 @@ function forEnemiesNear(x,y,R,cb){
   for(let ix=-span;ix<=span;ix++) for(let iy=-span;iy<=span;iy++){
     const a=egrid.get(cellKey(gx+ix,gy+iy)); if(!a) continue;
     for(const e of a) cb(e);
+  }
+}
+// shared single-target fire logic for every follow/stationary turret kind (Walking/Minigun/Engineer-placed)
+function tickChainTurret(tu, dt, range, fireCd, dmg){
+  tu.cd -= dt;
+  if(tu.cd<=0){
+    let target=null, bd=range*range;
+    forEnemiesNear(tu.x,tu.y,range,(e)=>{ if(e.under) return; const d=dist2(tu.x,tu.y,e.x,e.y); if(d<=bd){ bd=d; target=e; } });
+    if(target){
+      tu.face = Math.atan2(target.y-tu.y, target.x-tu.x);
+      petBullets.push({x:tu.x,y:tu.y,tx:target.x,ty:target.y,target,dmg});
+      tu.cd = fireCd;
+    } else tu.cd = 0.1;   // nothing in range yet — retry soon
   }
 }
 // push an enemy out of overlapping neighbours so the swarm flows around itself instead of stacking
@@ -1671,32 +1713,73 @@ function update(dt){
 
   // spatial grid for this frame: powers enemy separation + bullet/orb/aura collision
   buildEnemyGrid();
-  // Walking Turret(s): chain-follow behind the pet (or directly behind the player if no pet active)
-  if(P.turretCount>0){
-    while(turrets.length < P.turretCount) turrets.push({x:(P.petId?P.petX:P.x), y:(P.petId?P.petY:P.y), cd:0, face:0});
-    if(turrets.length > P.turretCount) turrets.length = P.turretCount;
+  // --- turret chain setup (shared by Walking/Minigun/Flamethrower follow-turrets) ---
+  if(P.turretCount>0 || P.miniTurretCount>0 || P.flameTurretCount>0){
     const tml = Math.hypot(mx,my);
     const tfdx = tml>0.05 ? -mx/tml : -Math.cos(P.face);
     const tfdy = tml>0.05 ? -my/tml : -Math.sin(P.face);
-    const turretRange = P.turretAdaptive ? P.range : (P.turretRangeBase + P.turretRangeBonus);
-    const turretFireCd = 0.32 / (P.turretFireMul||1);
     let chx = P.petId ? P.petX : P.x, chy = P.petId ? P.petY : P.y;
-    for(const tu of turrets){
-      const tx = chx + tfdx*34, ty = chy + tfdy*34;
-      tu.x += (tx-tu.x)*Math.min(1,dt*9);
-      tu.y += (ty-tu.y)*Math.min(1,dt*9);
-      chx = tu.x; chy = tu.y;   // next turret in the chain trails behind this one
-      tu.cd -= dt;
-      if(tu.cd<=0){
-        let target=null, bd=turretRange*turretRange;
-        forEnemiesNear(tu.x,tu.y,turretRange,(e)=>{ if(e.under) return; const d=dist2(tu.x,tu.y,e.x,e.y); if(d<=bd){ bd=d; target=e; } });
-        if(target){
-          tu.face = Math.atan2(target.y-tu.y, target.x-tu.x);
-          const dmgBase = P.turretAdaptive ? P.dmg*0.10 : P.turretDmgBase;
-          if(typeof petBullets!=='undefined') petBullets.push({x:tu.x,y:tu.y,tx:target.x,ty:target.y,target,dmg:dmgBase*(P.turretDmgMul||1)});
-          tu.cd = turretFireCd;
-        } else tu.cd = 0.1;   // nothing in range yet — retry soon
+
+    // Walking Turret(s): chain-follow behind the pet (or directly behind the player if no pet active)
+    if(P.turretCount>0){
+      while(turrets.length < P.turretCount) turrets.push({x:chx, y:chy, cd:0, face:0});
+      if(turrets.length > P.turretCount) turrets.length = P.turretCount;
+      const turretRange = P.turretAdaptive ? P.range : (P.turretRangeBase + P.turretRangeBonus);
+      const turretFireCd = (P.turretFireFromPlayer ? P.fireRate : 0.32) / (P.turretFireMul||1);
+      const dmgBase = P.turretAdaptive ? P.dmg*(P.turretDmgFrac||0.10) : P.turretDmgBase;
+      for(const tu of turrets){
+        const tx = chx + tfdx*34, ty = chy + tfdy*34;
+        tu.x += (tx-tu.x)*Math.min(1,dt*9);
+        tu.y += (ty-tu.y)*Math.min(1,dt*9);
+        chx = tu.x; chy = tu.y;   // next turret in the chain trails behind this one
+        tickChainTurret(tu, dt, turretRange, turretFireCd, dmgBase*(P.turretDmgMul||1));
       }
+    }
+
+    // Minigun Turret(s) — Engineer-exclusive card: low damage, very high fire rate
+    if(P.miniTurretCount>0){
+      while(miniTurrets.length < P.miniTurretCount) miniTurrets.push({x:chx, y:chy, cd:0, face:0});
+      if(miniTurrets.length > P.miniTurretCount) miniTurrets.length = P.miniTurretCount;
+      const miniFireCd = (0.32/2.25) / (P.miniFireMul||1);   // 125% more fire rate than the 0.32s baseline
+      for(const tu of miniTurrets){
+        const tx = chx + tfdx*34, ty = chy + tfdy*34;
+        tu.x += (tx-tu.x)*Math.min(1,dt*9);
+        tu.y += (ty-tu.y)*Math.min(1,dt*9);
+        chx = tu.x; chy = tu.y;
+        tickChainTurret(tu, dt, P.range, miniFireCd, P.dmg*0.125);
+      }
+    }
+
+    // Flamethrower Turret(s) — Engineer-exclusive card: continuous AOE burn instead of bullets
+    if(P.flameTurretCount>0){
+      while(flameTurrets.length < P.flameTurretCount) flameTurrets.push({x:chx, y:chy, cd:0, face:0});
+      if(flameTurrets.length > P.flameTurretCount) flameTurrets.length = P.flameTurretCount;
+      const flameR = P.flameR||70;
+      for(const tu of flameTurrets){
+        const tx = chx + tfdx*34, ty = chy + tfdy*34;
+        tu.x += (tx-tu.x)*Math.min(1,dt*9);
+        tu.y += (ty-tu.y)*Math.min(1,dt*9);
+        chx = tu.x; chy = tu.y;
+        tu.firing = false;
+        forEnemiesNear(tu.x,tu.y,flameR,(e)=>{
+          if(e.iv>0 || e.lead) return;
+          if(dist2(tu.x,tu.y,e.x,e.y) < flameR*flameR){
+            tu.firing = true; tu.face = Math.atan2(e.y-tu.y, e.x-tu.x);
+            e.hp -= P.dmg*(P.flameDmgFrac||0.08)*dt; e.hitT=Math.max(e.hitT,0.05);
+            if(Math.random()<0.15) parts.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:0,vy:-rand(20,50),life:0.35,max:0.35,color:'#ff8a3a',r:rand(2,4)});
+          }
+        });
+      }
+    }
+  }
+
+  // --- Engineer placed turrets (replace dash): stationary, destructible, 25 HP, max 3 ---
+  if(placedTurrets.length){
+    for(let pi=placedTurrets.length-1; pi>=0; pi--){
+      const tu = placedTurrets[pi];
+      tu.inv = Math.max(0, (tu.inv||0)-dt);
+      tickChainTurret(tu, dt, P.range, 0.32, P.dmg*0.25);
+      if(tu.hp<=0){ burst(tu.x,tu.y,'#9aa3af',16,220); placedTurrets.splice(pi,1); }
     }
   }
   // Daredevil: is a foe point-blank this frame? (drives a crit bonus)
@@ -1714,7 +1797,7 @@ function update(dt){
 
   // --- auto-fire at nearest enemy within range ---
   P.fireCd -= dt;
-  if(P.fireCd<=0 && (enemies.length || luckies.length)){
+  if(!P.noPlayerShots && P.fireCd<=0 && (enemies.length || luckies.length)){
     let best=null, bd=Infinity;
     for(const e of enemies){ const d=dist2(P.x,P.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
     for(const lb of luckies){ const d=dist2(P.x,P.y,lb.x,lb.y); if(d<bd){bd=d;best=lb;} }   // lucky blocks are auto-targeted too
@@ -2228,6 +2311,16 @@ function update(dt){
         const a=Math.atan2(P.y-e.y,P.x-e.x);
         P.x=clamp(P.x+Math.cos(a)*120, WALL+P.r, WORLD.w-WALL-P.r); P.y=clamp(P.y+Math.sin(a)*120, WALL+P.r, WORLD.h-WALL-P.r);
         shake=Math.max(shake,7);
+      }
+    }
+
+    // enemies also attack any Engineer-placed turret they touch
+    if(!e.under && placedTurrets.length){
+      for(const tu of placedTurrets){
+        if(tu.inv<=0 && dist2(e.x,e.y,tu.x,tu.y) < (e.r+18)*(e.r+18)){
+          tu.hp -= (e.isBoss?20:10)*(e.dmgBuff||1)*chalDmgMul();
+          tu.inv = 0.4;
+        }
       }
     }
 
@@ -3533,6 +3626,43 @@ function renderInfiniteGround(vx0,vy0,vx1,vy1){
   }
 }
 
+// shared visual for every turret kind (Walking/Minigun/Flamethrower/Engineer-placed): tripod base +
+// a swiveling twin-barrel head that aims at tu.face. hpFrac (0-1), if given, draws a health bar above it.
+function drawTurretUnit(tu, ts, bodyCol, visorCol, hpFrac){
+  cx.fillStyle='rgba(40,60,25,0.18)';
+  cx.beginPath(); cx.ellipse(tu.x,tu.y+ts*0.46,ts*0.4,ts*0.14,0,0,TAU); cx.fill();
+  cx.save(); cx.translate(tu.x,tu.y);
+  cx.strokeStyle=OUT; cx.lineWidth=ts*0.16; cx.lineCap='round';
+  for(const lx of [-1,0,1]){
+    cx.beginPath(); cx.moveTo(0,-ts*0.08); cx.lineTo(lx*ts*0.42, ts*0.55); cx.stroke();
+  }
+  cx.fillStyle='#454b54'; cx.strokeStyle=OUT; cx.lineWidth=2;
+  cx.beginPath(); cx.ellipse(0,ts*0.05,ts*0.22,ts*0.16,0,0,TAU); cx.fill(); cx.stroke();
+  cx.save(); cx.rotate(tu.face||0);
+  cx.fillStyle='#23272e'; cx.strokeStyle=OUT; cx.lineWidth=2;
+  cx.fillRect(ts*0.18,-ts*0.32,ts*0.62,ts*0.16); cx.strokeRect(ts*0.18,-ts*0.32,ts*0.62,ts*0.16);
+  cx.fillRect(ts*0.18, ts*0.16,ts*0.62,ts*0.16); cx.strokeRect(ts*0.18, ts*0.16,ts*0.62,ts*0.16);
+  cx.fillStyle='#11151a';
+  cx.fillRect(ts*0.7,-ts*0.30,ts*0.1,ts*0.12);
+  cx.fillRect(ts*0.7, ts*0.18,ts*0.1,ts*0.12);
+  cx.fillStyle=bodyCol; cx.strokeStyle=OUT; cx.lineWidth=2.4;
+  cx.beginPath(); cx.ellipse(0,0,ts*0.5,ts*0.42,0,0,TAU); cx.fill(); cx.stroke();
+  cx.strokeStyle='rgba(0,0,0,0.25)'; cx.lineWidth=1.6;
+  cx.beginPath(); cx.moveTo(-ts*0.32,-ts*0.1); cx.lineTo(ts*0.3,-ts*0.1); cx.stroke();
+  cx.fillStyle='#dff7ff'; cx.strokeStyle=OUT; cx.lineWidth=1.6;
+  cx.beginPath(); cx.ellipse(ts*0.12,0,ts*0.2,ts*0.14,0,0,TAU); cx.fill(); cx.stroke();
+  cx.fillStyle=visorCol;
+  cx.beginPath(); cx.arc(ts*0.16,0,ts*0.07,0,TAU); cx.fill();
+  cx.restore();
+  cx.restore();
+  if(hpFrac!=null){
+    const bw=ts*0.9;
+    cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(tu.x-bw/2, tu.y-ts*0.85, bw, 5);
+    cx.fillStyle = hpFrac>0.4 ? '#5fbf52' : '#e0392e';
+    cx.fillRect(tu.x-bw/2, tu.y-ts*0.85, bw*Math.max(0,hpFrac), 5);
+  }
+}
+
 function render(){
   cx.save();
   let sx=0, sy=0;
@@ -3748,37 +3878,25 @@ function render(){
 
   // --- walking turret(s) (Walking Turret card) ---
   if(state!==ST.MENU && P.turretCount>0){
-    for(const tu of turrets){
-      const ts=P.r*1.3;
-      cx.fillStyle='rgba(40,60,25,0.18)';
-      cx.beginPath(); cx.ellipse(tu.x,tu.y+ts*0.46,ts*0.4,ts*0.14,0,0,TAU); cx.fill();
-      cx.save(); cx.translate(tu.x,tu.y);
-      // stationary tripod base
-      cx.strokeStyle=OUT; cx.lineWidth=ts*0.16; cx.lineCap='round';
-      for(const lx of [-1,0,1]){
-        cx.beginPath(); cx.moveTo(0,-ts*0.08); cx.lineTo(lx*ts*0.42, ts*0.55); cx.stroke();
+    for(const tu of turrets) drawTurretUnit(tu, P.r*1.3, '#2f8fa0', '#5fe0ff');
+  }
+  // --- minigun turret(s) (Minigun Turret card — Engineer only) ---
+  if(state!==ST.MENU && P.miniTurretCount>0){
+    for(const tu of miniTurrets) drawTurretUnit(tu, P.r*1.3, '#c9852f', '#ffcf5f');
+  }
+  // --- flamethrower turret(s) (Flamethrower Turret card — Engineer only) ---
+  if(state!==ST.MENU && P.flameTurretCount>0){
+    for(const tu of flameTurrets){
+      drawTurretUnit(tu, P.r*1.3, '#b5432f', '#ffae3a');
+      if(tu.firing){
+        cx.fillStyle='rgba(255,150,40,0.35)';
+        cx.beginPath(); cx.arc(tu.x,tu.y,(P.flameR||70)*0.5,0,TAU); cx.fill();
       }
-      cx.fillStyle='#454b54'; cx.strokeStyle=OUT; cx.lineWidth=2;
-      cx.beginPath(); cx.ellipse(0,ts*0.05,ts*0.22,ts*0.16,0,0,TAU); cx.fill(); cx.stroke();
-      // swiveling head + barrel (aims at target)
-      cx.save(); cx.rotate(tu.face||0);
-      cx.fillStyle='#23272e'; cx.strokeStyle=OUT; cx.lineWidth=2;
-      cx.fillRect(ts*0.18,-ts*0.32,ts*0.62,ts*0.16); cx.strokeRect(ts*0.18,-ts*0.32,ts*0.62,ts*0.16);
-      cx.fillRect(ts*0.18, ts*0.16,ts*0.62,ts*0.16); cx.strokeRect(ts*0.18, ts*0.16,ts*0.62,ts*0.16);
-      cx.fillStyle='#11151a';
-      cx.fillRect(ts*0.7,-ts*0.30,ts*0.1,ts*0.12);
-      cx.fillRect(ts*0.7, ts*0.18,ts*0.1,ts*0.12);
-      cx.fillStyle='#2f8fa0'; cx.strokeStyle=OUT; cx.lineWidth=2.4;
-      cx.beginPath(); cx.ellipse(0,0,ts*0.5,ts*0.42,0,0,TAU); cx.fill(); cx.stroke();
-      cx.strokeStyle='rgba(0,0,0,0.25)'; cx.lineWidth=1.6;
-      cx.beginPath(); cx.moveTo(-ts*0.32,-ts*0.1); cx.lineTo(ts*0.3,-ts*0.1); cx.stroke();
-      cx.fillStyle='#dff7ff'; cx.strokeStyle=OUT; cx.lineWidth=1.6;
-      cx.beginPath(); cx.ellipse(ts*0.12,0,ts*0.2,ts*0.14,0,0,TAU); cx.fill(); cx.stroke();
-      cx.fillStyle='#5fe0ff';
-      cx.beginPath(); cx.arc(ts*0.16,0,ts*0.07,0,TAU); cx.fill();
-      cx.restore();
-      cx.restore();
     }
+  }
+  // --- Engineer-placed stationary turret(s) ---
+  if(state!==ST.MENU && placedTurrets.length){
+    for(const tu of placedTurrets) drawTurretUnit(tu, P.r*1.3, '#5a6672', '#9fe0ff', tu.hp/tu.maxHp);
   }
 
   // --- player ---
