@@ -768,13 +768,14 @@ const UPGRADES = [
       {desc:'aura grows bigger.',                   f:()=>{P.auraR+=30;}},
       {desc:'aura grows bigger and hits harder.',   f:()=>{P.auraR+=30; P.auraDmg+=10;}},
     ] },
-  { id:'skibidi', name:'Skibidi Toilet', icon:'gembig', rarity:'epic', minWorld:3, cap:4,
+  { id:'skibidi', name:'Skibidi Toilet', icon:'gembig', rarity:'epic', minWorld:3,
     steps:[
-      {desc:'summon a Skibidi Toilet that bounces off the map edges 6 times before vanishing, reappearing after 10s.', f:()=>{P.skibidiCount=1; P.skibidiBounces=6;}},
+      {desc:'summons toilets that bounce off the map edges 6 times before vanishing, reappearing after 10s.', f:()=>{P.skibidiCount=1; P.skibidiBounces=6;}},
       {desc:'bounces more before vanishing.',         f:()=>{P.skibidiBounces+=4;}},
       {desc:'+1 Skibidi Toilet.',                      f:()=>{P.skibidiCount+=1;}},
-      {desc:'+1 Skibidi Toilet — they never stop respawning.', f:()=>{P.skibidiCount+=1; P.skibidiAlways=true;}},
-    ] },
+      {desc:'+1 Skibidi Toilet.',                      f:()=>{P.skibidiCount+=1;}},
+    ],
+    evo:{name:'Eternal Skibidi', icon:'gembig', desc:'EVOLVE — Skibidi Toilets never disappear.', f:()=>{P.skibidiNeverDie=true;}} },
 
   // ✨ SYNERGY cards — hidden until you own the prerequisite cards (req)
   { id:'frostfire', name:'Frostfire Core', icon:'gem', rarity:'epic', cap:1, req:['slow','nova'],
@@ -873,7 +874,7 @@ function resetPlayer(){
     soldierStill:false, soldierBullets:false,
     noCards:false, whiteBullets:false, stealthAggro:false, ghostBullets:false,
     auraR:0, auraDmg:0,
-    skibidiCount:0, skibidiBounces:6, skibidiAlways:false
+    skibidiCount:0, skibidiBounces:6, skibidiNeverDie:false
   });
   skibidiBullets.length=0; skibidiTimers.length=0;
 }
@@ -1602,7 +1603,10 @@ function update(dt){
     else if(b.y>WORLD.h-WALL){ b.y=WORLD.h-WALL; b.vy=-Math.abs(b.vy); bounced=true; }
     if(bounced){
       b.bounces++; burst(b.x,b.y,'#cfe8ff',6,140); sfx.hit();
-      if(b.bounces>=P.skibidiBounces){ b.dead=true; skibidiTimers[i]=P.skibidiAlways?0:10; continue; }
+      if(b.bounces>=P.skibidiBounces){
+        if(P.skibidiNeverDie) b.bounces=0;   // evolved: keep bouncing forever instead of dying
+        else { b.dead=true; skibidiTimers[i]=10; continue; }
+      }
     }
     forEnemiesNear(b.x,b.y,24,(e)=>{
       if(e.iv>0 || e.lead) return;
