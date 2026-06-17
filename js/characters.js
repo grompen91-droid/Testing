@@ -451,9 +451,8 @@ const CHARACTERS = [
     id: 'engineer',
     name: 'Engineer',
     desc: 'Fires no bullets of his own. Starts with 2 turrets that share all his stats. Dash places a stationary turret instead.',
-    rarity: 'epic',
-    worldUnlock: null,
-    gemPrice: 25,
+    rarity: 'world',
+    worldUnlock: 1,   // World 2 — temporary early unlock
     baseStats: {},
     register() {
       P.noPlayerShots = true;
