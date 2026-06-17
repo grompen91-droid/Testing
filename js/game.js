@@ -483,7 +483,7 @@ function worldCleared(boss){
         })
       : [];
   }
-  _clearData = { worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars, isPractice };
+  _clearData = { worldNum:worldIdx+1, coins:worldCoins, gems:gemsEarned, newChars, isPractice, isW1:!isPractice && worldIdx===0 };
   if(newChars.length && typeof updateCharBadge==='function') updateCharBadge();
   state = ST.CUTSCENE;
   cut = { t:0, boss:boss, alpha:1, fade:0, name:curWorld().name };
@@ -506,7 +506,15 @@ function cutsceneUpdate(dt){
   if(cut.t > 1.6) cut.fade = Math.min(1, (cut.t-1.6)/0.7); // screen fades to theme color
   for(let i=parts.length-1;i>=0;i--){ const p=parts[i]; p.t=(p.t||0)+dt; p.x+=(p.vx||0)*dt; p.y+=(p.vy||0)*dt; p.life-=dt; if(p.life<=0) parts.splice(i,1); }
   for(let i=texts.length-1;i>=0;i--){ const tx=texts[i]; tx.t=(tx.t||0)+dt; tx.x+=(tx.vx||0)*dt; tx.y+=(tx.vy||0)*dt; tx.life-=dt; if(tx.life<=0) texts.splice(i,1); }
-  if(cut.t > 2.5){ cut=null; toMenuFromClear(); }
+  if(cut.t > 2.5){
+    cut=null;
+    if(_clearData && _clearData.isW1 && !localStorage.getItem('br_seen_w1outro')){
+      localStorage.setItem('br_seen_w1outro','1');
+      startW1Outro(toMenuFromClear);
+    } else {
+      toMenuFromClear();
+    }
+  }
 }
 function toMenuFromClear(){
   if(!_clearData){ quitToMenu(); triggerUnlockReveal(); return; }
@@ -628,6 +636,76 @@ function introRender(){
 
   // fade to black at the very end, into the real game
   if(t>14.3){ cx.globalAlpha=Math.min(1,(t-14.3)/0.7); cx.fillStyle='#000'; cx.fillRect(0,0,W,H); cx.globalAlpha=1; }
+  cx.restore();
+}
+
+// ============================================================
+// WORLD 1 OUTRO — plays once, right after the player first clears Grasslands.
+// Same approach as the intro: pure screen-space, one flat elapsed-time timeline,
+// nothing read from the camera/world. Gated by localStorage so it never replays.
+// ============================================================
+const OUTRO_DUR = 12.5;
+let outroT = 0, outroDone = null;
+// fallen army roster — same cast as the intro's invading army, now lying defeated
+const OUTRO_FRIENDS = [
+  {spr:'pigeon',   x:-0.22, rise:5.00},
+  {spr:'chimp',    x:-0.11, rise:5.55},
+  {spr:'penguin',  x: 0.11, rise:6.10},
+  {spr:'flamingo', x: 0.22, rise:6.65},
+  {spr:'duck',     x: 0.00, rise:7.20},
+];
+function startW1Outro(onDone){
+  outroT=0; outroDone=onDone; state=ST.OUTRO; shake=0;
+}
+function finishW1Outro(){
+  const cb=outroDone; outroDone=null;
+  if(cb) cb();
+}
+function w1OutroUpdate(dt){ outroT+=dt; if(outroT>=OUTRO_DUR) finishW1Outro(); }
+function w1OutroRender(){
+  const t=outroT;
+  cx.save();
+  // dim, "aftermath" grass backdrop — darker than the intro's daytime checker
+  cx.fillStyle='#3d5c22'; cx.fillRect(0,0,W,H);
+  cx.fillStyle='#456827';
+  for(let gy=0; gy<H; gy+=64) for(let gx=0; gx<W; gx+=64) if(((gx/64+gy/64)&1)) cx.fillRect(gx,gy,64,64);
+
+  const groundY=H*0.62;
+  const exitE=easeOut(clamp((t-9.2)/2.0,0,1));   // everyone marches off-screen right near the end
+
+  // --- Sahur: lying defeated, rises t=3.0..5.0 ---
+  const sE=easeOut(clamp((t-3.0)/2.0,0,1));
+  const sRot=(1-sE)*(Math.PI/2);
+  const sX=W*0.5+exitE*W*0.55, sY=groundY-sE*26;
+  if(t<6){   // pulsing ground glow while he's down/rising
+    cx.globalAlpha=0.35*(0.6+0.4*Math.sin(t*4))*(1-sE*0.5); cx.fillStyle='#9fe0ff';
+    cx.beginPath(); cx.ellipse(W*0.5,groundY+6,70+sE*20,22,0,0,TAU); cx.fill(); cx.globalAlpha=1;
+  }
+  if(typeof SP!=='undefined' && SP['sahur']) drawSprite('sahur', sX, sY, 120, sRot, 0,0,false,null);
+
+  // --- friends: lying flat, rise one by one as Sahur calls them ---
+  for(const f of OUTRO_FRIENDS){
+    const e=easeOut(clamp((t-f.rise)/0.8,0,1));
+    const rot=(1-e)*(Math.PI/2);
+    const fx=W*0.5+f.x*W+exitE*W*0.44, fy=groundY+34-e*18;
+    if(typeof SP!=='undefined' && SP[f.spr]) drawSprite(f.spr, fx, fy, 50, rot, 0,0,false,null);
+  }
+
+  // power-up flash once the whole army is back on its feet
+  if(t>8.6){
+    const p=Math.min(1,(t-8.6)/1.0);
+    cx.globalAlpha=0.5*p*(0.6+0.4*Math.sin(t*10))*(1-exitE*0.6); cx.fillStyle='#cfeeff';
+    cx.beginPath(); cx.arc(W*0.5+exitE*W*0.55,groundY-10,140*p,0,TAU); cx.fill(); cx.globalAlpha=1;
+  }
+
+  introCaption('BACK IN THE GRASSLANDS...', t, 0.3, 2.8, H*0.18);
+  introCaption('TUNG TUNG TUNG SAHUR DID NOT STAY DOWN.', t, 2.6, 5.0, H*0.18);
+  introCaption('HE CALLS UPON HIS FALLEN ARMY...', t, 5.0, 8.6, H*0.86);
+  introCaption('...AND THEY VOW TO GROW STRONGER.', t, 9.4, 11.6, H*0.86);
+  introCaption('WORLD 2 AWAITS.', t, 11.2, 12.4, H*0.5);
+
+  // fade to black at the very end, back into the world-cleared menu
+  if(t>11.6){ cx.globalAlpha=Math.min(1,(t-11.6)/0.7); cx.fillStyle='#000'; cx.fillRect(0,0,W,H); cx.globalAlpha=1; }
   cx.restore();
 }
 
@@ -4074,7 +4152,8 @@ function loop(t){
   } else if(state===ST.MENU) menuUpdate(dt);
   else if(state===ST.CUTSCENE) cutsceneUpdate(dt);
   else if(state===ST.INTRO) introUpdate(dt);
-  if(state===ST.INTRO) introRender(); else render();
+  else if(state===ST.OUTRO) w1OutroUpdate(dt);
+  if(state===ST.INTRO) introRender(); else if(state===ST.OUTRO) w1OutroRender(); else render();
 }
 
 // menu: gentle drifting enemies around the player anchor for vibes
