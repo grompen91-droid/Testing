@@ -6,6 +6,7 @@ let deathShakeOn = localStorage.getItem('br_deathshake')!=='0';   // screen shak
 const P = {}; // player
 let bullets=[], ebullets=[], petBullets=[], enemies=[], gems=[], parts=[], texts=[], zones=[], holes=[], luckies=[];
 let skibidiBullets=[], skibidiTimers=[];   // Skibidi Toilet card: edge-bouncing persistent bullets, own lifecycle
+let turrets=[];   // Walking Turret card: chain-follows behind the pet, each {x,y,cd,face}
 let timeScale=1.0;
 let _vis=[];   // reused per-frame scratch list of visible enemies (depth sort) — avoids GC churn
 let wave=1, kills=0, spawnTimer=0, waveEnemiesLeft=0, betweenWaves=false, boss=null;
@@ -716,6 +717,13 @@ const UPGRADES = [
   { id:'pierce', name:'Piercing Rounds', icon:'crocodilo', rarity:'rare',
     steps:[{desc:'pierce +1 enemy.',f:()=>P.pierce+=1},{desc:'pierce +1 enemy.',f:()=>P.pierce+=1},{desc:'pierce +1 enemy.',f:()=>P.pierce+=1},{desc:'pierce +1 enemy.',f:()=>P.pierce+=1}],
     evo:{name:'Hyper-Velocity Core', icon:'crocodilo', desc:'EVOLVE — infinite pierce, faster & larger cyan shots.', f:()=>{P.pierce=999;P.railgun=true;}} },
+  { id:'turret', name:'Walking Turret', icon:'gembig', rarity:'rare',
+    steps:[
+      {desc:'Deploy a walking turret that follows behind your pet: fires the closest enemy for 10% of your damage, at default range & fire rate.', f:()=>{ P.turretCount=Math.max(1,P.turretCount||0); P.turretDmgBase=P.dmg*0.10; }},
+      {desc:'Turret fires 20% faster and hits 30% harder.', f:()=>{ P.turretFireMul=(P.turretFireMul||1)*1.2; P.turretDmgMul=(P.turretDmgMul||1)*1.3; }},
+      {desc:'+1 turret.', f:()=>{ P.turretCount=(P.turretCount||1)+1; }},
+    ],
+    evo:{name:'Turret Network', icon:'gembig', desc:'EVOLVE — +range, and turrets now scale with your current damage & range upgrades.', f:()=>{ P.turretRangeBonus=(P.turretRangeBonus||0)+130; P.turretAdaptive=true; }} },
   { id:'range', name:'Focal Lens', icon:'gem', rarity:'uncommon',
     steps:[{desc:'+20% attack range.',f:()=>P.range*=1.2},{desc:'+20% attack range.',f:()=>P.range*=1.2},{desc:'+20% attack range.',f:()=>P.range*=1.2},{desc:'+20% attack range.',f:()=>P.range*=1.2}],
     evo:{name:'Farsight Sniper', icon:'coin', desc:'EVOLVE — maximum range and +50% damage.', f:()=>{P.range*=1.8;P.dmg*=1.5;}} },
@@ -904,7 +912,7 @@ for(const u of UPGRADES){ const ic='ab_'+u.id; if(SP[ic]){ u.icon=ic; if(u.evo) 
 // Synergy cards (frostfire/eventhz/...) keep their req-gating and stay available from W1.
 const CARD_MINWORLD = {
   dmg:0, rate:0, speed:0, hp:0, magnet:0, armor:0,
-  multi:1, range:1, orbit:0, crit:0, seeker:0, laststand:0,   // World 1 now offers far more variety
+  multi:1, range:1, orbit:0, crit:0, seeker:0, laststand:0, turret:1,   // World 1 now offers far more variety
   heavy:2, regen:2, gold:2, dashcd:2,
   pierce:3, slow:3, critdmg:3, steady:3,
   vamp:4,
@@ -966,6 +974,7 @@ function resetPlayer(){
     daredevil:0, knives:false, knifeCd:0, knifeCdBase:3.5, knifeN:0, knifeBig:false, knifeEvo:false,
     // World 1 additions
     seeker:0, laststand:0,
+    turretCount:0, turretDmgBase:0, turretDmgMul:1, turretFireMul:1, turretRangeBase:330, turretRangeBonus:0, turretAdaptive:false,
     // Character / pet system
     charId:(typeof activeCharId!=='undefined'?activeCharId:'gianni'),
     petId:(typeof activePetId!=='undefined'?activePetId:null),
@@ -982,6 +991,7 @@ function resetPlayer(){
     skibidiCount:0, skibidiBounces:6, skibidiNeverDie:false
   });
   skibidiBullets.length=0; skibidiTimers.length=0;
+  turrets.length=0;
 }
 
 function startGame(idx){
@@ -1545,6 +1555,34 @@ function update(dt){
 
   // spatial grid for this frame: powers enemy separation + bullet/orb/aura collision
   buildEnemyGrid();
+  // Walking Turret(s): chain-follow behind the pet (or directly behind the player if no pet active)
+  if(P.turretCount>0){
+    while(turrets.length < P.turretCount) turrets.push({x:(P.petId?P.petX:P.x), y:(P.petId?P.petY:P.y), cd:0, face:0});
+    if(turrets.length > P.turretCount) turrets.length = P.turretCount;
+    const tml = Math.hypot(mx,my);
+    const tfdx = tml>0.05 ? -mx/tml : -Math.cos(P.face);
+    const tfdy = tml>0.05 ? -my/tml : -Math.sin(P.face);
+    const turretRange = P.turretAdaptive ? P.range : (P.turretRangeBase + P.turretRangeBonus);
+    const turretFireCd = 0.32 / (P.turretFireMul||1);
+    let chx = P.petId ? P.petX : P.x, chy = P.petId ? P.petY : P.y;
+    for(const tu of turrets){
+      const tx = chx + tfdx*34, ty = chy + tfdy*34;
+      tu.x += (tx-tu.x)*Math.min(1,dt*9);
+      tu.y += (ty-tu.y)*Math.min(1,dt*9);
+      chx = tu.x; chy = tu.y;   // next turret in the chain trails behind this one
+      tu.cd -= dt;
+      if(tu.cd<=0){
+        let target=null, bd=turretRange*turretRange;
+        forEnemiesNear(tu.x,tu.y,turretRange,(e)=>{ if(e.under) return; const d=dist2(tu.x,tu.y,e.x,e.y); if(d<=bd){ bd=d; target=e; } });
+        if(target){
+          tu.face = Math.atan2(target.y-tu.y, target.x-tu.x);
+          const dmgBase = P.turretAdaptive ? P.dmg*0.10 : P.turretDmgBase;
+          if(typeof petBullets!=='undefined') petBullets.push({x:tu.x,y:tu.y,tx:target.x,ty:target.y,target,dmg:dmgBase*(P.turretDmgMul||1)});
+          tu.cd = turretFireCd;
+        } else tu.cd = 0.1;   // nothing in range yet — retry soon
+      }
+    }
+  }
   // Daredevil: is a foe point-blank this frame? (drives a crit bonus)
   P.foeClose = P.daredevil>0 && enemies.some(e=>!e.under && !e.lead && dist2(P.x,P.y,e.x,e.y) < 120*120);
   // Knife Circus: periodically fling a spinning ring of knives outward
@@ -3586,6 +3624,20 @@ function render(){
       cx.beginPath(); cx.ellipse(P.petX,P.petY+ps*0.38,ps*0.34,ps*0.12,0,0,TAU); cx.fill();
       cx.save(); cx.translate(P.petX,P.petY); if(pf) cx.scale(-1,1); cx.rotate(pb);
       _pet.draw(cx,ps,elapsed);
+      cx.restore();
+    }
+  }
+
+  // --- walking turret(s) (Walking Turret card) ---
+  if(state!==ST.MENU && P.turretCount>0){
+    for(const tu of turrets){
+      const ts=P.r*1.3;
+      cx.fillStyle='rgba(40,60,25,0.18)';
+      cx.beginPath(); cx.ellipse(tu.x,tu.y+ts*0.4,ts*0.34,ts*0.12,0,0,TAU); cx.fill();
+      cx.save(); cx.translate(tu.x,tu.y); cx.rotate(tu.face||0);
+      cx.fillStyle='#6b7280'; cx.strokeStyle=OUT; cx.lineWidth=2.4;
+      cx.beginPath(); cx.arc(0,0,ts*0.55,0,TAU); cx.fill(); cx.stroke();
+      cx.fillStyle='#3a4250'; cx.fillRect(0,-ts*0.12,ts*0.85,ts*0.24);
       cx.restore();
     }
   }
