@@ -237,6 +237,18 @@ const STAT_IC = { dmg:'ic_dmg', hp:'ic_hp', speed:'ic_spd', range:'ic_rng' };
 function rtagHTML(rar){ return '<span class="rtag r-'+rar+'">'+RAR[rar].name+'</span>'; }
 function statTag(stat){ return '<span class="stag s-'+stat+'">'+STAT[stat].short+'</span>'; }
 
+// ---- free daily coins ----
+const DAILY_COINS_AMOUNT=100;
+function _utcDateKey(){ const d=new Date(); return d.getUTCFullYear()+'-'+(d.getUTCMonth()+1)+'-'+d.getUTCDate(); }
+function dailyCoinsClaimed(){ return localStorage.getItem('br_daily_coins_date')===_utcDateKey(); }
+function claimDailyCoins(){
+  if(dailyCoinsClaimed()) return false;
+  gold+=DAILY_COINS_AMOUNT; saveGold(); if(window.markDirty) window.markDirty();
+  localStorage.setItem('br_daily_coins_date', _utcDateKey());
+  refreshGoldUI();
+  return true;
+}
+
 // ============ PURCHASING ============
 function buyItem(id, price){
   if(hasItemId(id) || gold<price) return false;
@@ -258,14 +270,22 @@ function shopCardHTML(id, price){
   return '<div class="scard r-'+rar+(owned?' owned':'')+'">'+ribbon+
     '<div class="sname">'+itemName(id)+'</div>'+
     '<div class="sicon"><img src="'+gearIconURL(id)+'" alt=""></div>'+
-    '<div class="stagrow">'+rtagHTML(rar)+statTag(itemStat(id))+'</div>'+
+    '<div class="stagrow">'+rtagHTML(rar)+statTag(itemStat(id))+'<span class="sbonus">'+itemBonusShort(id)+'</span></div>'+
     action+'</div>';
 }
 
 function renderShop(){
   const grid=$('shopgrid'); if(!grid) return;
+  // ---- FREE DAILY COINS ----
+  const claimed=dailyCoinsClaimed();
+  let html = '<div class="banner"><span>FREE DAILY COINS</span></div>';
+  html += '<div class="dailycoins'+(claimed?' claimed':'')+'">'+
+    '<div class="dcrow">'+coinTag()+'<span class="dcamt">+'+DAILY_COINS_AMOUNT+'</span></div>'+
+    (claimed ? '<div class="dcclaimed">Claimed — resets in '+_hoursUntilMidnightUTC()+'h</div>'
+             : '<button class="bigbtn green" id="dailycoinsbtn">CLAIM</button>')+
+    '</div>';
   // ---- DAILY SHOP (rotating, discounted) ----
-  let html = '<div class="banner"><span>DAILY SHOP</span></div><div class="shopsub">Resets at midnight (UTC) · up to -25%</div>';
+  html += '<div class="banner"><span>DAILY SHOP</span></div><div class="shopsub">Resets at midnight (UTC) · up to -25%</div>';
   html += '<div class="ggrid">';
   for(const id of dailyShop(6)) html += shopCardHTML(id, featuredPrice(id));
   html += '</div>';
@@ -284,6 +304,7 @@ function renderShop(){
   html += (typeof renderPetRecruitSection==='function') ? renderPetRecruitSection() : '';
   grid.innerHTML = html;
 
+  const dcb=$('dailycoinsbtn'); if(dcb) dcb.addEventListener('click',()=>{ if(claimDailyCoins()){ if(typeof sfx!=='undefined') sfx.coin(); renderShop(); } });
   grid.querySelectorAll('button.sbuy[data-id]').forEach(b=>b.addEventListener('click',()=>buyItem(b.dataset.id, +b.dataset.price)));
   grid.querySelectorAll('button[data-crate]').forEach(b=>b.addEventListener('click',()=>openCrate(b.dataset.crate)));
   grid.querySelectorAll('button[data-crinfo]').forEach(b=>b.addEventListener('click',(e)=>{ e.stopPropagation(); openCrateOdds(b.dataset.crinfo); }));
