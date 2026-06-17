@@ -66,8 +66,6 @@ const CRATE_ORDER = ['wood','silver','gold'];
 const GEAR_UID_KEY = 'br_gear_uid_seq';
 const SELL_RATE = 0.4;
 const FUSE_BASE = 20;
-const FUSE_PITY_MAX = 10;   // every 10th attempt (since the last success) is guaranteed
-function fusePity(){ return +(localStorage.getItem('br_fuse_pity')||0); }
 const FUSE_STEP = 10;
 const FUSE_CAP = 100;
 
@@ -489,7 +487,7 @@ function renderFuseStatus(){
   const invalid = !ids.length || ids.some(id=>itemRar(id)!==rar) || !nextRarity(rar);
   const chance = ids.length>=2 && !invalid ? fuseChance(ids.length) : 0;
   return '<div class="fusebar">'+
-    '<span class="fusemeta">'+count+' selected'+(rar?' · '+RAR[rar].name:'')+(chance?' · '+chance+'%':'')+' · pity '+fusePity()+'/'+FUSE_PITY_MAX+'</span>'+
+    '<span class="fusemeta">'+count+' selected'+(rar?' · '+RAR[rar].name:'')+(chance?' · '+chance+'%':'')+'</span>'+
     '<button class="chip2" id="fuseclear">Clear</button>'+
     '<button class="chip2 fusego'+((count<2||invalid)?' disabled':'')+'" id="fusebtn"'+((count<2||invalid)?' disabled':'')+'>Fuse</button>'+
   '</div>';
@@ -537,9 +535,7 @@ function fuseGearInstances(uids){
   if(ids.some(id=>itemRar(id)!==rar)) return null;
   const next = nextRarity(rar);
   if(!next) return null;
-  const pity = fusePity();
-  const success = pity>=FUSE_PITY_MAX-1 || Math.random()*100 < fuseChance(ids.length);
-  localStorage.setItem('br_fuse_pity', success ? 0 : pity+1);
+  const success = Math.random()*100 < fuseChance(ids.length);
   for(const uid of uids) removeGearInstance(uid);
   const pool = catalogByRarity(success ? next : rar);
   const won = pool[Math.floor(Math.random()*pool.length)];
