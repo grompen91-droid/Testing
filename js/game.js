@@ -379,36 +379,36 @@ const BOSSES_W5 = [   // original carnival movesets; telegraphed melee/zone with
   { spr:'mangiafuoco',   name:'MANGIAFUOCO DRAGHINO', hp:310, r:56, phased:true },
   { spr:'granpagliaccio',name:'IL GRAN PAGLIACCIO',   hp:450, r:62, phased:true },
 ];
-// ============ WORLD 6 — SWAMP (band 5): unique swamp roster ============
+// ============ WORLD 6 — AUTUMN WOODS (band 4): unique autumn roster ============
 const FOES_W6 = [
   // Tier I — fodder
-  { spr:'duck',      name:'Papera Putrefatta',      hp:4,  sp:82, r:14, xp:1, score:12 },
-  { spr:'goose',     name:'Oca Melmosa',            hp:4,  sp:76, r:15, xp:1, score:12, death:{type:'ring',n:4} },
-  { spr:'flamingo',  name:'Fenicottero Fangoso',    hp:3,  sp:70, r:15, xp:1, score:14, dash:true },
-  { spr:'pigeon',    name:'Piccione Paludoso',      hp:3,  sp:90, r:14, xp:1, score:10 },
+  { spr:'duck',      name:'Papera Fogliosa',         hp:4,  sp:82, r:14, xp:1, score:12 },
+  { spr:'goose',     name:'Oca Autunnale',           hp:4,  sp:76, r:15, xp:1, score:12, death:{type:'ring',n:4} },
+  { spr:'flamingo',  name:'Fenicottero dei Boschi',  hp:3,  sp:70, r:15, xp:1, score:14, dash:true },
+  { spr:'pigeon',    name:'Piccione delle Foglie',   hp:3,  sp:90, r:14, xp:1, score:10 },
   // Tier II — infantry
-  { spr:'beaver',    name:'Castoro Acquitrino',     hp:6,  sp:64, r:16, xp:2, score:18, front:0.35 },
-  { spr:'capy',      name:'Capibara Maledetto',     hp:7,  sp:62, r:17, xp:2, score:20, dash:true },
-  { spr:'candypig',  name:'Maialino del Pantano',   hp:6,  sp:68, r:16, xp:2, score:16, death:{type:'ring',n:5} },
-  { spr:'turtle',    name:'Testuggine Tossica',     hp:9,  sp:42, r:18, xp:2, score:24, front:0.5 },
+  { spr:'beaver',    name:'Castoro delle Foglie',    hp:6,  sp:64, r:16, xp:2, score:18, front:0.35 },
+  { spr:'capy',      name:'Capibara Selvatico',      hp:7,  sp:62, r:17, xp:2, score:20, dash:true },
+  { spr:'candypig',  name:'Maialino Boschivo',       hp:6,  sp:68, r:16, xp:2, score:16, death:{type:'ring',n:5} },
+  { spr:'turtle',    name:'Testuggine del Bosco',    hp:9,  sp:42, r:18, xp:2, score:24, front:0.5 },
   // Tier III — casters
-  { spr:'jelly',     name:'Medusa del Fango',       hp:8,  sp:50, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.4,dur:1.6,col:'#5a7a3a'} },
-  { spr:'octopus',   name:'Polipo Melmoso',         hp:9,  sp:48, r:19, xp:3, score:30, cast:{kind:'debris',cd:3.0,n:3,col:'#5a7a3a'} },
-  { spr:'panda',     name:'Panda Impaludato',       hp:8,  sp:54, r:19, xp:3, score:28, range:320, shoot:{type:'aim',n:2,cd:3.0,spd:140,col:'#5a7a3a',arc:true} },
-  { spr:'hippo',     name:'Ippopotamo Miasmatico',  hp:10, sp:44, r:21, xp:3, score:34, cast:{kind:'geyser',cd:3.6,range:380,n:5,col:'#5a7a3a'} },
+  { spr:'jelly',     name:'Medusa Ambrata',          hp:8,  sp:50, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.4,dur:1.6,col:'#c87a30'} },
+  { spr:'octopus',   name:'Polipo Selvatico',        hp:9,  sp:48, r:19, xp:3, score:30, cast:{kind:'debris',cd:3.0,n:3,col:'#c87a30'} },
+  { spr:'panda',     name:'Panda dei Boschi',        hp:8,  sp:54, r:19, xp:3, score:28, range:320, shoot:{type:'aim',n:2,cd:3.0,spd:140,col:'#c87a30',arc:true} },
+  { spr:'hippo',     name:'Ippopotamo Boschivo',     hp:10, sp:44, r:21, xp:3, score:34, cast:{kind:'geyser',cd:3.6,range:380,n:5,col:'#c87a30'} },
   // Tier IV — heavies
-  { spr:'rhino',     name:'Rinoceronte Paludoso',   hp:20, sp:38, r:23, xp:4, score:46, range:320, shoot:{type:'aim',n:2,cd:3.2,spd:135,col:'#6a8a3a'}, death:{type:'split',n:2} },
-  { spr:'camel',     name:'Cammello Acquoso',       hp:22, sp:34, r:24, xp:5, score:52, aoe:{r:50,dps:9,life:1.8,tele:0.6,slow:true,col:'#5a7a3a',cd:3.6} },
-  { spr:'tiger',     name:'Tigre del Pantano',      hp:18, sp:50, r:22, xp:4, score:46, dash:true, kb:true },
+  { spr:'rhino',     name:'Rinoceronte Selvatico',   hp:20, sp:38, r:23, xp:4, score:46, range:320, shoot:{type:'aim',n:2,cd:3.2,spd:135,col:'#c87a30'}, death:{type:'split',n:2} },
+  { spr:'camel',     name:'Cammello dei Boschi',     hp:22, sp:34, r:24, xp:5, score:52, aoe:{r:50,dps:9,life:1.8,tele:0.6,slow:true,col:'#c87a30',cd:3.6} },
+  { spr:'tiger',     name:'Tigre Autunnale',         hp:18, sp:50, r:22, xp:4, score:46, dash:true, kb:true },
   // Tier V — elites
-  { spr:'orangutan', name:'Orangutan Stagnante',    hp:16, sp:46, r:21, xp:4, score:46, cast:{kind:'summon',cd:5,spr:'duck',n:3,cap:4} },
-  { spr:'penguin',   name:'Pinguino Impaludato',    hp:18, sp:40, r:22, xp:5, score:52, death:{type:'split',n:2} },
+  { spr:'orangutan', name:'Orangutan dei Boschi',    hp:16, sp:46, r:21, xp:4, score:46, cast:{kind:'summon',cd:5,spr:'duck',n:3,cap:4} },
+  { spr:'penguin',   name:'Pinguino Selvatico',      hp:18, sp:40, r:22, xp:5, score:52, death:{type:'split',n:2} },
 ];
 const BOSSES_W6 = [
-  { spr:'bonecaambalabu', name:'BONECA PANTANERA',           hp:170, r:54, pattern:'chaos',  phased:true },
-  { spr:'kikkurimi',      name:'KIKKURIMI PALUDOSO',         hp:270, r:56, pattern:'rings',  phased:true },
-  { spr:'girafassassina', name:'GIRAFASSASSINA DEL PANTANO', hp:400, r:60, pattern:'chaos',  phased:true },
-  { spr:'bobritto',       name:'BOBRITTO FANGOSO',           hp:600, r:58, pattern:'chaos',  phased:true },
+  { spr:'bonecaambalabu', name:'BONECA STREGONICA',          hp:170, r:54, pattern:'chaos',  phased:true },
+  { spr:'kikkurimi',      name:'KIKKURIMI SELVATICO',        hp:270, r:56, pattern:'rings',  phased:true },
+  { spr:'girafassassina', name:'GIRAFASSASSINA AUTUNNALE',   hp:400, r:60, pattern:'chaos',  phased:true },
+  { spr:'bobritto',       name:'BOBRITTO FOGLIAME',          hp:600, r:58, pattern:'chaos',  phased:true },
 ];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
 // ---- 10 worlds: gradual difficulty bands (0..9), distinct map shapes, per-world enemy tints. ----
@@ -441,12 +441,12 @@ const WORLDS = [
   { id:'autumn', name:'AUTUMN WOODS', band:4, waveTarget:20, endless:false, map:{w:4000,h:4000}, enemyTint:'#e0792c',
     theme:{ void:'#8a4f22', tile1:'#d98a44', tile2:'#cf7e3a', tuft:'rgba(120,60,20,0.32)',
             wall:null, post:null, bg:'#c97a36', tint:'#e0792c', music:'game' },
-    foes:FOES_GRASS, bosses:BOSSES_GRASS },
+    foes:FOES_W6, bosses:BOSSES_W6 },
   { id:'swamp', name:'SWAMP', band:5, waveTarget:20, endless:false, map:{w:4800,h:1200}, enemyTint:'#6a8a3a',
     theme:{ void:'#38502a', tile1:'#5f7a45', tile2:'#56713e', tuft:'rgba(30,50,20,0.35)',
             wall:'#3a4d28', post:'#5a7038', postDark:'#28361c', bg:'#55703c', tint:'#6a8a3a', music:'dirt',
             debris:0.7 },
-    foes:FOES_W6, bosses:BOSSES_W6 },
+    foes:FOES_DIRT, bosses:BOSSES_DIRT },
   { id:'sky', name:'SKYLAND', band:6, waveTarget:20, endless:false, map:{w:3000,h:3000}, enemyTint:'#bfe0ff',
     theme:{ void:'#8fb6cf', tile1:'#cfe6f5', tile2:'#c0dcef', tuft:'rgba(140,180,210,0.28)',
             wall:null, post:null, bg:'#c2def0', tint:'#bfe0ff', music:'boss1' },
@@ -3509,15 +3509,15 @@ function madudungFinalScript(){
 }
 
 const FINAL_SCRIPT = {
-  // ===== WORLD 6 · BOBRITTO FANGOSO — "MAREA DEL FANGO" : the swamp tide colossus =====
+  // ===== WORLD 6 · BOBRITTO FOGLIAME — "TEMPESTA AUTUNNALE" : the autumn forest colossus =====
   bobritto: [
-    { name:'TIDE OF FILTH', col:'#5a7a3a', dur:7.5, iv:true, hold:'center',
+    { name:'FOGLIE CADENTI', col:'#5a7a3a', dur:7.5, iv:true, hold:'center',
       enter(e){ e.tether=7.5; e.sCd=0.7; e.pull=0; },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(0.5,0.85-e.loop*0.08);
         const a=arena; for(let k=0;k<4;k++) addZone(a?a.x+(k+0.5)*(a.w/4):P.x+rand(-180,180), P.y+rand(-80,80), 56, {tele:0.6,life:2.6,dps:12,slow:true,col:'#5a7a3a'});
         mRingGap(e,14+e.loop*2,118,'#5a7a3a',0.32); } } },
     { name:'SURFACE — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
-    { name:'BOG WALLS', col:'#3a5a2a', dur:8.0, iv:true, vulnMul:0.38,
+    { name:'VENTO DEL BOSCO', col:'#3a5a2a', dur:8.0, iv:true, vulnMul:0.38,
       enter(e){ e.sCd=0.45; e.sk=0; },
       tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(1.3,1.8-e.loop*0.15); e.sk++;
         const a=arena; if(!a) return;
@@ -3526,7 +3526,7 @@ const FINAL_SCRIPT = {
         mWall(side,152+e.loop*15,'#5a7a3a',gapAt,70,13);
         summonAdds(e,'duck',1,4); } } },
     { name:'SURFACE — STRIKE NOW!', col:'#7ed957', dur:8.0, iv:false },
-    { name:'PRIMORDIAL SURGE', col:'#3a5a2a', dur:6.0, iv:true, hold:'center',
+    { name:'TURBINE FINALE', col:'#3a5a2a', dur:6.0, iv:true, hold:'center',
       enter(e){ e.pull=6.0; e.pullStr=155; burst(e.x,e.y,'#5a7a3a',28,320); shake=Math.max(shake,12);
         e.storm=6.0; e.stormN=9+e.loop; e.stormSpd=140; e.stormStep=0.26; e.stormDir=1; e.stormCol='#5a7a3a'; e.stormCd=0.11; e.stormTwin=true; e.stormRainbow=false; sfx.warn(); },
       tick(e,dt){ void dt; } },
