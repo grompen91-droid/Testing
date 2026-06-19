@@ -2731,8 +2731,8 @@ function damageEnemy(e,dmg,fx,fy,crit){
   const _dvx=(Math.random()-0.5)*120;
   // spread simultaneous hits (piercing/multishot) apart from spawn so they don't stack into illegible overlap
   const _jx=rand(-14,14), _jy=rand(-6,6);
-  texts.push({x:e.x+_jx,y:e.y-e.r-4+_jy,str:(crit?'':'')+Math.round(dmg),color:crit?'#ffd23a':'#fff',size:crit?18:13,life:0.9,max:0.9,vy:-55,vx:_dvx});
-  if(crit) texts.push({x:e.x+_jx,y:e.y-e.r-40+_jy,str:'CRIT',color:'#ffd23a',size:15,life:0.9,max:0.9,vy:-55,vx:_dvx});
+  if(texts.length<80){ texts.push({x:e.x+_jx,y:e.y-e.r-4+_jy,str:(crit?'':'')+Math.round(dmg),color:crit?'#ffd23a':'#fff',size:crit?18:13,life:0.9,max:0.9,vy:-55,vx:_dvx}); }
+  if(crit && texts.length<80){ texts.push({x:e.x+_jx,y:e.y-e.r-40+_jy,str:'CRIT',color:'#ffd23a',size:15,life:0.9,max:0.9,vy:-55,vx:_dvx}); }
 }
 
 function fireEB(x,y,a,sp,color,opts){
@@ -4227,9 +4227,8 @@ function render(){
     cx.fillStyle=lb.heavy?'rgba(10,10,10,0.35)':'rgba(40,60,25,0.28)'; cx.beginPath(); cx.ellipse(lb.x,lb.y+lb.r*0.9,lb.r*0.8,lb.r*0.3,0,0,TAU); cx.fill();
     cx.globalAlpha=0.5; cx.strokeStyle=lb.heavy?'#e0e0e0':'#ffe88a'; cx.lineWidth=lb.heavy?3:2; cx.setLineDash([6,6]);
     cx.beginPath(); cx.arc(lb.x,lb.y+bob,lb.r+(lb.heavy?12:8),0,TAU); cx.stroke(); cx.setLineDash([]); cx.globalAlpha=1;
-    if(lb.heavy) cx.filter='grayscale(1) contrast(1.1)';
     drawSprite('luckyblock', lb.x, lb.y+bob, lb.r*(lb.heavy?3.4:2.6), wob, lb.sq, lb.hitT, false, null);
-    if(lb.heavy) cx.filter='none';
+    if(lb.heavy){ const hr=lb.r*(lb.heavy?3.4:2.6)*0.5; cx.globalAlpha=0.45; cx.fillStyle='#1a1a1a'; cx.fillRect(lb.x-hr,lb.y+bob-hr,hr*2,hr*2); cx.globalAlpha=1; }
     if(lb.hp<lb.maxHp){
       const w=lb.r*1.9;
       cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(lb.x-w/2,lb.y-lb.r-12,w,5);
@@ -4279,7 +4278,7 @@ function render(){
     if(b.boom){ drawBoomerangCroc(b); }
     else if(b.knife){ drawKnifeBullet(b); }
     else if(b.lucky){
-      if(b.luckyCrit){ cx.filter='grayscale(1) contrast(1.1)'; drawSprite('luckyblock',b.x,b.y,b.r*7,0,0,0,false,null); cx.filter='none'; }
+      if(b.luckyCrit){ drawSprite('luckyblock',b.x,b.y,b.r*7,0,0,0,false,null); cx.globalAlpha=0.45; cx.fillStyle='#1a1a1a'; cx.fillRect(b.x-b.r*3.5,b.y-b.r*3.5,b.r*7,b.r*7); cx.globalAlpha=1; }
       else drawSprite('luckyblock',b.x,b.y,b.r*5,0,0,0,false,null);
     }
   }
@@ -4361,10 +4360,6 @@ function render(){
       drawSprite(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), wob, e.sq, e.hitT, e.face===-1, e.isBoss?null:curWorld().enemyTint, pulse);   // per-world enemy recolor
     }
     if(e.cut){ cx.globalAlpha = 1; }
-    if(e.frz>0){ cx.globalAlpha=0.4; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
-    else if(e.chillT>0){ cx.globalAlpha=0.22; cx.fillStyle='#bfe6ff'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.05,0,TAU); cx.fill(); cx.globalAlpha=1; }
-    if(e.fire){ cx.globalAlpha=0.38; cx.fillStyle='#ff6a00'; cx.beginPath(); cx.arc(e.x,e.y,e.r*1.08,0,TAU); cx.fill(); cx.globalAlpha=1; }
-    if(e.iv>0){ const partVuln=e.scriptVulnMul>0; cx.strokeStyle=partVuln?'#e07030':'#d8b46a'; cx.lineWidth=4; cx.globalAlpha=0.85; cx.beginPath(); cx.arc(e.x,e.y,e.r+6,0,TAU); cx.stroke(); cx.globalAlpha=1; }
     if(e.hp<e.maxHp){
       const w=e.r*1.9;
       cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(e.x-w/2,e.y-e.r-12,w,5);
@@ -4380,6 +4375,25 @@ function render(){
       cx.strokeStyle=OUT; cx.lineWidth=3; cx.strokeText(e.name, e.x, e.y-e.r-22); cx.fillText(e.name, e.x, e.y-e.r-22);
     }
   }
+
+  // batched status overlays: one state-set per effect type instead of per enemy
+  cx.fillStyle='#bfe6ff';
+  cx.globalAlpha=0.4; cx.beginPath();
+  for(const e of _vis){ if(e.frz>0){ cx.moveTo(e.x+e.r*1.05,e.y); cx.arc(e.x,e.y,e.r*1.05,0,TAU); } }
+  cx.fill();
+  cx.globalAlpha=0.22; cx.beginPath();
+  for(const e of _vis){ if(e.chillT>0&&!(e.frz>0)){ cx.moveTo(e.x+e.r*1.05,e.y); cx.arc(e.x,e.y,e.r*1.05,0,TAU); } }
+  cx.fill();
+  cx.fillStyle='#ff6a00'; cx.globalAlpha=0.38; cx.beginPath();
+  for(const e of _vis){ if(e.fire){ cx.moveTo(e.x+e.r*1.08,e.y); cx.arc(e.x,e.y,e.r*1.08,0,TAU); } }
+  cx.fill();
+  cx.lineWidth=4; cx.globalAlpha=0.85;
+  cx.strokeStyle='#e07030'; cx.beginPath();
+  for(const e of _vis){ if(e.iv>0&&e.scriptVulnMul>0){ cx.moveTo(e.x+e.r+6,e.y); cx.arc(e.x,e.y,e.r+6,0,TAU); } }
+  cx.stroke();
+  cx.strokeStyle='#d8b46a'; cx.beginPath();
+  for(const e of _vis){ if(e.iv>0&&!(e.scriptVulnMul>0)){ cx.moveTo(e.x+e.r+6,e.y); cx.arc(e.x,e.y,e.r+6,0,TAU); } }
+  cx.stroke(); cx.globalAlpha=1;
 
   // --- teleport telegraph: show WHERE a blinking boss will reappear (ghost + pulsing ring) ---
   for(const e of enemies){
