@@ -193,20 +193,6 @@ const FOES_GRASS = [
   { spr:'patapim',   name:'Brr Brr Patapim', hp:12, sp:44, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.2,spd:120,col:'#9c6b3f'} },
   // Tier III — casters
   { spr:'pinecroc',  name:'Crocodillo Ananasinno', hp:8, sp:66, r:19, xp:3, score:28, range:320, shoot:{type:'aim',n:3,cd:2.8,spd:150,col:'#e0b400'} },
-  { spr:'goose',     name:'Bombombini',    hp:8,  sp:74, r:18, xp:3, score:30, range:320, shoot:{type:'aim',n:3,cd:2.6,spd:150,col:'#e58a3a'} },
-  { spr:'octopus',   name:'Blueberrinni',  hp:9,  sp:50, r:19, xp:3, score:30, range:300, shoot:{type:'ring',n:8,cd:3.0,spd:120,col:'#5b6cf0'} },
-  { spr:'jelly',     name:'Graipussi Medussi', hp:8, sp:46, r:19, xp:3, score:30, range:280, shoot:{type:'ring',n:6,cd:2.8,spd:95,col:'#d36fb0'} },
-  { spr:'espresso',  name:'Espressona Signora', hp:9, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.2,spd:130,col:'#a16a3c'} },
-  { spr:'orangutan', name:'Orangutini',    hp:10, sp:54, r:20, xp:4, score:34, range:320, shoot:{type:'aim',n:1,cd:2.4,spd:140,col:'#e07a2a'} },
-  // Tier IV — heavies
-  { spr:'rhino',     name:'Rhino Toasterino', hp:18, sp:42, r:23, xp:4, score:45, range:340, shoot:{type:'aim',n:2,cd:3.0,spd:140,col:'#e8b96a'}, aoe:{r:42,dps:14,life:1.3,tele:0.7,col:'#e8a93a',cd:3.6} },
-  { spr:'camel',     name:'Frigo Camelo',  hp:20, sp:38, r:24, xp:5, score:50, aoe:{r:52,dps:9,life:1.6,tele:0.6,slow:true,col:'#9fd0ff',cd:3.4} },
-  { spr:'hippo',     name:'Il Cacto Hipopotamo', hp:22, sp:34, r:25, xp:5, score:55, range:320, shoot:{type:'ring',n:8,cd:3.6,spd:120,col:'#6b9233'}, aoe:{r:46,dps:15,life:1.1,tele:0.6,col:'#6b9233',cd:4.0} },
-  { spr:'turtle',    name:'Torrtuginni',   hp:26, sp:30, r:24, xp:5, score:55, shell:true },
-  // Tier V — elites
-  { spr:'panda',     name:'Pandaccini',    hp:14, sp:58, r:20, xp:4, score:40, aoe:{r:42,dps:4,life:1.6,tele:0.5,slow:true,col:'#f7d24a',cd:3.0} },
-  { spr:'tiger',     name:'Tigrrullini',   hp:14, sp:76, r:20, xp:4, score:44, dash:true, range:360, shoot:{type:'aim',n:5,cd:3.4,spd:155,col:'#e54d4d',move:true} },
-  { spr:'capy',      name:'Capybarelli',   hp:16, sp:46, r:21, xp:5, score:48, support:true },
 ];
 const BOSSES_GRASS = [
   { spr:'tralalero', name:'TRALALERO TRALALA',        hp:150, r:54, pattern:'spiral' },
@@ -233,17 +219,25 @@ const FOES_DIRT = [
   { spr:'patapim',   name:'Brr Brr Patapim 2.0', hp:16, sp:44, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.0,spd:130,col:'#9c6b3f'} },
   // Tier III — casters
   { spr:'ananasini', name:'Orangutini Ananasini', hp:12, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.6,spd:165,col:'#e3a13a',arc:true} },
+  { spr:'orangutan', name:'Orangutini',          hp:16, sp:48, r:20, xp:4, score:36, range:330, shoot:{type:'aim',n:2,cd:2.2,spd:155,col:'#e07a2a',arc:true} },
   { spr:'glorbo',    name:'Glorbo Fruttodrillo', hp:12, sp:50, r:19, xp:3, score:30, cast:{kind:'geyser',cd:3.0,range:390,n:5,col:'#5a9e3f'} },
-  { spr:'octopus',   name:'Blueberrinni Octopussini 2.0', hp:13, sp:50, r:19, xp:3, score:30, cast:{kind:'debris',cd:2.8,n:3,col:'#5b6cf0'} },
-  { spr:'jelly',     name:'Graipussi Medussi 2.0', hp:12, sp:46, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.4,dur:1.8,col:'#d36fb0'} },
-  { spr:'espresso',  name:'Espressona Signora 2.0', hp:13, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.0,spd:140,col:'#a16a3c'} },
+  { spr:'goose',     name:'Bombombini',          hp:13, sp:68, r:18, xp:3, score:32, range:330, shoot:{type:'aim',n:3,cd:2.4,spd:165,col:'#e58a3a'}, death:{type:'ring',n:4} },
+  { spr:'octopus',   name:'Blueberrinni Octopussini', hp:13, sp:50, r:19, xp:3, score:30, cast:{kind:'debris',cd:2.8,n:3,col:'#5b6cf0'} },
+  { spr:'jelly',     name:'Graipussi Medussi',   hp:12, sp:46, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.4,dur:1.8,col:'#d36fb0'} },
+  { spr:'espresso',  name:'Espressona Signora',  hp:13, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.0,spd:140,col:'#a16a3c'} },
   { spr:'zibra',     name:'Zibra Zubra Zibralini', hp:14, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.4,spd:165,col:'#cfcfd8',split:true} },
   // Tier IV — heavies
-  { spr:'rhino',     name:'Rhino Toasterino 2.0', hp:24, sp:42, r:23, xp:4, score:45, range:340, shoot:{type:'aim',n:2,cd:2.8,spd:150,col:'#e8b96a'}, death:{type:'split',n:2} },
+  { spr:'rhino',     name:'Rhino Toasterino',    hp:24, sp:42, r:23, xp:4, score:46, range:340, shoot:{type:'aim',n:2,cd:2.8,spd:150,col:'#e8b96a'}, aoe:{r:44,dps:18,life:1.4,tele:0.7,col:'#e8a93a',cd:3.4} },
+  { spr:'camel',     name:'Frigo Camelo',        hp:32, sp:32, r:24, xp:5, score:52, aoe:{r:58,dps:12,life:1.8,tele:0.7,slow:true,col:'#9fd0ff',cd:3.0} },
+  { spr:'hippo',     name:'Il Cacto Hipopotamo', hp:35, sp:28, r:25, xp:5, score:58, range:330, shoot:{type:'ring',n:8,cd:3.2,spd:130,col:'#6b9233'}, aoe:{r:50,dps:18,life:1.2,tele:0.6,col:'#6b9233',cd:3.6} },
+  { spr:'turtle',    name:'Torrtuginni',         hp:42, sp:24, r:24, xp:5, score:58, shell:true },
   { spr:'burbaloni', name:'Burbaloni Luliloli',  hp:26, sp:34, r:24, xp:5, score:52, aoe:{r:54,dps:11,life:1.8,tele:0.6,slow:true,col:'#9fd0ff',cd:3.2} },
   { spr:'cocofanto', name:'Cocofanto Elefanto',  hp:29, sp:30, r:25, xp:5, score:58, pullAura:65, trail:{cd:0.4,r:36,life:1.8,dps:9,col:'#3a2616'} },
   { spr:'girafa',    name:'Girafa Celeste',      hp:33, sp:28, r:26, xp:5, score:58, dash:true, kb:true },
   // Tier V — elites
+  { spr:'panda',     name:'Pandaccini',          hp:22, sp:52, r:20, xp:4, score:42, aoe:{r:46,dps:5,life:1.8,tele:0.5,slow:true,col:'#f7d24a',cd:2.8} },
+  { spr:'tiger',     name:'Tigrrullini',         hp:22, sp:68, r:20, xp:4, score:46, dash:true, range:370, shoot:{type:'aim',n:5,cd:3.0,spd:170,col:'#e54d4d',move:true} },
+  { spr:'capy',      name:'Capybarelli',         hp:26, sp:40, r:21, xp:5, score:50, support:true },
   { spr:'bicus',     name:'Brri Brri Bicus Dicus Bombicus', hp:18, sp:50, r:20, xp:4, score:46, cast:{kind:'summon',cd:5,spr:'golubiro',n:3,cap:4} },
   { spr:'ambalabu',  name:'Boneca Ambalabu',     hp:19, sp:44, r:20, xp:4, score:46, cast:{kind:'geyser',cd:3.2,range:430,n:6,lines:3,col:'#5a9e3f'} },
   { spr:'dindin',    name:'U Din Din Din Din Dun Ma Din Din Din Dun', hp:21, sp:36, r:22, xp:5, score:50, death:{type:'split',n:2} },
