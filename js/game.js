@@ -1104,7 +1104,7 @@ function resetPlayer(){
     dmg:10, fireRate:0.26, fireCd:0, shots:1, pierce:0, range:330,
     magnet:90, crit:0.05, orbs:0, orbA:0, orbR:96, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
     vamp:0, bslow:1, lv:1, xp:0, xpNext:4, inv:0, up:{}, slowT:0,
-    face:0, walk:0, moving:false, hitT:0, dashCd:0, dashMax:1.8, dashT:0, dvx:0, dvy:0,
+    face:0, walk:0, walkAmt:0, moving:false, hitT:0, dashCd:0, dashMax:1.8, dashT:0, dvx:0, dvy:0,
     radial:false, railgun:false, orbShield:false, novaEvo:false, freeze:false,
     critMul:3, frenzy:0, frenzyGain:0, frenzyMax:0,
     shield:0, shieldMax:0, shieldCd:0, shieldCdBase:8, shieldDR:1, aegisEvo:false,
@@ -1725,7 +1725,8 @@ function update(dt){
   if(keys['a']||keys['arrowleft']) mx-=1;
   if(keys['d']||keys['arrowright']) mx+=1;
   const ml=Math.hypot(mx,my); if(ml>1){ mx/=ml; my/=ml; }
-  if(ml>0.05){ P.face=Math.atan2(my,mx); P.walk+=dt*10; P.moving=true; } else { P.walk*=0.9; P.moving=false; }
+  if(ml>0.05){ P.face=Math.atan2(my,mx); P.walk+=dt*10; P.moving=true; P.walkAmt=Math.min(1,(P.walkAmt||0)+dt*8); }
+  else { P.walk*=0.9; P.moving=false; P.walkAmt=Math.max(0,(P.walkAmt||0)-dt*6); }
 
   if(P.dashT>0){
     P.dashT-=dt;
@@ -2306,6 +2307,8 @@ function update(dt){
           e.moving = true;
         }
       } else { e.moving = dashing; }
+      // ease walk-pose blend toward moving/idle target instead of snapping legs straight when motion starts/stops
+      e.walkAmt = (e.walkAmt||0) + ((e.moving?1:0)-(e.walkAmt||0)) * Math.min(1, dt*8);
       separate(e);   // resolve overlaps with nearby foes so the pack spreads + flows around
       e.x = clamp(e.x, WALL, WORLD.w-WALL); e.y = clamp(e.y, WALL, WORLD.h-WALL);
       if(arena){ e.x=clamp(e.x, arena.x+e.r, arena.x+arena.w-e.r); e.y=clamp(e.y, arena.y+e.r, arena.y+arena.h-e.r); }
@@ -3915,11 +3918,14 @@ function drawSprite(name, x, y, size, rot, sq, hitT, flip, tint, pulse){
 // Composite-draw a part-based rig at (x,y) with displaySize, flip, hit-flash, pose, and squash.
 // pose: 'idle'|'walk'|'attack'|'hit'|'knockback'|'death'   phase: 0..1 within that pose
 // Each part is blitted at anchor * scale; rotation applied around the joint pivot (canvas center).
-function drawRig(rigName, x, y, displaySize, flip, hitT, pose, phase, sq) {
+function drawRig(rigName, x, y, displaySize, flip, hitT, pose, phase, sq, walkAmt) {
   const rig = RIG[rigName]; if(!rig) return;
   const s = displaySize / rig.baseSize;
   const poseFn = POSE_BIPED[pose] || POSE_BIPED.idle;
   const angles = poseFn(phase);
+  if(pose==='walk' && walkAmt!==undefined && walkAmt<0.999){
+    for(const k in angles) angles[k] *= walkAmt;   // ease limbs back to neutral instead of snapping when motion starts/stops
+  }
   const sortedParts = Object.entries(rig.layout).sort((a,b)=>a[1].z-b[1].z);
   cx.save();
   cx.translate(x, y);
@@ -4210,15 +4216,15 @@ function render(){
       cx.globalAlpha=0.7; cx.lineWidth=3.5; cx.beginPath(); cx.arc(e.x,e.y,e.r+8+(1-k)*48,0,TAU); cx.stroke();   // shrinks in as the attack nears
       cx.globalAlpha=1;
     }
-    const wob = skipWob ? 0 : (e.isBoss ? Math.sin(e.t*2)*0.06 : (e.moving===false ? 0 : Math.sin(e.t*6)*0.12));   // walk-cycle wobble only while actually moving
+    const wob = skipWob ? 0 : (e.isBoss ? Math.sin(e.t*2)*0.06 : Math.sin(e.t*6)*0.12*(e.walkAmt||0));   // walk-cycle wobble eases in/out with movement instead of snapping
     const pulse=0;
     if(e.cut && cut){ cx.globalAlpha = cut.alpha; }
     if(RIG[e.spr]){
       // part-based rig draw — pose driven by movement/hit/knockback state
       let ePose='idle', ePhase=0;
       if(e.sq>0){ ePose=e.sq>0.5?'knockback':'hit'; ePhase=1-e.sq; }
-      else if(e.moving){ ePose='walk'; ePhase=(e.t*3)%1; }
-      drawRig(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), e.face===-1, e.hitT, ePose, ePhase, e.sq);
+      else if((e.walkAmt||0)>0.001){ ePose='walk'; ePhase=(e.t*3)%1; }
+      drawRig(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), e.face===-1, e.hitT, ePose, ePhase, e.sq, e.walkAmt);
     } else {
       drawSprite(e.spr, e.x, e.y, e.r*2.5*(e.deathScale||1), wob, e.sq, e.hitT, e.face===-1, e.isBoss?null:curWorld().enemyTint, pulse);   // per-world enemy recolor
     }

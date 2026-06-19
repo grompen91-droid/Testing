@@ -67,6 +67,16 @@ function _charAnimLerp(frames, phase) {
            legL:L(lo.legL,hi.legL), legR:L(lo.legR,hi.legR) };
 }
 
+// Blends the walk-cycle pose toward neutral by walkAmt (0=idle, 1=full stride) so stopping
+// mid-stride eases the limbs back down instead of snapping straight to the idle pose.
+function _walkBlendPose(wp, walkAmt) {
+  const w = _charAnimLerp(_PL_WALK, wp);
+  if (walkAmt >= 0.999) return w;
+  if (walkAmt <= 0.001) return {body:0, yOff:0, armL:0, armR:0, legL:0, legR:0};
+  return { body:w.body*walkAmt, yOff:w.yOff*walkAmt, armL:w.armL*walkAmt, armR:w.armR*walkAmt,
+           legL:w.legL*walkAmt, legR:w.legR*walkAmt };
+}
+
 // Returns the vertical body offset (pixels, +ve = down) for the current anim state.
 // Call before drawing anything, wrap all draws in ctx.translate(0, _charBodyY(...)).
 function _charBodyY(anim, size, walkMul) {
@@ -76,11 +86,12 @@ function _charBodyY(anim, size, walkMul) {
   const hp = anim.hitPulse || 0;
   const t  = anim.t || 0;
   const wp = (((anim.walkPhase || 0) * walkMul) % (Math.PI * 2)) / (Math.PI * 2);
+  const walkAmt = anim.walkAmt !== undefined ? anim.walkAmt : (anim.moving ? 1 : 0);
   let yOff = 0;
-  if      (hp > 0.05)   yOff = (_charAnimLerp(_PL_HIT,    1 - hp).yOff || 0);
-  else if (fp > 0.05)   yOff = (_charAnimLerp(_PL_ATTACK,  1 - fp).yOff || 0);
-  else if (anim.moving) yOff = (_charAnimLerp(_PL_WALK,    wp).yOff || 0);
-  else                  yOff = Math.sin(t * 1.8) * 0.014; // idle breathing
+  if      (hp > 0.05)  yOff = (_charAnimLerp(_PL_HIT,    1 - hp).yOff || 0);
+  else if (fp > 0.05)  yOff = (_charAnimLerp(_PL_ATTACK,  1 - fp).yOff || 0);
+  else if (walkAmt > 0.001) yOff = (_walkBlendPose(wp, walkAmt).yOff || 0) + Math.sin(t*1.8)*0.014*(1-walkAmt);
+  else                 yOff = Math.sin(t * 1.8) * 0.014; // idle breathing
   return yOff * size;
 }
 
@@ -93,12 +104,12 @@ function _humanBase(ctx, size, legCol, bodyCol, armCol, skinCol, anim, walkMul) 
   const fp = anim.firePulse || 0;
   const hp = anim.hitPulse || 0;
   const wp = (((anim.walkPhase || 0) * walkMul) % (Math.PI * 2)) / (Math.PI * 2);
+  const walkAmt = anim.walkAmt !== undefined ? anim.walkAmt : (anim.moving ? 1 : 0);
 
   let p;
-  if      (hp > 0.05)   p = _charAnimLerp(_PL_HIT,    1 - hp);
-  else if (fp > 0.05)   p = _charAnimLerp(_PL_ATTACK,  1 - fp);
-  else if (anim.moving) p = _charAnimLerp(_PL_WALK,    wp);
-  else                  p = {body:0, yOff:0, armL:0, armR:0, legL:0, legR:0};
+  if      (hp > 0.05) p = _charAnimLerp(_PL_HIT,    1 - hp);
+  else if (fp > 0.05) p = _charAnimLerp(_PL_ATTACK,  1 - fp);
+  else                p = _walkBlendPose(wp, walkAmt);
   const {body, armL, armR, legL, legR} = p;
 
   const hipLX = -size*0.075, hipRX = size*0.075, hipY = size*0.16;
@@ -621,7 +632,7 @@ function _playerAnim() {
   }
   const hitPulse = P.hitT>0 ? P.hitT/0.25 : 0;
   const t = typeof elapsed!=='undefined' ? elapsed : 0;
-  return { walkPhase:P.walk||0, moving:!!P.moving, firePulse, hitPulse, t };
+  return { walkPhase:P.walk||0, moving:!!P.moving, walkAmt:P.walkAmt||0, firePulse, hitPulse, t };
 }
 
 function drawCharacter(charId, x, y, size, bob, flip) {
