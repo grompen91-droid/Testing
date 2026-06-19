@@ -14,15 +14,19 @@ let W=0, H=0, DPR=1;
 //   frameMin = min ms between rendered frames (fps cap). 0 = uncapped.
 //   particles= multiplier on the particle hard-cap (0 = off, 0.5 = low, 1 = full).
 //   shake    = master toggle for camera shake (separate from death-shake).
-const GFX = { dpr:1.5, frameMin:14.5, particles:1, shake:true };
+// frameMin default 0 = render every animation frame (vsync). A skip-cap that sits between the
+// display's refresh multiples renders unevenly (e.g. ~48fps with judder on a 144Hz panel), which
+// reads as "not smooth". Vsync is the smoothest pacing; weak devices cut cost via dpr/particles.
+const GFX = { dpr:1.5, frameMin:0, particles:1, shake:true };
 function saveGfx(){ try{ localStorage.setItem('br_gfx', JSON.stringify(GFX)); }catch(e){} }
 (function loadGfx(){
   const raw = (()=>{ try{ return localStorage.getItem('br_gfx'); }catch(e){ return null; } })();
   if(raw===null){
-    // First boot: pick safe defaults for the device so weak hardware starts smooth.
+    // First boot: pick safe defaults for the device so weak hardware starts smooth (lower
+    // resolution + fewer particles), but keep vsync pacing — never the juddery frame-skip cap.
     const cores = navigator.hardwareConcurrency || 4;
     const coarse = !!(window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
-    if(cores <= 4 || coarse){ GFX.dpr = 1.0; GFX.particles = 0.5; }
+    if(cores <= 4 || coarse){ GFX.dpr = 0.85; GFX.particles = 0.5; }
     saveGfx();
     return;
   }
@@ -32,6 +36,8 @@ function saveGfx(){ try{ localStorage.setItem('br_gfx', JSON.stringify(GFX)); }c
     if(typeof s.frameMin==='number')  GFX.frameMin = s.frameMin;
     if(typeof s.particles==='number') GFX.particles = s.particles;
     if(typeof s.shake==='boolean')    GFX.shake = s.shake;
+    // Migrate the old ~69fps skip-cap default (14.5) to vsync — it was the source of the judder.
+    if(s.frameMin===14.5){ GFX.frameMin = 0; saveGfx(); }
   }catch(e){}
 })();
 

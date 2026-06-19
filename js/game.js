@@ -2381,7 +2381,10 @@ function update(dt){
       kills++; setKillHUD();
       if(typeof fireHook==='function') fireHook('onKill', e);
       sfx.hit();
-      if(deathShakeOn) shake=Math.max(shake,e.isBoss?16:8); hitstop=Math.max(hitstop,e.isBoss?0.08:0.05);
+      if(deathShakeOn) shake=Math.max(shake,e.isBoss?16:8);
+      // Hit-stop only on boss kills. Normal kills are constant in a survivor game, so freezing the
+      // sim 50ms each one stacked into near-continuous choppiness — feedback comes from burst+sfx instead.
+      hitstop=Math.max(hitstop,e.isBoss?0.06:0);
       burst(e.x,e.y,'#ff9f3a',e.isBoss?60:22,e.isBoss?420:280);
       if(P.aftershock && Math.random() < 0.12+P.aftershock*0.06){   // Aftershock: kills erupt a quake that damages nearby foes
         const R=70+P.aftershock*10, qd=P.dmg*(2+P.aftershock)*(P.abyssalMul||1);
