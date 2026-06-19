@@ -1654,10 +1654,21 @@ function openLevelUp(){
                   `<div class="cstars">${stars}</div>`;
     d.onclick = ()=>{
       m.evolve ? sfx.evolve() : sfx.pick();
-      m.apply(); P.up[u.id] = (P.up[u.id]||0)+1;
-      $('levelup').classList.add('hidden');
-      state = ST.PLAY;
-      tPrev = performance.now();
+      const allCards = [...$('cards').querySelectorAll('.card')];
+      allCards.forEach(c => { c.style.pointerEvents='none'; });
+      d.classList.add('card-selected');
+      const selIdx = allCards.indexOf(d);
+      allCards.forEach((c,i) => {
+        if(c===d) return;
+        c.style.setProperty('--rej-rot', (i<selIdx?-1:1)*(12+Math.random()*10)+'deg');
+        c.classList.add('card-rejected');
+      });
+      setTimeout(()=>{
+        m.apply(); P.up[u.id]=(P.up[u.id]||0)+1;
+        $('levelup').classList.add('hidden');
+        state=ST.PLAY;
+        tPrev=performance.now();
+      }, 440);
     };
     wrap.appendChild(d);
   });
