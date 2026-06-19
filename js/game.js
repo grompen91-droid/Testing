@@ -139,7 +139,7 @@ function popLucky(lb){
     floatText(lb.x,lb.y-lb.r-10,'HEAVY LUCKY!','#ff9c1a',22);
     return;
   }
-  const roll = (Math.random()*3)|0;
+  const roll = (P.hp/P.maxHp <= 0.35) ? 0 : (Math.random()*3)|0;
   if(roll===0){            // big heart, heals 50
     const a=rand(0,TAU), s=rand(40,90); gems.push({x:lb.x,y:lb.y,heart:true,big:true,t:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s});
   } else if(roll===1 && !P.hasMagnetPet){  // magnet — skip if player has magnet pet
