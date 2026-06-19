@@ -27,6 +27,9 @@ function makePart(rigName, partName, partSize, draw, uScale) {
 //   legL/R     → CW = foot swings forward (toward player); CC = foot swings back
 //   armL/R     → CW = arm swings forward; CC = arm swings back
 // When character flips (faces left, cx.scale(-1,1)), rotations visually mirror — gait stays correct.
+// shared scratch pose — animLerp's result is consumed synchronously by one caller (drawRig), so
+// reusing one object avoids allocating a fresh pose (and a closure) on every enemy draw each frame.
+const _poseOut = {body:0, head:0, armL:0, armR:0, legL:0, legR:0};
 function animLerp(frames, phase) {
   phase = ((phase % 1) + 1) % 1;
   let lo = frames[0], hi = frames[frames.length-1];
@@ -35,10 +38,11 @@ function animLerp(frames, phase) {
   }
   const t = hi.ph===lo.ph ? 0 : (phase-lo.ph)/(hi.ph-lo.ph);
   const e = t*t*(3-2*t); // smoothstep — preserves snappy peak poses, eases into/out of them
-  const L = (a,b) => (a||0)+((b||0)-(a||0))*e;
-  return { body:L(lo.body,hi.body), head:L(lo.head,hi.head),
-           armL:L(lo.armL,hi.armL), armR:L(lo.armR,hi.armR),
-           legL:L(lo.legL,hi.legL), legR:L(lo.legR,hi.legR) };
+  const o=_poseOut;
+  o.body=(lo.body||0)+((hi.body||0)-(lo.body||0))*e; o.head=(lo.head||0)+((hi.head||0)-(lo.head||0))*e;
+  o.armL=(lo.armL||0)+((hi.armL||0)-(lo.armL||0))*e; o.armR=(lo.armR||0)+((hi.armR||0)-(lo.armR||0))*e;
+  o.legL=(lo.legL||0)+((hi.legL||0)-(lo.legL||0))*e; o.legR=(lo.legR||0)+((hi.legR||0)-(lo.legR||0))*e;
+  return o;
 }
 
 // ---- BIPED WALK (8-pose cycle: contact→down→passing→up × 2 strides) ----
@@ -93,8 +97,9 @@ const _DEATH = [
   {ph:1.00, body: 1.50, head: 1.05, armL:-1.65, armR: 1.15, legL: 1.05, legR: 1.55},
 ];
 
+const _POSE_ZERO = {body:0, head:0, armL:0, armR:0, legL:0, legR:0};   // idle is a static all-zero pose (never mutated)
 const POSE_BIPED = {
-  idle:      ()   => ({body:0, head:0, armL:0, armR:0, legL:0, legR:0}),
+  idle:      ()   => _POSE_ZERO,
   walk:      (ph) => animLerp(_WALK, ph),
   attack:    (ph) => animLerp(_ATTACK, ph),
   hit:       (ph) => animLerp(_HIT, ph),

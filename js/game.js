@@ -3986,10 +3986,12 @@ function drawRig(rigName, x, y, displaySize, flip, hitT, pose, phase, sq, walkAm
   const s = displaySize / rig.baseSize;
   const poseFn = POSE_BIPED[pose] || POSE_BIPED.idle;
   const angles = poseFn(phase);
-  if(pose==='walk' && walkAmt!==undefined && walkAmt<0.999){
-    for(const k in angles) angles[k] *= walkAmt;   // ease limbs back to neutral instead of snapping when motion starts/stops
+  if(pose==='walk' && walkAmt!==undefined && walkAmt<0.999){   // ease limbs back to neutral instead of snapping when motion starts/stops
+    angles.body*=walkAmt; angles.head*=walkAmt; angles.armL*=walkAmt;
+    angles.armR*=walkAmt; angles.legL*=walkAmt; angles.legR*=walkAmt;
   }
-  const sortedParts = Object.entries(rig.layout).sort((a,b)=>a[1].z-b[1].z);
+  // z-order is static per rig — sort once and cache, instead of allocating entries()+sort() every draw
+  const sortedParts = rig._order || (rig._order = Object.entries(rig.layout).sort((a,b)=>a[1].z-b[1].z));
   cx.save();
   cx.translate(x, y);
   if(flip) cx.scale(-1,1);
