@@ -438,7 +438,7 @@ const WORLDS = [
     theme:{ void:'#8a4f22', tile1:'#d98a44', tile2:'#cf7e3a', tuft:'rgba(120,60,20,0.32)',
             wall:null, post:null, bg:'#c97a36', tint:'#e0792c', music:'game' },
     foes:FOES_W6, bosses:BOSSES_W6 },
-  { id:'swamp', name:'SWAMP', band:5, waveTarget:20, endless:false, map:{w:4800,h:1200}, enemyTint:'#6a8a3a',
+  { id:'swamp', name:'SWAMP', band:5, waveTarget:20, endless:false, map:{w:4800,h:1200}, enemyTint:null,
     theme:{ void:'#38502a', tile1:'#5f7a45', tile2:'#56713e', tuft:'rgba(30,50,20,0.35)',
             wall:'#3a4d28', post:'#5a7038', postDark:'#28361c', bg:'#55703c', tint:'#6a8a3a', music:'dirt',
             debris:0.7 },
