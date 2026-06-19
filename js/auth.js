@@ -145,7 +145,9 @@ function rehydrate(){
 }
 
 // ---- saving (debounced; gentle on quota) ----
-function markDirty(){ if(saveTimer) return; saveTimer=setTimeout(()=>{ saveTimer=null; saveProfile(); }, 1500); }
+// Debounced; the actual stringify+write runs in idle time so it never lands inside a render frame.
+const _ric = window.requestIdleCallback ? (fn)=>window.requestIdleCallback(fn,{timeout:2000}) : (fn)=>setTimeout(fn,0);
+function markDirty(){ if(saveTimer) return; saveTimer=setTimeout(()=>{ saveTimer=null; _ric(saveProfile); }, 1500); }
 window.markDirty = markDirty;
 function flushSave(){ if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; saveProfile(); } }
 window.addEventListener('beforeunload', flushSave);

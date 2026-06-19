@@ -61,7 +61,16 @@ function _saveHash(v){ let h=0x811c9dc5; const s=String(v)+'brrumble'; for(let i
   window.__initGold = safeGold;
 })();
 let gold = window.__initGold||0;   // persistent currency (saved)
-function saveGold(){ localStorage.setItem('br_gold', gold); localStorage.setItem('br_gold_sig', _saveHash(gold)); }
+// Debounced: coin pickup can fire this many times per frame (magnet streams coins in). Synchronous
+// localStorage writes on the hot path caused a periodic stutter, so coalesce to at most one write/sec.
+// In-memory `gold` stays authoritative; the durable copy is the save blob (flushed on pagehide).
+let _goldSaveT=null;
+function saveGold(){
+  if(_goldSaveT) return;
+  _goldSaveT=setTimeout(()=>{ _goldSaveT=null; flushGold(); }, 1000);
+}
+function flushGold(){ try{ localStorage.setItem('br_gold', gold); localStorage.setItem('br_gold_sig', _saveHash(gold)); }catch(e){} }
+window.addEventListener('pagehide', flushGold);
 // boss arena: the field locks to a small bounded square a few seconds before the boss arrives
 let arena=null, bossPending=0;
 const ARENA_SIZE=1000, ARENA_LEAD=4, ARENA_ZOOM=1.3;
