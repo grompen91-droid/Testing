@@ -4568,20 +4568,23 @@ function renderZones(){
     if(z.t<z.tele){                       // telegraph: clearly shows WHERE + WHEN it lands
       const k=z.t/z.tele;                 // 0..1 charge
       const imminent = k>0.62;
-      // dark base disc so the hazard reads on any ground color
-      cx.globalAlpha=0.34; cx.fillStyle='#000'; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.fill();
-      // danger fill grows to full exactly at impact = a visible countdown
-      cx.globalAlpha=0.30+0.34*k; cx.fillStyle=danger; cx.beginPath(); cx.arc(z.x,z.y,z.r*k,0,TAU); cx.fill();
-      // bold rotating warning ring (turns white the instant before it fires)
-      cx.globalAlpha=1; cx.lineWidth=imminent?8:5; cx.strokeStyle=imminent?'#fff':danger;
-      cx.setLineDash([11,7]); cx.lineDashOffset=zDashOff;
-      cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.stroke(); cx.setLineDash([]);
-      // dark contrast outline
-      cx.lineWidth=2.5; cx.strokeStyle='rgba(0,0,0,0.55)'; cx.beginPath(); cx.arc(z.x,z.y,z.r+2,0,TAU); cx.stroke();
-      // pulsing center marker so the exact spot is unmistakable
       const ps=0.5+0.5*Math.sin(z.t*26);
-      cx.globalAlpha=0.75+0.25*ps; cx.fillStyle=imminent?'#fff':danger;
-      cx.beginPath(); cx.arc(z.x,z.y,4+3*ps,0,TAU); cx.fill();
+      // dark base disc so the hazard reads on ANY ground color (themed green hazards used to vanish on green maps)
+      cx.globalAlpha=0.5; cx.fillStyle='#000'; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.fill();
+      // hot danger fill grows to full exactly at impact = a visible countdown (vivid red, not the muddy theme color)
+      cx.globalAlpha=0.40+0.40*k; cx.fillStyle='#ff2a1a'; cx.beginPath(); cx.arc(z.x,z.y,z.r*k,0,TAU); cx.fill();
+      // thick black halo so the rim never blends into the ground
+      cx.globalAlpha=1; cx.lineWidth=6; cx.strokeStyle='rgba(0,0,0,0.9)'; cx.beginPath(); cx.arc(z.x,z.y,z.r+3,0,TAU); cx.stroke();
+      // bold rotating warning ring (hot red -> flashes white the instant before it fires)
+      cx.lineWidth=imminent?10:6; cx.strokeStyle=imminent?'#ffffff':'#ff2a1a';
+      cx.setLineDash([13,8]); cx.lineDashOffset=zDashOff;
+      cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.stroke(); cx.setLineDash([]);
+      // hazard-stripe crosshair through the center so the exact spot is unmistakable
+      cx.globalAlpha=0.6+0.3*ps; cx.lineWidth=2.5; cx.strokeStyle='#fff';
+      cx.beginPath(); cx.moveTo(z.x-z.r*0.5,z.y); cx.lineTo(z.x+z.r*0.5,z.y); cx.moveTo(z.x,z.y-z.r*0.5); cx.lineTo(z.x,z.y+z.r*0.5); cx.stroke();
+      // pulsing center marker
+      cx.globalAlpha=0.85+0.15*ps; cx.fillStyle=imminent?'#fff':'#ffd400';
+      cx.beginPath(); cx.arc(z.x,z.y,5+4*ps,0,TAU); cx.fill();
       // arcing projectile: travels from boss origin to landing spot
       if(z.fromX !== undefined){
         const dist=Math.hypot(z.x-z.fromX, z.y-z.fromY);
@@ -4601,12 +4604,17 @@ function renderZones(){
         cx.fillStyle=danger; cx.beginPath(); cx.arc(px,py,6,0,TAU); cx.fill();
         cx.fillStyle='rgba(255,255,255,0.7)'; cx.beginPath(); cx.arc(px-2,py-2,2.5,0,TAU); cx.fill();
       }
-    } else {                              // active: bright fill + a white impact flash
+    } else {                              // active (DEALING DAMAGE): must be impossible to miss
       const k=Math.max(0,1-(z.t-z.tele)/z.life);
-      cx.globalAlpha=0.5*k+0.18; cx.fillStyle=danger; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.fill();
-      cx.globalAlpha=0.9*k; cx.lineWidth=6; cx.strokeStyle=danger; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.stroke();
+      const ps=0.5+0.5*Math.sin(z.t*22);
+      // dark base + hot fill so the live hazard reads on any ground (was themed color over nothing = invisible on green)
+      cx.globalAlpha=0.45*k+0.12; cx.fillStyle='#000'; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.fill();
+      cx.globalAlpha=0.55*k+0.22; cx.fillStyle='#ff3b1e'; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.fill();
+      // thick black halo + pulsing hot ring
+      cx.globalAlpha=1; cx.lineWidth=5; cx.strokeStyle='rgba(0,0,0,0.9)'; cx.beginPath(); cx.arc(z.x,z.y,z.r+3,0,TAU); cx.stroke();
+      cx.globalAlpha=0.85+0.15*ps; cx.lineWidth=6+2*ps; cx.strokeStyle='#ff6a3a'; cx.beginPath(); cx.arc(z.x,z.y,z.r,0,TAU); cx.stroke();
       const f=(z.t-z.tele)/0.12;
-      if(f<1){ cx.globalAlpha=0.8*(1-f); cx.fillStyle='#fff'; cx.beginPath(); cx.arc(z.x,z.y,z.r*0.7,0,TAU); cx.fill(); }
+      if(f<1){ cx.globalAlpha=0.85*(1-f); cx.fillStyle='#fff'; cx.beginPath(); cx.arc(z.x,z.y,z.r*0.7,0,TAU); cx.fill(); }
     }
   }
   // duo tether beam: bright energy line between the two final-boss titans
