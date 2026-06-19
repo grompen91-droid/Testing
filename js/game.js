@@ -1657,11 +1657,11 @@ function openLevelUp(){
       const allCards = [...$('cards').querySelectorAll('.card')];
       allCards.forEach(c => { c.style.pointerEvents='none'; });
       d.classList.add('card-selected');
-      const selIdx = allCards.indexOf(d);
+      const rejClass = ['card-rejected-left','card-rejected-mid','card-rejected-right'];
       allCards.forEach((c,i) => {
         if(c===d) return;
-        c.style.setProperty('--rej-rot', (i<selIdx?-1:1)*(12+Math.random()*10)+'deg');
-        c.classList.add('card-rejected');
+        if(i===2) c.style.setProperty('--rej-rot',(12+Math.random()*10)+'deg');
+        c.classList.add(rejClass[i]);
       });
       setTimeout(()=>{
         m.apply(); P.up[u.id]=(P.up[u.id]||0)+1;

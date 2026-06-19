@@ -645,21 +645,27 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 @keyframes tabIn   { from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
 @keyframes popIn   { from{ opacity:0; transform:scale(.82) translateY(14px); } to{ opacity:1; transform:scale(1) translateY(0); } }
 @keyframes cardDeal1 {
-  0%  { opacity:0; transform:translateX(-90px) translateY(70px) rotate(-14deg) scale(.68); }
-  55% { opacity:1; transform:translateX(7px) translateY(-9px) rotate(3deg) scale(1.07); }
-  75% { transform:translateX(-3px) translateY(3px) rotate(-1deg) scale(.98); }
+  0%  { opacity:0; transform:translateX(-60px) translateY(160px) rotate(-22deg) scale(.45); }
+  18% { opacity:1; }
+  58% { transform:translateX(10px) translateY(-16px) rotate(5deg) scale(1.1); }
+  74% { transform:translateX(-4px) translateY(6px) rotate(-2deg) scale(.96); }
+  88% { transform:translateX(2px) translateY(-3px) rotate(.8deg) scale(1.02); }
   100%{ opacity:1; transform:none; }
 }
 @keyframes cardDeal2 {
-  0%  { opacity:0; transform:translateY(100px) rotate(5deg) scale(.64); }
-  55% { opacity:1; transform:translateY(-12px) rotate(-2deg) scale(1.08); }
-  75% { transform:translateY(4px) rotate(.6deg) scale(.97); }
+  0%  { opacity:0; transform:translateY(180px) rotate(8deg) scale(.4); }
+  18% { opacity:1; }
+  58% { transform:translateY(-18px) rotate(-3deg) scale(1.11); }
+  74% { transform:translateY(7px) rotate(1deg) scale(.95); }
+  88% { transform:translateY(-3px) rotate(-.4deg) scale(1.02); }
   100%{ opacity:1; transform:none; }
 }
 @keyframes cardDeal3 {
-  0%  { opacity:0; transform:translateX(90px) translateY(70px) rotate(14deg) scale(.68); }
-  55% { opacity:1; transform:translateX(-7px) translateY(-9px) rotate(-3deg) scale(1.07); }
-  75% { transform:translateX(3px) translateY(3px) rotate(1deg) scale(.98); }
+  0%  { opacity:0; transform:translateX(60px) translateY(160px) rotate(22deg) scale(.45); }
+  18% { opacity:1; }
+  58% { transform:translateX(-10px) translateY(-16px) rotate(-5deg) scale(1.1); }
+  74% { transform:translateX(4px) translateY(6px) rotate(2deg) scale(.96); }
+  88% { transform:translateX(-2px) translateY(-3px) rotate(-.8deg) scale(1.02); }
   100%{ opacity:1; transform:none; }
 }
 @keyframes cardSelect {
@@ -668,10 +674,22 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
   65% { transform:scale(1.05) translateY(-4px); box-shadow:0 14px 28px rgba(255,214,50,.45), 0 0 0 3px #ffd832; }
   100%{ transform:scale(1.03) translateY(-3px); box-shadow:0 10px 20px rgba(255,214,50,.3), 0 0 0 3px #ffd832; }
 }
-@keyframes cardReject {
+/* left card: fades/shrinks in place */
+@keyframes cardRejectLeft {
+  0%  { opacity:1; transform:scale(1); }
+  40% { opacity:.5; transform:scale(.94); }
+  100%{ opacity:0; transform:scale(.88); }
+}
+/* middle card: straight up */
+@keyframes cardRejectMid {
+  0%  { opacity:1; transform:translateY(0) scale(1); }
+  100%{ opacity:0; transform:translateY(-210px) scale(.82); }
+}
+/* right card: flies up with rotation */
+@keyframes cardRejectRight {
   0%  { opacity:1; transform:translateY(0) rotate(0deg) scale(1); }
-  25% { opacity:.9; transform:translateY(-18px) rotate(var(--rej-rot,8deg)) scale(.96); }
-  100%{ opacity:0; transform:translateY(-200px) rotate(calc(var(--rej-rot,8deg)*1.6)) scale(.78); }
+  22% { transform:translateY(-22px) rotate(var(--rej-rot,10deg)) scale(.96); }
+  100%{ opacity:0; transform:translateY(-210px) rotate(calc(var(--rej-rot,10deg)*1.8)) scale(.76); }
 }
 
 #menu:not(.hidden)      { animation:fadeIn .25s ease; }
@@ -687,12 +705,14 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
 #crate:not(.hidden) .cratepanel,
 #world-cleared:not(.hidden) .panel { animation:popIn .26s cubic-bezier(.2,.9,.35,1.2); }
 /* skill-choice cards: per-position deal animation */
-#cards .card:nth-child(1){ animation:cardDeal1 .54s cubic-bezier(.18,.9,.28,1.12) .06s backwards; }
-#cards .card:nth-child(2){ animation:cardDeal2 .54s cubic-bezier(.18,.9,.28,1.12) .18s backwards; }
-#cards .card:nth-child(3){ animation:cardDeal3 .54s cubic-bezier(.18,.9,.28,1.12) .30s backwards; }
+#cards .card:nth-child(1){ animation:cardDeal1 .62s cubic-bezier(.18,.9,.28,1.08) .06s backwards; }
+#cards .card:nth-child(2){ animation:cardDeal2 .62s cubic-bezier(.18,.9,.28,1.08) .20s backwards; }
+#cards .card:nth-child(3){ animation:cardDeal3 .62s cubic-bezier(.18,.9,.28,1.08) .34s backwards; }
 /* post-select states — defined after nth-child so same-specificity rules win by order */
-#cards .card.card-selected { animation:cardSelect .42s cubic-bezier(.2,.9,.3,1) forwards; transition:none; pointer-events:none; }
-#cards .card.card-rejected { animation:cardReject .40s cubic-bezier(.5,0,.9,.6) forwards; transition:none; pointer-events:none; }
+#cards .card.card-selected       { animation:cardSelect .42s cubic-bezier(.2,.9,.3,1) forwards; transition:none; pointer-events:none; }
+#cards .card.card-rejected-left  { animation:cardRejectLeft  .44s ease forwards; transition:none; pointer-events:none; }
+#cards .card.card-rejected-mid   { animation:cardRejectMid   .38s cubic-bezier(.4,0,.8,.6) forwards; transition:none; pointer-events:none; }
+#cards .card.card-rejected-right { animation:cardRejectRight .40s cubic-bezier(.5,0,.9,.6) forwards; transition:none; pointer-events:none; }
 /* smooth tab + button colour changes */
 .tabbtn { transition:background .18s ease, color .18s ease; }
 .startbtn, .sbuy, .ipbtn, .chip2, .bigbtn { transition:transform .06s ease, box-shadow .06s ease, filter .12s ease; }
