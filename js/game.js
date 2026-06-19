@@ -4403,6 +4403,31 @@ function render(){
 
   // --- player ---
   if(state!==ST.MENU){
+    // Aura Monster: cool energy field, drawn UNDER the player (no green tint on the character).
+    // Additive radial glow + two counter-rotating dashed rings + orbiting sparks, all gently pulsing.
+    if(P.auraR>0){
+      const R=P.auraR, t=elapsed, pulse=0.5+0.5*Math.sin(t*4);
+      cx.save();
+      cx.globalCompositeOperation='lighter';
+      const g=cx.createRadialGradient(P.x,P.y,R*0.12, P.x,P.y,R);
+      g.addColorStop(0,'rgba(60,230,90,0)');
+      g.addColorStop(0.5,'rgba(46,220,80,0.10)');
+      g.addColorStop(0.85,'rgba(90,255,130,'+(0.16+0.10*pulse).toFixed(3)+')');
+      g.addColorStop(1,'rgba(40,200,70,0.03)');
+      cx.fillStyle=g; cx.beginPath(); cx.arc(P.x,P.y,R,0,TAU); cx.fill();
+      cx.globalCompositeOperation='source-over';
+      cx.setLineDash([14,10]);
+      cx.lineWidth=3; cx.strokeStyle='rgba(120,255,150,'+(0.45+0.30*pulse).toFixed(3)+')'; cx.lineDashOffset=-t*60;
+      cx.beginPath(); cx.arc(P.x,P.y,R*0.97,0,TAU); cx.stroke();
+      cx.lineWidth=2; cx.strokeStyle='rgba(60,200,90,0.32)'; cx.lineDashOffset=t*44;
+      cx.beginPath(); cx.arc(P.x,P.y,R*0.88,0,TAU); cx.stroke();
+      cx.setLineDash([]);
+      cx.lineWidth=2; cx.strokeStyle='rgba(160,255,180,'+(0.55+0.20*pulse).toFixed(3)+')';
+      cx.beginPath(); cx.arc(P.x,P.y,R,0,TAU); cx.stroke();
+      for(let i=0;i<3;i++){ const a=t*1.4+i*(TAU/3), ox=P.x+Math.cos(a)*R*0.9, oy=P.y+Math.sin(a)*R*0.9;
+        cx.fillStyle='rgba(180,255,200,0.9)'; cx.beginPath(); cx.arc(ox,oy,3.2,0,TAU); cx.fill(); }
+      cx.restore();
+    }
     cx.fillStyle='rgba(40,60,25,0.3)';
     cx.beginPath(); cx.ellipse(P.x, P.y+P.r*0.9, P.r*0.85, P.r*0.34, 0,0,TAU); cx.fill();
     {
@@ -4417,14 +4442,6 @@ function render(){
     if(P.burnAura>0){
       cx.globalAlpha=0.12+0.05*Math.sin(elapsed*8); cx.fillStyle='#ff7a3a';
       cx.beginPath(); cx.arc(P.x,P.y,80,0,TAU); cx.fill(); cx.globalAlpha=1;
-    }
-    // Aura Monster: clearly-green damage aura, fill + bright ring so it always reads as "yours"
-    if(P.auraR>0){
-      cx.globalAlpha=0.16+0.05*Math.sin(elapsed*6); cx.fillStyle='#39d953';
-      cx.beginPath(); cx.arc(P.x,P.y,P.auraR,0,TAU); cx.fill();
-      cx.globalAlpha=0.55; cx.strokeStyle='#2ecc40'; cx.lineWidth=2.5;
-      cx.beginPath(); cx.arc(P.x,P.y,P.auraR,0,TAU); cx.stroke();
-      cx.globalAlpha=1;
     }
     // Soldier stand-still boost indicator — pulsing red ring
     if(P.soldierBullets && P.soldierStill){
