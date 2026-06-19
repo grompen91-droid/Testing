@@ -64,22 +64,17 @@ const TAU = Math.PI*2;
 // ============ WORLD & CAMERA ============
 const WORLD = { w:2600, h:2600 };
 const WALL = 46;                 // fence thickness
-const camera = { x:0, y:0, lx:0, ly:0 };
+const camera = { x:0, y:0 };
 // camera zoom: <1 = zoomed out (see more), >1 = zoomed in
 let zoom = 1;
 const ZMIN = 0.85, ZMAX = 2.2;   // max zoom-out (0.85 = a small step out) / max zoom-in
-const CAM_LEAD = 78;             // px the view eases ahead of the player in their move direction
 function setZoom(z){ zoom = clamp(z, ZMIN, ZMAX); }
 function zoomBy(d){ setZoom(+(zoom + d).toFixed(3)); }
 function computeCamera(){
-  // Follow the player, but ease the view slightly toward their movement direction (look-ahead).
-  // The player dot never lags — only the framing leads — so you see incoming threats sooner, which
-  // reads as a snappier, more agile feel. Target lead (P.tlx/tly) is set each frame from input.
+  // always keep the player dead-centre — follow them at every zoom level, never lock to world edges/centre
   const vw = W/zoom, vh = H/zoom;
-  camera.lx += ((P.tlx||0) - camera.lx) * 0.10;
-  camera.ly += ((P.tly||0) - camera.ly) * 0.10;
-  camera.x = P.x + camera.lx - vw/2;
-  camera.y = P.y + camera.ly - vh/2;
+  camera.x = P.x - vw/2;
+  camera.y = P.y - vh/2;
 }
 
 // ============ GLOBAL GAME-STATE FLAG ============

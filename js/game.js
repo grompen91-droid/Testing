@@ -1100,11 +1100,11 @@ function nextMove(u){
 
 function resetPlayer(){
   Object.assign(P, {
-    x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:220,
+    x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:260,
     dmg:10, fireRate:0.26, fireCd:0, shots:1, pierce:0, range:330,
     magnet:90, crit:0.05, orbs:0, orbA:0, orbR:96, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
     vamp:0, bslow:1, lv:1, xp:0, xpNext:4, inv:0, up:{}, slowT:0,
-    face:0, walk:0, tlx:0, tly:0, dashCd:0, dashMax:1.8, dashT:0, dvx:0, dvy:0,
+    face:0, walk:0, dashCd:0, dashMax:1.8, dashT:0, dvx:0, dvy:0,
     radial:false, railgun:false, orbShield:false, novaEvo:false, freeze:false,
     critMul:3, frenzy:0, frenzyGain:0, frenzyMax:0,
     shield:0, shieldMax:0, shieldCd:0, shieldCdBase:8, shieldDR:1, aegisEvo:false,
@@ -1203,7 +1203,7 @@ function startWave(){
   $('wavetag').textContent = 'WAVE '+wave;
   if(typeof fireHook==='function') fireHook('waveStart');
   if(wave % 5 === 0){ startBossArena(); waveEnemiesLeft = 0; }
-  else { waveEnemiesLeft = Math.max(4, Math.round((10 + wave*3.6) * (curWorld().enemyMul||1) * (wave<=9?1.3:1))); spawnTimer = 0; sfx.wave();
+  else { waveEnemiesLeft = Math.max(6, Math.round((16 + wave*5.5) * (curWorld().enemyMul||1) * (wave<=9?1.3:1))); spawnTimer = 0; sfx.wave();
     const luckyCap = Math.max(2, ...(typeof queryHook==='function' ? queryHook('getLuckyCap') : [2]));
     spawnLuckyBatch(luckyCap);
   }
@@ -1373,7 +1373,7 @@ function spawnEnemy(){
   }
   const p = ringPos();
   const special = foeIsSpecial(def);
-  const hpMult = (1 + (wave-1)*0.07) * worldHpBand() * (curWorld().hpMul||1) * (special?SPECIAL_HP_BUFF:1);   // gentle per-wave growth + per-world band
+  const hpMult = (1 + (wave-1)*0.07) * worldHpBand() * (curWorld().hpMul||1) * (special?SPECIAL_HP_BUFF:1) * 0.65;   // gentle per-wave growth + per-world band; -35% base so faster, lower-hp swarms kill quicker
   enemies.push({
     spr:def.spr, name:def.name, x:p.x, y:p.y, r:def.r,
     hp:def.hp*HP_MULT*hpMult, maxHp:def.hp*HP_MULT*hpMult,
@@ -1726,9 +1726,6 @@ function update(dt){
   if(keys['d']||keys['arrowright']) mx+=1;
   const ml=Math.hypot(mx,my); if(ml>1){ mx/=ml; my/=ml; }
   if(ml>0.05){ P.face=Math.atan2(my,mx); P.walk+=dt*10; } else P.walk*=0.9;
-  // camera look-ahead target: lead in the move direction, scaled by how hard you're pushing
-  if(ml>0.05){ const k=Math.min(1,ml); P.tlx=(mx/ml)*CAM_LEAD*k; P.tly=(my/ml)*CAM_LEAD*k; }
-  else { P.tlx=0; P.tly=0; }
 
   if(P.dashT>0){
     P.dashT-=dt;
@@ -2219,7 +2216,7 @@ function update(dt){
   if(!betweenWaves && waveEnemiesLeft>0 && spawnTimer<=0){
     // Challenger's first stretch (before its 1st boss) spawns 30% faster, same early-game buff as story waves 1-9
     const chalEarlyMul = (gameMode==='challenger' && chalBossIdx===0) ? 1.3 : 1;
-    spawnTimer = Math.max(0.10, (0.70 - wave*0.04) / chalEarlyMul);
+    spawnTimer = Math.max(0.05, (0.40 - wave*0.03) / chalEarlyMul);
     if(spawnEnemy() !== false) waveEnemiesLeft--;   // at the cap? keep the budget and retry next tick
   }
 

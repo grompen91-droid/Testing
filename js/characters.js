@@ -316,7 +316,7 @@ const CHARACTERS = [
     rarity: 'epic',
     worldUnlock: null,
     gemPrice: 25,     // Character Shop only — no progression unlock
-    baseStats: { maxHp:70, speed:230, fireRate:0.46, dmg:12, gearDmgMul:1.0 },
+    baseStats: { maxHp:70, speed:270, fireRate:0.46, dmg:12, gearDmgMul:1.0 },
     register() {
       P.fortunatoLuckyCap = 5 + Math.floor(Math.random()*4); // 5-8, fixed for the run
       onHook('getLuckyCap', () => P.fortunatoLuckyCap);
@@ -396,7 +396,7 @@ const CHARACTERS = [
     desc: 'Fast, solid bullets, can\'t aim while moving.',
     rarity: 'challenger',
     chalWorldUnlock: 1,   // unlocked by beating Challenger World 1
-    baseStats: { speed: 280 },   // 200 * 1.4
+    baseStats: { speed: 320 },   // base 260 + soldier's flat speed bonus
     register() {
       P.soldierBullets = true;
       let wasStill = true;
