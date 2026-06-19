@@ -219,42 +219,42 @@ const BOSSES_GRASS = [
 // ============ WORLD 2 — DIRT DEPTHS roster ============
 const FOES_DIRT = [
   // Tier I — fodder
-  { spr:'golubiro',  name:'Spijuniro Golubiro', hp:3, sp:84, r:15, xp:1, score:10 },
-  { spr:'bananini',  name:'Chimpanzini Bananini', hp:3, sp:86, r:16, xp:1, score:12 },
-  { spr:'dolfinita', name:'Bananita Dolfinita',  hp:4, sp:56, r:16, xp:1, score:12, dash:true },
-  { spr:'frula',     name:'Fruli Frula',         hp:3, sp:50, r:15, xp:1, score:14, death:{type:'split',n:2} },
-  { spr:'baraboom',  name:'Tric Trac Baraboom',  hp:3, sp:72, r:15, xp:1, score:14, death:{type:'ring',n:4} },
+  { spr:'golubiro',  name:'Spijuniro Golubiro', hp:5,  sp:84, r:15, xp:1, score:10 },
+  { spr:'bananini',  name:'Chimpanzini Bananini', hp:5, sp:86, r:16, xp:1, score:12 },
+  { spr:'dolfinita', name:'Bananita Dolfinita',  hp:6,  sp:56, r:16, xp:1, score:12, dash:true },
+  { spr:'frula',     name:'Fruli Frula',         hp:4,  sp:50, r:15, xp:1, score:14, death:{type:'split',n:2} },
+  { spr:'baraboom',  name:'Tric Trac Baraboom',  hp:5,  sp:72, r:15, xp:1, score:14, death:{type:'ring',n:4} },
   // Tier II — infantry
-  { spr:'cappuccino',name:'Cappuccino Assassino 2.0', hp:5, sp:70, r:15, xp:2, score:18, front:0.35 },
-  { spr:'ballerina', name:'Ballerina Cappuccina 2.0', hp:5, sp:64, r:16, xp:2, score:18, range:300, shoot:{type:'aim',n:1,cd:2.8,spd:130,col:'#c98a4f',arc:true} },
-  { spr:'bobrito',   name:'Bobrito Bandito',     hp:6, sp:62, r:17, xp:2, score:22, range:340, shoot:{type:'aim',n:3,cd:2.4,spd:175,col:'#caa12f'} },
-  { spr:'trulimero', name:'Trulimero Trulichina', hp:7, sp:64, r:16, xp:2, score:18, range:260, shoot:{type:'ring',n:6,cd:3.2,spd:120,col:'#3fa6a0',move:true} },
-  { spr:'lirili',    name:'Lirili Larila 2.0',   hp:13, sp:40, r:22, xp:3, score:30, range:320, shoot:{type:'aim',n:3,cd:3.0,spd:130,col:'#6b9233'} },
-  { spr:'patapim',   name:'Brr Brr Patapim 2.0', hp:12, sp:44, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.2,spd:120,col:'#9c6b3f'} },
+  { spr:'cappuccino',name:'Cappuccino Assassino 2.0', hp:8,  sp:70, r:15, xp:2, score:18, front:0.35 },
+  { spr:'ballerina', name:'Ballerina Cappuccina 2.0', hp:8,  sp:64, r:16, xp:2, score:18, range:300, shoot:{type:'aim',n:1,cd:2.6,spd:145,col:'#c98a4f',arc:true} },
+  { spr:'bobrito',   name:'Bobrito Bandito',     hp:9,  sp:62, r:17, xp:2, score:22, range:340, shoot:{type:'aim',n:3,cd:2.2,spd:185,col:'#caa12f'} },
+  { spr:'trulimero', name:'Trulimero Trulichina', hp:10, sp:64, r:16, xp:2, score:18, range:260, shoot:{type:'ring',n:6,cd:3.0,spd:130,col:'#3fa6a0',move:true} },
+  { spr:'lirili',    name:'Lirili Larila 2.0',   hp:18, sp:40, r:22, xp:3, score:30, range:320, shoot:{type:'aim',n:3,cd:2.8,spd:140,col:'#6b9233'} },
+  { spr:'patapim',   name:'Brr Brr Patapim 2.0', hp:16, sp:44, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.0,spd:130,col:'#9c6b3f'} },
   // Tier III — casters
-  { spr:'ananasini', name:'Orangutini Ananasini', hp:8, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.8,spd:150,col:'#e3a13a',arc:true} },
-  { spr:'glorbo',    name:'Glorbo Fruttodrillo', hp:8, sp:50, r:19, xp:3, score:30, cast:{kind:'geyser',cd:3.2,range:380,n:5,col:'#5a9e3f'} },
-  { spr:'octopus',   name:'Blueberrinni Octopussini 2.0', hp:9, sp:50, r:19, xp:3, score:30, cast:{kind:'debris',cd:3.0,n:3,col:'#5b6cf0'} },
-  { spr:'jelly',     name:'Graipussi Medussi 2.0', hp:8, sp:46, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.6,dur:1.6,col:'#d36fb0'} },
-  { spr:'espresso',  name:'Espressona Signora 2.0', hp:9, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.2,spd:130,col:'#a16a3c'} },
-  { spr:'zibra',     name:'Zibra Zubra Zibralini', hp:10, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.6,spd:150,col:'#cfcfd8',split:true} },
+  { spr:'ananasini', name:'Orangutini Ananasini', hp:12, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.6,spd:165,col:'#e3a13a',arc:true} },
+  { spr:'glorbo',    name:'Glorbo Fruttodrillo', hp:12, sp:50, r:19, xp:3, score:30, cast:{kind:'geyser',cd:3.0,range:390,n:5,col:'#5a9e3f'} },
+  { spr:'octopus',   name:'Blueberrinni Octopussini 2.0', hp:13, sp:50, r:19, xp:3, score:30, cast:{kind:'debris',cd:2.8,n:3,col:'#5b6cf0'} },
+  { spr:'jelly',     name:'Graipussi Medussi 2.0', hp:12, sp:46, r:19, xp:3, score:30, cast:{kind:'sweep',cd:3.4,dur:1.8,col:'#d36fb0'} },
+  { spr:'espresso',  name:'Espressona Signora 2.0', hp:13, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.0,spd:140,col:'#a16a3c'} },
+  { spr:'zibra',     name:'Zibra Zubra Zibralini', hp:14, sp:54, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.4,spd:165,col:'#cfcfd8',split:true} },
   // Tier IV — heavies
-  { spr:'rhino',     name:'Rhino Toasterino 2.0', hp:18, sp:42, r:23, xp:4, score:45, range:340, shoot:{type:'aim',n:2,cd:3.0,spd:140,col:'#e8b96a'}, death:{type:'split',n:2} },
-  { spr:'burbaloni', name:'Burbaloni Luliloli',  hp:20, sp:36, r:24, xp:5, score:50, aoe:{r:52,dps:9,life:1.6,tele:0.6,slow:true,col:'#9fd0ff',cd:3.4} },
-  { spr:'cocofanto', name:'Cocofanto Elefanto',  hp:22, sp:32, r:25, xp:5, score:55, pullAura:60, trail:{cd:0.5,r:34,life:1.6,dps:7,col:'#3a2616'} },
-  { spr:'girafa',    name:'Girafa Celeste',      hp:26, sp:30, r:26, xp:5, score:55, dash:true, kb:true },
+  { spr:'rhino',     name:'Rhino Toasterino 2.0', hp:24, sp:42, r:23, xp:4, score:45, range:340, shoot:{type:'aim',n:2,cd:2.8,spd:150,col:'#e8b96a'}, death:{type:'split',n:2} },
+  { spr:'burbaloni', name:'Burbaloni Luliloli',  hp:26, sp:34, r:24, xp:5, score:52, aoe:{r:54,dps:11,life:1.8,tele:0.6,slow:true,col:'#9fd0ff',cd:3.2} },
+  { spr:'cocofanto', name:'Cocofanto Elefanto',  hp:29, sp:30, r:25, xp:5, score:58, pullAura:65, trail:{cd:0.4,r:36,life:1.8,dps:9,col:'#3a2616'} },
+  { spr:'girafa',    name:'Girafa Celeste',      hp:33, sp:28, r:26, xp:5, score:58, dash:true, kb:true },
   // Tier V — elites
-  { spr:'bicus',     name:'Brri Brri Bicus Dicus Bombicus', hp:14, sp:50, r:20, xp:4, score:44, cast:{kind:'summon',cd:5,spr:'golubiro',n:3,cap:4} },
-  { spr:'ambalabu',  name:'Boneca Ambalabu',     hp:14, sp:44, r:20, xp:4, score:44, cast:{kind:'geyser',cd:3.4,range:420,n:5,lines:3,col:'#5a9e3f'} },
-  { spr:'dindin',    name:'U Din Din Din Din Dun Ma Din Din Din Dun', hp:16, sp:38, r:22, xp:5, score:48, death:{type:'split',n:2} },
+  { spr:'bicus',     name:'Brri Brri Bicus Dicus Bombicus', hp:18, sp:50, r:20, xp:4, score:46, cast:{kind:'summon',cd:5,spr:'golubiro',n:3,cap:4} },
+  { spr:'ambalabu',  name:'Boneca Ambalabu',     hp:19, sp:44, r:20, xp:4, score:46, cast:{kind:'geyser',cd:3.2,range:430,n:6,lines:3,col:'#5a9e3f'} },
+  { spr:'dindin',    name:'U Din Din Din Din Dun Ma Din Din Din Dun', hp:21, sp:36, r:22, xp:5, score:50, death:{type:'split',n:2} },
 ];
 const BOSSES_DIRT = [
-  { spr:'tatasahur', name:'TA TA TA TA SAHUR',        hp:150, r:54, pattern:'chaos',  phased:true },
-  { spr:'hotspot',   name:'POT HOTSPOT',              hp:230, r:60, pattern:'rings',  phased:true },
-  { spr:'saturnita', name:'LA VACA SATURNO SATURNITA',hp:300, r:58, pattern:'chaos',  phased:true },
-  { spr:'tralalero', name:'TRALALERO TRALALA 2.0',    hp:380, r:56, pattern:'spiral', phased:true, moveKey:'tralala2' },
-  { spr:'orcalero', name:'ORCALERO ORCALA',           hp:560, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
-  { spr:'madudung',  name:'MADUDUNGDUNG',             hp:680, r:62, pattern:'chaos',  bars:2, hp2:480, duo:'garamaraman' },
+  { spr:'tatasahur', name:'TA TA TA TA SAHUR',        hp:185, r:54, pattern:'chaos',  phased:true },
+  { spr:'hotspot',   name:'POT HOTSPOT',              hp:280, r:60, pattern:'rings',  phased:true },
+  { spr:'saturnita', name:'LA VACA SATURNO SATURNITA',hp:370, r:58, pattern:'chaos',  phased:true },
+  { spr:'tralalero', name:'TRALALERO TRALALA 2.0',    hp:470, r:56, pattern:'spiral', phased:true, moveKey:'tralala2' },
+  { spr:'orcalero', name:'ORCALERO ORCALA',           hp:690, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
+  { spr:'madudung',  name:'MADUDUNGDUNG',             hp:840, r:62, pattern:'chaos',  bars:2, hp2:580, duo:'garamaraman' },
 ];
 // ============ WORLD 2 — CITRUS COAST roster (real OG Italian Brainrots, recreated). band 1: easy, mostly chasers. ============
 const FOES_W2 = [
@@ -381,36 +381,36 @@ const BOSSES_W5 = [   // original carnival movesets; telegraphed melee/zone with
 ];
 // ============ WORLD 6 — AUTUMN WOODS (band 4): unique autumn roster ============
 const FOES_W6 = [
-  // Tier I — fodder (different sprites from grass world)
-  { spr:'golubiro',  name:'Golubiro Foglietto',      hp:4,  sp:82, r:15, xp:1, score:10 },
-  { spr:'bananini',  name:'Bananini Autunnali',      hp:3,  sp:88, r:16, xp:1, score:12, death:{type:'split',n:2} },
-  { spr:'dolfinita', name:'Dolfinita Boschiva',      hp:4,  sp:58, r:16, xp:1, score:12, dash:true },
-  { spr:'frula',     name:'Fruli Frula Autunnale',   hp:3,  sp:54, r:15, xp:1, score:14 },
-  { spr:'baraboom',  name:'Baraboom dei Boschi',     hp:3,  sp:72, r:15, xp:1, score:14, death:{type:'ring',n:4} },
+  // Tier I — fodder (autumn birds — distinct from FOES_DIRT T1, orange-tinted)
+  { spr:'pigeon',    name:'Piccione Foglietto',      hp:6,  sp:90, r:14, xp:1, score:12 },
+  { spr:'duck',      name:'Papera d\'Autunno',       hp:6,  sp:82, r:15, xp:1, score:12, death:{type:'ring',n:4} },
+  { spr:'goose',     name:'Oca dei Boschi',          hp:5,  sp:76, r:15, xp:1, score:14, dash:true },
+  { spr:'flamingo',  name:'Fenicottero Selvatico',   hp:5,  sp:70, r:15, xp:1, score:14, death:{type:'split',n:2} },
+  { spr:'candypig',  name:'Cinghialino Autunnale',   hp:6,  sp:68, r:16, xp:1, score:14, death:{type:'ring',n:3} },
   // Tier II — infantry
-  { spr:'bobrito',   name:'Bobrito Selvatico',       hp:6,  sp:64, r:17, xp:2, score:22, range:320, shoot:{type:'aim',n:2,cd:2.6,spd:160,col:'#c87a30'} },
-  { spr:'trulimero', name:'Trulimero Autunnale',     hp:6,  sp:66, r:16, xp:2, score:18, range:260, shoot:{type:'ring',n:6,cd:3.0,spd:120,col:'#c87a30',move:true} },
-  { spr:'lirili',    name:'Lirili Autunnale',        hp:13, sp:42, r:22, xp:3, score:30, range:320, shoot:{type:'aim',n:3,cd:3.0,spd:130,col:'#a05a20'} },
-  { spr:'patapim',   name:'Patapim Boschivo',        hp:12, sp:46, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.2,spd:120,col:'#9c6b3f'} },
+  { spr:'bobrito',   name:'Bobrito Selvatico',       hp:9,  sp:64, r:17, xp:2, score:22, range:320, shoot:{type:'aim',n:2,cd:2.4,spd:170,col:'#c87a30'} },
+  { spr:'trulimero', name:'Trulimero Autunnale',     hp:8,  sp:66, r:16, xp:2, score:18, range:260, shoot:{type:'ring',n:6,cd:2.8,spd:125,col:'#c87a30',move:true} },
+  { spr:'lirili',    name:'Lirili Autunnale',        hp:17, sp:42, r:22, xp:3, score:30, range:320, shoot:{type:'aim',n:3,cd:2.8,spd:140,col:'#a05a20'} },
+  { spr:'patapim',   name:'Patapim Boschivo',        hp:15, sp:46, r:21, xp:3, score:28, range:300, shoot:{type:'aim',n:2,cd:3.0,spd:130,col:'#9c6b3f'} },
   // Tier III — casters
-  { spr:'ananasini', name:'Ananasini Autunnali',     hp:9,  sp:52, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.8,spd:150,col:'#e3a13a',arc:true} },
-  { spr:'glorbo',    name:'Glorbo Autunnale',        hp:8,  sp:52, r:19, xp:3, score:30, cast:{kind:'geyser',cd:3.2,range:380,n:5,col:'#a05a20'} },
-  { spr:'zibra',     name:'Zibra Boschiva',          hp:10, sp:56, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.6,spd:150,col:'#cfcfd8',split:true} },
-  { spr:'espresso',  name:'Espresso Autunnale',      hp:9,  sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.2,spd:130,col:'#a16a3c'} },
+  { spr:'ananasini', name:'Ananasini Autunnali',     hp:12, sp:52, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.6,spd:160,col:'#e3a13a',arc:true} },
+  { spr:'glorbo',    name:'Glorbo Autunnale',        hp:11, sp:52, r:19, xp:3, score:30, cast:{kind:'geyser',cd:3.0,range:380,n:5,col:'#a05a20'} },
+  { spr:'zibra',     name:'Zibra Boschiva',          hp:13, sp:56, r:20, xp:4, score:34, range:340, shoot:{type:'aim',n:2,cd:2.4,spd:160,col:'#cfcfd8',split:true} },
+  { spr:'espresso',  name:'Espresso Autunnale',      hp:12, sp:58, r:17, xp:3, score:32, range:300, shoot:{type:'ring',n:5,cd:2.0,spd:140,col:'#a16a3c'} },
   // Tier IV — heavies
-  { spr:'burbaloni', name:'Burbaloni dei Boschi',    hp:19, sp:38, r:24, xp:5, score:50, aoe:{r:50,dps:9,life:1.6,tele:0.6,slow:true,col:'#c87a30',cd:3.4} },
-  { spr:'cocofanto', name:'Cocofanto Fogliame',      hp:21, sp:32, r:25, xp:5, score:55, pullAura:55, trail:{cd:0.5,r:34,life:1.6,dps:7,col:'#3a2616'} },
-  { spr:'girafa',    name:'Girafa Autunnale',        hp:24, sp:30, r:26, xp:5, score:55, dash:true, kb:true },
+  { spr:'burbaloni', name:'Burbaloni dei Boschi',    hp:25, sp:36, r:24, xp:5, score:52, aoe:{r:52,dps:11,life:1.8,tele:0.6,slow:true,col:'#c87a30',cd:3.2} },
+  { spr:'cocofanto', name:'Cocofanto Fogliame',      hp:27, sp:30, r:25, xp:5, score:58, pullAura:60, trail:{cd:0.4,r:36,life:1.8,dps:9,col:'#3a2616'} },
+  { spr:'girafa',    name:'Girafa Autunnale',        hp:30, sp:28, r:26, xp:5, score:58, dash:true, kb:true },
   // Tier V — elites
-  { spr:'bicus',     name:'Bicus Autunnale',         hp:14, sp:50, r:20, xp:4, score:44, cast:{kind:'summon',cd:5,spr:'golubiro',n:3,cap:4} },
-  { spr:'ambalabu',  name:'Ambalabu dei Boschi',     hp:14, sp:44, r:20, xp:4, score:44, cast:{kind:'geyser',cd:3.4,range:420,n:5,lines:3,col:'#a05a20'} },
-  { spr:'dindin',    name:'Din Din Autunnale',       hp:16, sp:38, r:22, xp:5, score:48, death:{type:'split',n:2} },
+  { spr:'bicus',     name:'Bicus Autunnale',         hp:18, sp:50, r:20, xp:4, score:46, cast:{kind:'summon',cd:5,spr:'pigeon',n:3,cap:4} },
+  { spr:'ambalabu',  name:'Ambalabu dei Boschi',     hp:18, sp:44, r:20, xp:4, score:46, cast:{kind:'geyser',cd:3.2,range:420,n:6,lines:3,col:'#a05a20'} },
+  { spr:'dindin',    name:'Din Din Autunnale',       hp:21, sp:36, r:22, xp:5, score:50, death:{type:'split',n:2} },
 ];
 const BOSSES_W6 = [
-  { spr:'bonecaambalabu', name:'BONECA STREGONICA',          hp:170, r:54, pattern:'chaos',  phased:true },
-  { spr:'kikkurimi',      name:'KIKKURIMI SELVATICO',        hp:270, r:56, pattern:'rings',  phased:true },
-  { spr:'girafassassina', name:'GIRAFASSASSINA AUTUNNALE',   hp:400, r:60, pattern:'chaos',  phased:true },
-  { spr:'bobritto',       name:'BOBRITTO FOGLIAME',          hp:600, r:58, pattern:'chaos',  phased:true },
+  { spr:'bonecaambalabu', name:'BONECA STREGONICA',          hp:220, r:54, pattern:'chaos',  phased:true },
+  { spr:'kikkurimi',      name:'KIKKURIMI SELVATICO',        hp:340, r:56, pattern:'rings',  phased:true },
+  { spr:'girafassassina', name:'GIRAFASSASSINA AUTUNNALE',   hp:520, r:60, pattern:'chaos',  phased:true },
+  { spr:'bobritto',       name:'BOBRITTO FOGLIAME',          hp:780, r:58, pattern:'chaos',  phased:true },
 ];
 // ---- worlds: each = theme + roster + boss list + wave target (boss wave). ----
 // ---- 10 worlds: gradual difficulty bands (0..9), distinct map shapes, per-world enemy tints. ----
@@ -2968,23 +2968,23 @@ function bossMoves(e){
       if(e.vph>=2) return ['QUAKE_CROSS','PRISM_SPLIT','aimed5','RING_VOLLEY'];
       return ['QUAKE_LINE','aimed5','ring12'];
     }
-    // ---- World 6 (SWAMP) unique bosses ----
-    case 'bonecaambalabu':                 // B1: voodoo doll — summons + slow curse rings
-      if(e.vph>=3) return ['DOLL_CURSE','SUMMON','SWAMP_FLOOD','EXPAND_IMPLODE','SPIRAL_STORM'];
-      if(e.vph>=2) return ['DOLL_CURSE','SUMMON','SPORE_FIELD','EXPAND_IMPLODE','ring2'];
-      return ['DOLL_CURSE','SUMMON','SPORE_FIELD','ring12'];
-    case 'kikkurimi':                      // B2: swamp slug — pull vortex + geyser denial
-      if(e.vph>=3) return ['VORTEX_PULL','GEYSER_SWEEP','SWAMP_FLOOD','DEVOUR','TWIN_STORM'];
-      if(e.vph>=2) return ['VORTEX_PULL','GEYSER_SWEEP','SPORE_FIELD','QUAKE_CROSS','ring2'];
-      return ['VORTEX_PULL','GEYSER_SWEEP','SPORE_FIELD','ring16'];
-    case 'girafassassina':                 // B3: swamp giraffe assassin — rapid dashes + aimed
-      if(e.vph>=3) return ['GATOR_LUNGE','DOUBLE_DASH','RICOCHET','aimed5','SPIRAL_STORM'];
-      if(e.vph>=2) return ['GATOR_LUNGE','DOUBLE_DASH','GEYSER_SWEEP','aimed5','RING_VOLLEY'];
-      return ['GATOR_LUNGE','POUNCE','aimed5','ring16'];
-    case 'bobritto':                       // B4 FINAL: muddy colossus — heavy flood + tether
-      if(e.vph>=3) return ['SWAMP_FLOOD','TETHER','DEVOUR','ERUPTION','SPIRAL_STORM'];
-      if(e.vph>=2) return ['SWAMP_FLOOD','TETHER','GEYSER_SWEEP','BURROW_DOUBLE','RING_VOLLEY'];
-      return ['SWAMP_FLOOD','BURROW_SLAM','GEYSER_SWEEP','ring16'];
+    // ---- World 6 (AUTUMN WOODS) unique bosses ----
+    case 'bonecaambalabu':                 // B1: woodland voodoo — leaf curse rings + summon
+      if(e.vph>=3) return ['LEAF_BURST','SUMMON','FOREST_FLOOD','EXPAND_IMPLODE','SPIRAL_STORM'];
+      if(e.vph>=2) return ['LEAF_BURST','SUMMON','VINE_RING','EXPAND_IMPLODE','ring2'];
+      return ['LEAF_BURST','SUMMON','VINE_RING','ring12'];
+    case 'kikkurimi':                      // B2: autumn slug — vortex pull + branch crash + ring
+      if(e.vph>=3) return ['VORTEX_PULL','BRANCH_CRASH','FOREST_FLOOD','QUAKE_CROSS','TWIN_STORM'];
+      if(e.vph>=2) return ['VORTEX_PULL','BRANCH_CRASH','VINE_RING','QUAKE_CROSS','ring2'];
+      return ['VORTEX_PULL','BRANCH_CRASH','VINE_RING','ring16'];
+    case 'girafassassina':                 // B3: forest predator — canopy plunge + double dash
+      if(e.vph>=3) return ['CANOPY_PLUNGE','DOUBLE_DASH','RICOCHET','aimed5','SPIRAL_STORM'];
+      if(e.vph>=2) return ['CANOPY_PLUNGE','DOUBLE_DASH','GEYSER_SWEEP','aimed5','RING_VOLLEY'];
+      return ['CANOPY_PLUNGE','POUNCE','aimed5','ring16'];
+    case 'bobritto':                       // B4 FINAL: woodland warlord — flood + tether + eruption
+      if(e.vph>=3) return ['FOREST_FLOOD','TETHER','DEVOUR','ERUPTION','SPIRAL_STORM'];
+      if(e.vph>=2) return ['FOREST_FLOOD','TETHER','GEYSER_SWEEP','BURROW_DOUBLE','RING_VOLLEY'];
+      return ['FOREST_FLOOD','BURROW_SLAM','GEYSER_SWEEP','ring16'];
   }
   return ['ring16'];
 }
@@ -2994,8 +2994,9 @@ const MOVE_COL = { dash:'#e54d4d', spiral:'#e54d4d', aimed3:'#e23b3b', aimed5:'#
   roll:'#e0503f', warp:'#c77dff',
   // world-themed new moves
   SWAMP_FLOOD:'#5a7a3a', ERUPTION:'#e0502c', SKY_PLUNGE:'#9fd0ff', CRYSTAL_SPIKE:'#b08fe0',
-  // W6 swamp boss moves
+  // W6 autumn boss moves
   DOLL_CURSE:'#5a7a3a', GATOR_LUNGE:'#3a5a2a',
+  LEAF_BURST:'#c87a30', VINE_RING:'#8a4f22', CANOPY_PLUNGE:'#c87a30', BRANCH_CRASH:'#c87a30', FOREST_FLOOD:'#c87a30',
   // World 2
   BURROW_SLAM:'#7a5a30', BURROW_DOUBLE:'#7a5a30', DEBRIS3:'#9a7a52',
   QUAKE_LINE:'#e0503f', QUAKE_CROSS:'#e0503f', QUAKE_RADIAL:'#e0503f',
@@ -3264,6 +3265,18 @@ function execMove(e){
     case 'GATOR_LUNGE': // fast dash + landing slow zone
       e.dst='wind'; e.dwin=e.enraged?0.28:0.42; e.da=Math.atan2(P.y-e.y,P.x-e.x);
       e.landFx={type:'pounce'}; addZone(P.x,P.y,72,{tele:0.6,life:2.0,dps:14,slow:true,col:'#5a7a3a'}); sfx.warn(); return 0.9;
+    // ---- World 6 (AUTUMN WOODS) boss moves ----
+    case 'LEAF_BURST': // hexagon of slow leaf-zones around boss + gapped ring
+      { const off=rand(0,TAU); for(let k=0;k<6;k++) addZone(e.x+Math.cos(off+k*TAU/6)*125,e.y+Math.sin(off+k*TAU/6)*125,42,{tele:0.6,life:2.4,dps:12,slow:true,col:'#c87a30'}); mRingGap(e,14,110,'#c87a30',0.30); sfx.hit(); return 0.5; }
+    case 'VINE_RING': // double amber+bark ring volley
+      mRing(e,12,165,'#8a4f22'); mRing(e,8,92,'#c87a30'); return 0.30;
+    case 'CANOPY_PLUNGE': // fast forest-drop dash + wide landing zone
+      e.dst='wind'; e.dwin=e.enraged?0.26:0.40; e.da=Math.atan2(P.y-e.y,P.x-e.x);
+      e.landFx={type:'pounce'}; addZone(P.x,P.y,78,{tele:0.6,life:2.2,dps:16,slow:true,col:'#c87a30'}); sfx.warn(); return 0.9;
+    case 'BRANCH_CRASH': // aimed 3-spread + small zone on landing
+      mAimed(e,3,0.20,200,'#c87a30'); addZone(P.x,P.y,52,{tele:0.5,life:1.6,dps:10,slow:true,col:'#8a4f22'}); return 0.3;
+    case 'FOREST_FLOOD': // amber zone sweep across arena width
+      { const a=arena; for(let k=0;k<5;k++) addZone(a?a.x+(k+0.5)*(a.w/5):P.x+rand(-200,200),P.y+rand(-100,100),58,{tele:0.6,life:2.6,dps:12,slow:true,col:'#c87a30'}); return 0.4; }
     // ---- world-themed moves (worlds 6-10) ----
     case 'SWAMP_FLOOD': // slow-zone sweep across arena width (swamp)
       { const a=arena; for(let k=0;k<5;k++) addZone(a?a.x+(k+0.5)*(a.w/5):P.x+rand(-200,200), P.y+rand(-80,80), 54, {tele:0.6,life:2.8,dps:10,slow:true,col:'#5a7a3a'}); return 0.4; }
