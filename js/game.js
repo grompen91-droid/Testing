@@ -327,7 +327,7 @@ const BOSSES_DIRT = [
   { spr:'tatasahur', name:'TING TING TING BAHUR 2.0',        hp:185, r:54, pattern:'chaos',  phased:true },
   { spr:'hotspot',   name:'POT HOTSPOT',              hp:280, r:60, pattern:'rings',  phased:true },
   { spr:'saturnita', name:'LA VACA SATURNO SATURNITA',hp:370, r:58, pattern:'chaos',  phased:true },
-  { spr:'tralalero', name:'TRALALERO TRALALA 2.0',    hp:470, r:56, pattern:'spiral', phased:true, moveKey:'tralala2' },
+  { spr:'tralalero', name:'TRALALERO TRALALA 2.0',    hp:470, r:56, pattern:'spiral', phased:true, moveKey:'tralala2', final:true },
   { spr:'orcalero', name:'ORCALERO ORCALA',           hp:690, r:58, pattern:'rings',  phased:true, moveKey:'croco2' },
   { spr:'madudung',  name:'MADUDUNGDUNG',             hp:840, r:62, pattern:'chaos',  bars:2, hp2:580, duo:'garamaraman' },
 ];
@@ -1369,8 +1369,10 @@ function spawnBoss(){
   const p = arena ? { x:arena.x+arena.w/2, y:arena.y+arena.h*0.28 } : ringPos();
   const bar1 = def.hp*HP_MULT*mult, bar2 = (def.hp2||0)*HP_MULT*mult;
   const baseTotal = bar1+bar2;
-  // each world's last boss = its FINAL boss: a beefed phase 3 whose HP alone tops phases 1+2 combined
-  const isFinal = bossIdx === curBosses.length-1;
+  // each world's last boss = its FINAL boss: a beefed phase 3 whose HP alone tops phases 1+2 combined.
+  // def.final also flags a boss as final even when it isn't the literal last list entry (e.g. Tralalero 2.0,
+  // which sits mid-list but is the wave-20 fight in its worlds).
+  const isFinal = bossIdx === curBosses.length-1 || def.final===true;
   const p3pool = isFinal ? baseTotal*1.5 : 0;     // phase 3 = 1.5x of phases 1+2 → "more than 1 and 2 combined"
   const total  = baseTotal + p3pool;
   boss = {
@@ -2804,6 +2806,19 @@ function summonAdds(e,spr,n,cap){
   for(let k=0;k<n && live+k<cap; k++){ const a=rand(0,TAU), d=rand(46,82); spawnMini(spr, e.x+Math.cos(a)*d, e.y+Math.sin(a)*d, e); }
   burst(e.x,e.y,'#d2a0ff',12,180);
 }
+// summon a WAVE of tanky adds (boss-summon onslaught): same minion but with greatly boosted HP, bigger
+// body, and more score so it reads as an elite. Used by final-boss invincible "survive the wave" stages.
+function summonTank(e,spr,n,cap,hpMul){
+  const live = enemies.filter(o=>o.summoner===e).length;
+  hpMul = hpMul||5;
+  for(let k=0;k<n && live+k<cap; k++){
+    const a=rand(0,TAU), d=rand(70,140);
+    spawnMini(spr, e.x+Math.cos(a)*d, e.y+Math.sin(a)*d, e);
+    const m=enemies[enemies.length-1];
+    m.hp*=hpMul; m.maxHp*=hpMul; m.r=Math.round(m.r*1.25); m.sp*=0.92; m.score=Math.round((m.score||8)*2.5); m.tank=true;
+  }
+  burst(e.x,e.y,'#5fe0ff',18,260); shake=Math.max(shake,7);
+}
 // burst a dying enemy into smaller, non-splitting copies
 function spawnSplit(e){
   const n=(e.death&&e.death.n)||2, hp=Math.max(1,Math.round(e.maxHp*0.34));
@@ -3620,6 +3635,30 @@ function madudungFinalScript(){
 }
 
 const FINAL_SCRIPT = {
+  // ===== TRALALERO TRALALA 2.0 — "L'ABISSO" : shark-king finale. Invincible while it summons tanky
+  // waves of minions; you must clear/survive each wave, then it drops guard for a DPS window. =====
+  tralala2: [
+    // 1) INVINCIBLE — summon a school of high-HP adds while raining bouncing rings. Survive + thin the wave.
+    { name:'SUMMON THE SCHOOL', col:'#2f8fa0', dur:8.5, iv:true, hold:'center',
+      enter(e){ e.sCd=0.2; e.sk=0; summonTank(e,'golubiro',3+e.loop,12,5+e.loop); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=Math.max(1.5,2.3-e.loop*0.2); e.sk++;
+        if(e.sk%2===1) summonTank(e,'golubiro',2+e.loop,12,5+e.loop);
+        mRingGap(e,14+e.loop*2,120,'#5fe0ff',0.30); } } },
+    { name:'STRIKE NOW!', col:'#7ed957', dur:7.0, iv:false },
+    // 2) INVINCIBLE — bouncing sneaker spiral storm with gap rings to weave through.
+    { name:'SNEAKER SPIRAL', col:'#5fe0ff', dur:7.5, iv:true, hold:'center',
+      enter(e){ e.storm=7.5; e.stormN=9+e.loop; e.stormSpd=140; e.stormStep=0.26; e.stormDir=Math.random()<0.5?1:-1;
+        e.stormCol='#5fe0ff'; e.stormCd=0.11; e.stormTwin=true; e.stormRainbow=false; e.sCd=1.0; sfx.warn(); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=1.3; mRingGap(e,16+e.loop*2,125,'#bff0ff',0.28); } } },
+    { name:'STRIKE NOW!', col:'#7ed957', dur:7.0, iv:false },
+    // 3) INVINCIBLE — feeding frenzy: drag the player in, churn a storm, and keep topping up the tank wave.
+    { name:'FEEDING FRENZY', col:'#1f6f80', dur:7.0, iv:true, hold:'center',
+      enter(e){ e.pull=7.0; e.pullStr=165; burst(e.x,e.y,'#2f8fa0',30,340); shake=Math.max(shake,13);
+        e.storm=7.0; e.stormN=10+e.loop; e.stormSpd=150; e.stormStep=0.24; e.stormDir=1; e.stormCol='#5fe0ff'; e.stormCd=0.10; e.stormTwin=true; e.stormRainbow=false; e.sCd=1.6; sfx.warn();
+        summonTank(e,'golubiro',2+e.loop,12,6+e.loop); },
+      tick(e,dt){ e.sCd-=dt; if(e.sCd<=0){ e.sCd=2.0; summonTank(e,'golubiro',2,12,6+e.loop); } } },
+    { name:'STRIKE NOW!', col:'#7ed957', dur:7.0, iv:false },
+  ],
   // ===== WORLD 6 · BOBRITTO FOGLIAME — "TEMPESTA AUTUNNALE" : the autumn forest colossus =====
   bobritto: [
     { name:'FOGLIE CADENTI', col:'#5a7a3a', dur:7.5, iv:true, hold:'center',
