@@ -106,28 +106,45 @@ function _humanBase(ctx, size, legCol, bodyCol, armCol, skinCol, anim, walkMul) 
   const lw = size*0.09, lh = size*0.20, lr = size*0.03;
   const aw = size*0.09, ah = size*0.18, ar = size*0.04;
 
-  // back leg
-  ctx.save(); ctx.translate(hipRX, hipY); ctx.rotate(legR);
-  _fillR(ctx, size, legCol, -lw*0.5, 0, lw, lh, lr);
-  ctx.restore();
+  // Dynamic Z: leg with higher angle is the leading leg → draw it in front
+  const legLFront = legL > legR;
+  function _drawLegL() {
+    ctx.save(); ctx.translate(hipLX, hipY); ctx.rotate(legL);
+    _fillR(ctx, size, legCol, -lw*0.5, 0, lw, lh, lr);
+    ctx.restore();
+  }
+  function _drawLegR() {
+    ctx.save(); ctx.translate(hipRX, hipY); ctx.rotate(legR);
+    _fillR(ctx, size, legCol, -lw*0.5, 0, lw, lh, lr);
+    ctx.restore();
+  }
+
+  // back leg (the non-leading one)
+  if (legLFront) _drawLegR(); else _drawLegL();
   // torso
   ctx.save(); ctx.rotate(body * 0.5);
   _fillR(ctx, size, bodyCol, -size*0.16, -size*0.08, size*0.32, size*0.28, size*0.10);
   ctx.restore();
+  // Dynamic Z for arms too
+  const armLFront = armL > armR;
+  function _drawArmL() {
+    ctx.save(); ctx.translate(shouLX, shouY); ctx.rotate(armL);
+    _fillR(ctx, size, armCol, -aw*0.5, 0, aw, ah, ar);
+    ctx.restore();
+  }
+  function _drawArmR() {
+    ctx.save(); ctx.translate(shouRX, shouY); ctx.rotate(armR);
+    _fillR(ctx, size, armCol, -aw*0.5, 0, aw, ah, ar);
+    ctx.restore();
+  }
   // back arm
-  ctx.save(); ctx.translate(shouRX, shouY); ctx.rotate(armR);
-  _fillR(ctx, size, armCol, -aw*0.5, 0, aw, ah, ar);
-  ctx.restore();
-  // front leg
-  ctx.save(); ctx.translate(hipLX, hipY); ctx.rotate(legL);
-  _fillR(ctx, size, legCol, -lw*0.5, 0, lw, lh, lr);
-  ctx.restore();
+  if (armLFront) _drawArmR(); else _drawArmL();
+  // front leg (the leading one)
+  if (legLFront) _drawLegL(); else _drawLegR();
   // head
   _fillE(ctx, size, skinCol, 0, -size*0.24, size*0.16, size*0.15);
   // front arm
-  ctx.save(); ctx.translate(shouLX, shouY); ctx.rotate(armL);
-  _fillR(ctx, size, armCol, -aw*0.5, 0, aw, ah, ar);
-  ctx.restore();
+  if (armLFront) _drawArmL(); else _drawArmR();
 }
 function _stdHead(ctx, size, color) {
   _fillE(ctx, size, color, 0, -size*0.24, size*0.16, size*0.15);
