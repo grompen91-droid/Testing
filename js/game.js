@@ -1088,11 +1088,11 @@ function nextMove(u){
 
 function resetPlayer(){
   Object.assign(P, {
-    x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:200,
-    dmg:10, fireRate:0.32, fireCd:0, shots:1, pierce:0, range:330,
+    x:WORLD.w/2, y:WORLD.h/2, r:18, hp:100, maxHp:100, speed:220,
+    dmg:10, fireRate:0.26, fireCd:0, shots:1, pierce:0, range:330,
     magnet:90, crit:0.05, orbs:0, orbA:0, orbR:96, nova:false, novaCd:5, novaCdBase:5, novaPow:1,
     vamp:0, bslow:1, lv:1, xp:0, xpNext:4, inv:0, up:{}, slowT:0,
-    face:0, walk:0, dashCd:0, dashMax:2.2, dashT:0, dvx:0, dvy:0,
+    face:0, walk:0, dashCd:0, dashMax:1.8, dashT:0, dvx:0, dvy:0,
     radial:false, railgun:false, orbShield:false, novaEvo:false, freeze:false,
     critMul:3, frenzy:0, frenzyGain:0, frenzyMax:0,
     shield:0, shieldMax:0, shieldCd:0, shieldCdBase:8, shieldDR:1, aegisEvo:false,
@@ -1170,7 +1170,7 @@ function _doStartGame(wi){
   timeScale=1.0;
   bullets=[]; ebullets=[]; petBullets=[]; enemies=[]; gems=[]; parts=[]; texts=[]; zones=[]; holes=[]; luckies=[];
   wave=1; kills=0; elapsed=0; boss=null; waveGapT=0; arena=null; bossPending=0;
-  luckyTimer=rand(18,30);
+  luckyTimer=rand(10,18);
   worldCoins=0;
   chalElapsed=0; chalBossIdx=0; chalBossActive=false; chalLuckyT=5;
   { const ci=$('coincount'); if(ci){ const img=ci.querySelector('img'); if(img && !img.getAttribute('src')) img.src=SP['coin'].toDataURL(); } }
@@ -1191,7 +1191,7 @@ function startWave(){
   $('wavetag').textContent = 'WAVE '+wave;
   if(typeof fireHook==='function') fireHook('waveStart');
   if(wave % 5 === 0){ startBossArena(); waveEnemiesLeft = 0; }
-  else { waveEnemiesLeft = Math.max(4, Math.round((7 + wave*3) * (curWorld().enemyMul||1) * (wave<=9?1.3:1))); spawnTimer = 0; sfx.wave();
+  else { waveEnemiesLeft = Math.max(4, Math.round((10 + wave*3.6) * (curWorld().enemyMul||1) * (wave<=9?1.3:1))); spawnTimer = 0; sfx.wave();
     const luckyCap = Math.max(2, ...(typeof queryHook==='function' ? queryHook('getLuckyCap') : [2]));
     spawnLuckyBatch(luckyCap);
   }
@@ -1264,7 +1264,7 @@ function spawnRingDist(){
   // Challenger: use the SHORT viewport axis instead of the long one, so on wide/ultrawide
   // monitors mobs spawn closer in (visible, in-your-face) rather than way off past the long edge.
   if(gameMode==='challenger') return Math.min(W,H)/Math.max(zoom,0.0001)*0.58 + 60;
-  return Math.max(W,H)/Math.max(zoom,0.0001)*0.62 + 80;   // world-space ring radius; scales with viewport so it stays off-screen on wide/zoomed-out monitors
+  return Math.max(W,H)/Math.max(zoom,0.0001)*0.52 + 60;   // world-space ring radius; scales with viewport so it stays off-screen on wide/zoomed-out monitors
 }
 function ringPos(){ // spawn point on a ring around player, clamped to world
   const a = rand(0,TAU), d = spawnRingDist();
@@ -1384,16 +1384,16 @@ function spawnEnemy(){
 function burst(x,y,color,n=10,spd=160){
   for(let i=0;i<n;i++){
     const a=rand(0,TAU), s=rand(spd*0.3,spd);
-    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.25,0.6),max:0.6,color,r:rand(2,5)});
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.18,0.48),max:0.48,color,r:rand(2.5,6)});
   }
 }
 // satisfying impact: quick expanding ring + round sparks + white flash core
 function hitSpark(x,y,color,crit){
-  parts.push({x,y,vx:0,vy:0,life:0.16,max:0.16,color,r:crit?6:4,ring:true,gr:crit?190:130,lw:crit?2.5:2});
-  const n=crit?5:3;
-  for(let i=0;i<n;i++){ const a=rand(0,TAU), s=rand(35,crit?170:100);
-    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.1,0.26),max:0.26,color,r:rand(1.2,crit?3:2)}); }
-  parts.push({x,y,vx:0,vy:0,life:0.09,max:0.09,color:'#ffffff',r:crit?4.5:3});
+  parts.push({x,y,vx:0,vy:0,life:0.16,max:0.16,color,r:crit?8:5,ring:true,gr:crit?280:190,lw:crit?3:2.5});
+  const n=crit?8:5;
+  for(let i=0;i<n;i++){ const a=rand(0,TAU), s=rand(40,crit?210:130);
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(0.1,0.28),max:0.28,color,r:rand(1.5,crit?4:2.5)}); }
+  parts.push({x,y,vx:0,vy:0,life:0.10,max:0.10,color:'#ffffff',r:crit?6:4});
 }
 // muzzle flash: short colored burst at the shooter so its projectiles are easy to trace back
 function muzzleFlash(x,y,color){
@@ -1497,7 +1497,7 @@ function gainXp(n){
   while(P.xp >= P.xpNext){
     P.xp -= P.xpNext;
     P.lv++;
-    P.xpNext = Math.floor(4 + P.lv*2.6 + P.lv*P.lv*0.4);
+    P.xpNext = Math.floor(3 + P.lv*2.2 + P.lv*P.lv*0.32);
     if(typeof fireHook==='function') fireHook('onLevelUp');
     if(P.noCards){ sfx.level(); floatText(P.x,P.y-40,'LEVEL '+P.lv,'#9fe0ff',16); }   // stat-only level up, no card picker
     else openLevelUp();
@@ -1841,7 +1841,7 @@ function update(dt){
     for(const lb of luckies){ const d=dist2(P.x,P.y,lb.x,lb.y); if(d<bd){bd=d;best=lb;} }   // lucky blocks are auto-targeted too
     if(best && bd <= P.range*P.range){   // only shoot what's in range
       P.fireCd = P.fireRate / (1 + (P.frenzy||0)*0.002);   // Killing Frenzy speeds up fire (+0.2%/stack)
-      const spd = (P.railgun ? 760 : 560) * (P.bulletSpd||1);
+      const spd = (P.railgun ? 840 : 620) * (P.bulletSpd||1);
       const br  = (P.railgun ? 9 : 6) * (P.bulletR||1);
       // always fire the aimed volley at the nearest enemy
       const base = Math.atan2(best.y-P.y, best.x-P.x), spread = 0.16*(P.spread||1);
@@ -2204,7 +2204,7 @@ function update(dt){
   if(!betweenWaves && waveEnemiesLeft>0 && spawnTimer<=0){
     // Challenger's first stretch (before its 1st boss) spawns 30% faster, same early-game buff as story waves 1-9
     const chalEarlyMul = (gameMode==='challenger' && chalBossIdx===0) ? 1.3 : 1;
-    spawnTimer = Math.max(0.14, (0.85 - wave*0.04) / chalEarlyMul);
+    spawnTimer = Math.max(0.10, (0.70 - wave*0.04) / chalEarlyMul);
     if(spawnEnemy() !== false) waveEnemiesLeft--;   // at the cap? keep the budget and retry next tick
   }
 
@@ -2369,8 +2369,8 @@ function update(dt){
       kills++; setKillHUD();
       if(typeof fireHook==='function') fireHook('onKill', e);
       sfx.hit();
-      if(deathShakeOn) shake=Math.max(shake,e.isBoss?16:5); hitstop=Math.max(hitstop,e.isBoss?0.08:0.03);
-      burst(e.x,e.y,'#ff9f3a',e.isBoss?60:14,e.isBoss?420:200);
+      if(deathShakeOn) shake=Math.max(shake,e.isBoss?16:8); hitstop=Math.max(hitstop,e.isBoss?0.08:0.05);
+      burst(e.x,e.y,'#ff9f3a',e.isBoss?60:22,e.isBoss?420:280);
       if(P.aftershock && Math.random() < 0.12+P.aftershock*0.06){   // Aftershock: kills erupt a quake that damages nearby foes
         const R=70+P.aftershock*10, qd=P.dmg*(2+P.aftershock)*(P.abyssalMul||1);
         forEnemiesNear(e.x,e.y,R,(o)=>{ if(o.iv>0||o.under||o.lead) return; if(dist2(e.x,e.y,o.x,o.y)<R*R){ o.hp-=qd; o.hitT=Math.max(o.hitT,0.08); } });
@@ -2441,7 +2441,7 @@ function update(dt){
 
   // wave cleared? (not while the boss is still incoming; skip in timer-mode — enemies spawn endlessly)
   if(!betweenWaves && bossPending<=0 && waveEnemiesLeft===0 && enemies.length===0 && !timerMode()){
-    betweenWaves=true; waveGapT=2.2;
+    betweenWaves=true; waveGapT=1.3;
     bigText('WAVE CLEARED','#5fbf52');
     if(typeof fireHook==='function') fireHook('waveEnd');
   }
