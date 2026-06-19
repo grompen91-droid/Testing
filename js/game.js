@@ -1324,7 +1324,7 @@ function spawnBoss(){
     }
   }
   sfx.boss();
-  playMusic('boss'+(((Math.floor(wave/5)-1)%3+3)%3));   // a different loop per boss
+  playMusic(isFinal ? 'final_'+boss.spr : 'boss'+(((Math.floor(wave/5)-1)%3+3)%3));
   $('bossname').textContent = boss.name;
   $('bossfill').style.width = '100%';
   $('bossfill').style.background = '';   // reset to the default red (a prior final boss may have left it magenta)

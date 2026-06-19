@@ -90,7 +90,29 @@ const TRACKS = {
   boss1: { bpm:154, density:0.55, drums:true,  lt:'sawtooth', bt:'square',   lv:0.036, bv:0.05,  scale:[0,2,3,5,7,8,10],
            prog:[50,50,48,48, 46,46,45,45, 50,53,48,46, 45,43,45,45] },
   boss2: { bpm:120, density:0.42, drums:true,  lt:'square',   bt:'sawtooth', lv:0.044, bv:0.055, scale:[0,3,5,6,7,10],
-           prog:[45,45,45,45, 41,41,43,43, 44,44,40,40, 45,43,41,40] }
+           prog:[45,45,45,45, 41,41,43,43, 44,44,40,40, 45,43,41,40] },
+  // ---- Final-boss themes (one per world) ----
+  // W1: Ting Ting Ting Bahur — war-drum chaos, phrygian aggression
+  final_sahur:          { bpm:164, density:0.60, drums:true, lt:'square',   bt:'sawtooth', lv:0.046, bv:0.058, scale:[0,1,3,5,7,8,10],
+                           prog:[45,45,41,41, 43,43,48,48, 45,45,43,43, 41,41,40,40,  43,43,45,45, 48,48,43,43, 41,41,40,40, 41,40,40,40] },
+  // W2: Tracotucotulu — tropical sprint, major pentatonic, bright madness
+  final_tracotucotulu:  { bpm:172, density:0.58, drums:true, lt:'triangle', bt:'square',   lv:0.042, bv:0.052, scale:[0,2,4,7,9],
+                           prog:[55,55,57,57, 60,60,55,55, 53,53,55,55, 57,57,52,52,  55,57,60,60, 57,55,53,53, 55,55,52,52, 53,53,55,55] },
+  // W3: Cocofanto Mastodonte — slow forest stomp, dorian, bass-forward
+  final_cocofantoboss:  { bpm:100, density:0.32, drums:true, lt:'sawtooth', bt:'sawtooth', lv:0.050, bv:0.068, scale:[0,3,5,7,8,10],
+                           prog:[33,33,33,33, 31,31,29,29, 28,28,28,28, 29,29,31,31,  33,33,36,36, 31,31,29,29, 28,28,29,29, 28,28,28,28] },
+  // W4: Ice Ice Bearlini — icy urgency, minor with 9th, ethereal triangle
+  final_icebearlini:    { bpm:138, density:0.40, drums:true, lt:'triangle', bt:'sine',     lv:0.048, bv:0.050, scale:[0,2,3,7,9],
+                           prog:[45,45,48,48, 43,43,41,41, 45,45,43,43, 40,40,41,41,  43,43,45,45, 48,48,43,43, 41,41,40,40, 41,41,43,43] },
+  // W5: Il Gran Pagliaccio — deranged circus, harmonic minor, frantic sawtooth
+  final_granpagliaccio: { bpm:160, density:0.62, drums:true, lt:'sawtooth', bt:'square',   lv:0.038, bv:0.048, scale:[0,1,4,5,7,8,11],
+                           prog:[52,52,55,55, 57,57,48,48, 50,50,52,52, 55,55,52,48,  52,52,53,53, 55,55,50,50, 48,48,52,52, 53,52,50,48] },
+  // W6: Bobritto Fogliame — autumn storm, locrian dark, brooding march
+  final_bobritto:       { bpm:116, density:0.38, drums:true, lt:'sawtooth', bt:'triangle', lv:0.046, bv:0.060, scale:[0,3,5,6,7,10],
+                           prog:[45,45,45,45, 43,43,43,43, 41,41,40,40, 41,41,43,43,  45,45,48,48, 43,43,41,41, 40,40,40,40, 41,40,40,40] },
+  // W7-10: Madudungdung — ultimate swamp crusher, diminished sludge, lowest register
+  final_madudung:       { bpm:88,  density:0.28, drums:true, lt:'sawtooth', bt:'sawtooth', lv:0.052, bv:0.072, scale:[0,1,3,5,6,8,10],
+                           prog:[33,33,31,31, 29,29,28,28, 33,33,33,33, 28,28,29,31,  33,33,33,33, 31,31,29,29, 28,28,28,28, 29,28,28,28] },
 };
 let musicTimer=null, musicName=null, musicStep=0;
 function playMusic(name){
