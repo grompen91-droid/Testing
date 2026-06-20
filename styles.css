@@ -1110,35 +1110,35 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
   #tab-battle:not(.hidden) {
     display:grid;
     grid-template-areas:
-      "world stage act"
-      "sub   stage act";
-    grid-template-columns:clamp(200px,20vw,280px) 1fr clamp(220px,23vw,310px);
-    grid-template-rows:auto 1fr;
-    column-gap:clamp(18px,2.2vw,30px);
-    row-gap:0;
+      "world  act"
+      "sub    act"
+      "stage  act";
+    grid-template-columns:1fr clamp(220px,23vw,310px);
+    grid-template-rows:auto auto 1fr;
+    gap:clamp(10px,1.4vw,18px);
     padding:clamp(22px,2.6vw,38px);
     flex:1; min-height:0;
   }
 
-  /* World selector — dark glass panel, rounded top only */
+  /* World selector — centered row above stage */
   #worldsel {
     grid-area:world;
-    flex-direction:row; justify-content:space-between; align-items:center;
-    background:rgba(0,0,0,.22);
-    border:2px solid rgba(255,255,255,.13); border-bottom:none;
-    border-radius:16px 16px 0 0;
-    padding:clamp(12px,1.4vw,18px); gap:6px; margin:0;
+    flex-direction:row; justify-content:center; align-items:center;
+    gap:clamp(10px,1.2vw,18px); margin:0;
+    background:rgba(0,0,0,.18);
+    border:2px solid rgba(255,255,255,.13);
+    border-radius:14px;
+    padding:clamp(10px,1.2vw,16px) clamp(14px,1.8vw,24px);
   }
-  #wname { min-height:0; width:auto; flex:1; font-size:clamp(12px,1.6vw,20px); }
+  #wname { min-height:0; width:auto; flex:1; text-align:center; font-size:clamp(14px,1.9vw,26px); }
 
-  /* World subtitle — continues the panel, rounded bottom */
+  /* Subtitle — sits flush below world selector */
   .worldsub {
     grid-area:sub;
-    background:rgba(0,0,0,.16);
-    border:2px solid rgba(255,255,255,.1); border-top:1px solid rgba(255,255,255,.07);
-    border-radius:0 0 16px 16px;
-    padding:clamp(8px,1vw,14px) 14px;
     text-align:center; align-self:start; margin:0;
+    font-size:clamp(12px,1.3vw,18px);
+    opacity:.85;
+    padding:0 4px;
   }
 
   #stage { grid-area:stage; height:100%; margin:0; min-height:clamp(300px,54vh,600px); }
@@ -1161,13 +1161,14 @@ html,body { width:100%; height:100%; overflow:hidden; background:#6fae3d; font-f
   .ggrid { grid-template-columns:repeat(3,1fr); }
   .crates { grid-template-columns:repeat(3,1fr); }
 
-  /* ── Character: 2-column card grid ── */
+  /* ── Character: 2-column card grid, banners span full width ── */
   #charlist {
     display:grid;
     grid-template-columns:repeat(2,1fr);
     gap:clamp(10px,1.4vw,18px);
     align-content:start;
   }
+  #charlist > .banner { grid-column:1/-1; }
 
   /* ── Equipment: wider owned grid ── */
   #invowned.ggrid { grid-template-columns:repeat(8,1fr); }
