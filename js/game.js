@@ -1444,7 +1444,7 @@ function scheduleChaos(){
     16+Math.floor(Math.random()*4),
   ];
   chaosWaveIdx=0; chaosMidTimer=-1; chaosAnnounceT=0; _chaosQueuedFn=null;
-  chaosSpeedT=0; chaosBlackoutT=0; chaosGiantN=0; chaosGravT=0; chaosShrinkT=0;
+  chaosSpeedT=0; chaosBlackoutT=0; chaosGiantN=0; chaosGravT=0; chaosShrinkT=0; _chaosMagN=0;
   const el=$('chaos-announce'); if(el) el.classList.add('hidden');
 }
 
@@ -1499,25 +1499,46 @@ function _chaosBossCrash(){
   sfx.boss();
 }
 
+// SVG icons for chaos card — stroke-based, currentColor
+const CHAOS_SVGS={
+  'CLONE WAR':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><circle cx="17" cy="14" r="7" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M7 38c0-6 4-10 10-10h0c6 0 10 4 10 10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="32" cy="14" r="7" stroke="currentColor" stroke-width="2.5" fill="none" opacity=".38"/><path d="M22 38c0-6 4-10 10-10h0c6 0 10 4 10 10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".38"/></svg>`,
+  'SPEED SURGE':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><polyline points="6,18 20,18 14,24 28,24 22,30 42,30" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  'BULLET STORM':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><line x1="10" y1="6" x2="6" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="22" y1="4" x2="18" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="34" y1="6" x2="30" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="8" cy="34" r="5" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="24" cy="36" r="5" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="40" cy="34" r="5" stroke="currentColor" stroke-width="2.5" fill="none"/></svg>`,
+  'GIANT':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="19" stroke="currentColor" stroke-width="2.5" fill="none"/><line x1="24" y1="34" x2="24" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polyline points="15,21 24,12 33,21" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  'BLACKOUT':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><path d="M30 8 A16 16 0 1 0 30 40 A11 11 0 1 1 30 8Z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/></svg>`,
+  'BOSS CRASH':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><polygon points="24,4 27,17 40,17 30,25 34,38 24,31 14,38 18,25 8,17 21,17" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>`,
+  'GRAVITY':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="4" stroke="currentColor" stroke-width="2" fill="none"/><line x1="24" y1="20" x2="24" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polyline points="20,12 24,8 28,12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="24" y1="28" x2="24" y2="40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polyline points="20,36 24,40 28,36" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="20" y1="24" x2="8" y2="24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polyline points="12,20 8,24 12,28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="28" y1="24" x2="40" y2="24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polyline points="36,20 40,24 36,28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  'FREEZE':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><line x1="24" y1="4" x2="24" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="10" x2="38" y2="38" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="38" y1="10" x2="10" y2="38" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="24" cy="24" r="4" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
+  'SWARM':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="30" r="4.5" stroke="currentColor" stroke-width="2.2" fill="none"/><circle cx="24" cy="38" r="4.5" stroke="currentColor" stroke-width="2.2" fill="none"/><circle cx="36" cy="30" r="4.5" stroke="currentColor" stroke-width="2.2" fill="none"/><circle cx="18" cy="20" r="3.8" stroke="currentColor" stroke-width="2.2" fill="none"/><circle cx="30" cy="20" r="3.8" stroke="currentColor" stroke-width="2.2" fill="none"/><circle cx="24" cy="10" r="3" stroke="currentColor" stroke-width="2.2" fill="none"/></svg>`,
+  'MAGNET PULL':`<svg viewBox="0 0 48 48" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><path d="M10 10 L10 28 A14 14 0 0 0 38 28 L38 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><line x1="6" y1="10" x2="14" y2="10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="34" y1="10" x2="42" y2="10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="24" y1="36" x2="24" y2="46" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><polyline points="20,42 24,46 28,42" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+let _chaosMagN=0; // count of gems with _chaosMag set — skip gem loop when 0
+
 const CHAOS_EVENTS=[
-  {name:'CLONE WAR',   col:'#ff88ff', fn:()=>_chaosCloneWar()},
-  {name:'SPEED SURGE', col:'#ffdd00', fn:()=>{chaosSpeedT=8;}},
-  {name:'BULLET STORM',col:'#ff4488', fn:()=>_chaosBulletStorm()},
-  {name:'GIANT',       col:'#ff8800', fn:()=>{chaosGiantN=6;}},
-  {name:'BLACKOUT',    col:'#8888ff', fn:()=>{chaosBlackoutT=6;}},
-  {name:'BOSS CRASH',  col:'#ff3333', fn:()=>_chaosBossCrash()},
-  {name:'GRAVITY',     col:'#44ffcc', fn:()=>{chaosGravT=3;}},
-  {name:'FREEZE',      col:'#aaeeff', fn:()=>{for(const e of enemies){if(!e.isBoss)e.frz=Math.max(e.frz,3);}}},
-  {name:'SWARM',       col:'#aaff44', fn:()=>{ let n=18;while(n-->0&&enemies.length<MAX_ENEMIES-1){const p=ringPos(),f=curFoes[0];enemies.push({spr:f.spr,name:f.name,x:p.x,y:p.y,r:f.r*0.65,hp:f.hp*HP_MULT*0.28,maxHp:f.hp*HP_MULT*0.28,_shooter:false,_hazard:false,_burst:false,dmgBuff:0.5,sp:f.sp*1.8,xp:f.xp*0.25,score:8,range:0,shoot:null,death:null,aoe:null,aoeCd:3,dash:false,dst:'idle',dcd:2,da:0,dwin:0,ddur:0,shell:false,shellCd:5,iv:0.25,support:null,supCd:3,front:0,kb:0,pullAura:0,trail:null,trailT:0,cast:null,castCd:0,under:false,digT:0,spin:0,t:rand(0,TAU),wob:rand(2,4),shootCd:3,frz:0,isBoss:false,hitT:0,sq:0,face:1,chaosSwarm:true});}}},
-  {name:'MAGNET PULL', col:'#ffcc00', fn:()=>{for(const g of gems){g._chaosMag=true;}}},
+  {name:'CLONE WAR',   fn:()=>_chaosCloneWar()},
+  {name:'SPEED SURGE', fn:()=>{chaosSpeedT=8;}},
+  {name:'BULLET STORM',fn:()=>_chaosBulletStorm()},
+  {name:'GIANT',       fn:()=>{chaosGiantN=6;}},
+  {name:'BLACKOUT',    fn:()=>{chaosBlackoutT=6;}},
+  {name:'BOSS CRASH',  fn:()=>_chaosBossCrash()},
+  {name:'GRAVITY',     fn:()=>{chaosGravT=3;}},
+  {name:'FREEZE',      fn:()=>{for(const e of enemies){if(!e.isBoss)e.frz=Math.max(e.frz,3);}}},
+  {name:'SWARM',       fn:()=>{ let n=18;while(n-->0&&enemies.length<MAX_ENEMIES-1){const p=ringPos(),f=curFoes[0];enemies.push({spr:f.spr,name:f.name,x:p.x,y:p.y,r:f.r*0.65,hp:f.hp*HP_MULT*0.28,maxHp:f.hp*HP_MULT*0.28,_shooter:false,_hazard:false,_burst:false,dmgBuff:0.5,sp:f.sp*1.8,xp:f.xp*0.25,score:8,range:0,shoot:null,death:null,aoe:null,aoeCd:3,dash:false,dst:'idle',dcd:2,da:0,dwin:0,ddur:0,shell:false,shellCd:5,iv:0.25,support:null,supCd:3,front:0,kb:0,pullAura:0,trail:null,trailT:0,cast:null,castCd:0,under:false,digT:0,spin:0,t:rand(0,TAU),wob:rand(2,4),shootCd:3,frz:0,isBoss:false,hitT:0,sq:0,face:1,chaosSwarm:true});}}},
+  {name:'MAGNET PULL', fn:()=>{for(const g of gems){g._chaosMag=true;} _chaosMagN=gems.length;}},
 ];
 
 function fireChaosEvent(){
   const ev=pick(CHAOS_EVENTS);
-  chaosAnnounceT=1.8;
+  chaosAnnounceT=2.6;
   _chaosQueuedFn=ev.fn;
   const el=$('chaos-announce');
-  if(el){ el.textContent='⚡ '+ev.name+' ⚡'; el.style.color=ev.col; el.classList.remove('hidden'); }
+  if(el){
+    const icon=CHAOS_SVGS[ev.name]||'';
+    el.innerHTML=`<div class="chaos-icon">${icon}</div><div class="chaos-name">${ev.name}</div>`;
+    el.style.animation='none'; el.offsetHeight; el.style.animation='';
+    el.classList.remove('hidden');
+  }
 }
 
 function updateChaos(dt){
@@ -1539,11 +1560,14 @@ function updateChaos(dt){
     chaosShrinkT-=dt;
     if(chaosShrinkT<=0){chaosShrinkT=0;for(const e of enemies){if(e._chaosShrunk){e._chaosShrunk=false;e.r*=2;e.sp*=0.5;}}}
   }
-  // magnet chaos — pull flagged gems toward player
-  for(const g of gems){
-    if(g._chaosMag){
-      const dx=P.x-g.x,dy=P.y-g.y,d=Math.hypot(dx,dy);
-      if(d>20){g.vx+=dx/d*2200*dt;g.vy+=dy/d*2200*dt;}else{g._chaosMag=false;}
+  // magnet chaos — only iterate gems when any are flagged
+  if(_chaosMagN>0){
+    _chaosMagN=0;
+    for(const g of gems){
+      if(g._chaosMag){
+        const dx=P.x-g.x,dy=P.y-g.y,d=Math.hypot(dx,dy);
+        if(d>20){g.vx+=dx/d*2200*dt;g.vy+=dy/d*2200*dt;_chaosMagN++;}else{g._chaosMag=false;}
+      }
     }
   }
 }
@@ -2457,6 +2481,10 @@ function update(dt){
       if(e && !e.isBoss && dist2(e.x,e.y,P.x,P.y)>CULL_DSQ) enemies.splice(i,1);
     }
   }
+  // hoist per-frame chaos constants outside the loop (avoid one branch-per-enemy inside)
+  const _cSpd = chaosSpeedT>0 ? 2 : 1;
+  const _gravOn = chaosGravT!==0;
+  const _SKIP_DSQ = 760*760; // enemies > 760px from player skip non-essential subsystems
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     if(!e) continue;   // worldCleared() can shrink the array mid-loop (boss dies while adds are alive)
@@ -2523,8 +2551,7 @@ function update(dt){
             else if(e.shoot && e.shoot.move){ a = toP + Math.PI/2; } // in range + mobile: strafe
             else { move=false; }                                  // in range + stationary: hold
           }
-          const cSpd=chaosSpeedT>0?2:1;
-          if(move){ e.x += Math.cos(a)*e.sp*fs*cSpd*dt; e.y += Math.sin(a)*e.sp*fs*cSpd*dt; }
+          if(move){ e.x += Math.cos(a)*e.sp*fs*_cSpd*dt; e.y += Math.sin(a)*e.sp*fs*_cSpd*dt; }
           e.face = Math.cos(toP)>=0 ? 1 : -1;
           e.moving = move;
         } else {
@@ -2541,14 +2568,16 @@ function update(dt){
       e.x = clamp(e.x, WALL, WORLD.w-WALL); e.y = clamp(e.y, WALL, WORLD.h-WALL);
       if(arena){ e.x=clamp(e.x, arena.x+e.r, arena.x+arena.w-e.r); e.y=clamp(e.y, arena.y+e.r, arena.y+arena.h-e.r); }
       // chaos gravity: scatter away (>0) or rush in (<0)
-      if(chaosGravT!==0&&e.iv<=0){
+      if(_gravOn&&e.iv<=0){
         const ga=chaosGravT>0?Math.atan2(e.y-P.y,e.x-P.x):Math.atan2(P.y-e.y,P.x-e.x);
         const gs=chaosGravT>0?270:420;
         e.x=clamp(e.x+Math.cos(ga)*gs*dt,WALL,WORLD.w-WALL);
         e.y=clamp(e.y+Math.sin(ga)*gs*dt,WALL,WORLD.h-WALL);
       }
-      if(wave>=3 && e.iv<=0 && awake){
-        if(e.shoot && (!e.range || dist2(e.x,e.y,P.x,P.y) <= e.range*e.range)){
+      // skip shooting / casting / aoe / support for enemies well outside player's screen
+      const _eDist2 = dist2(e.x,e.y,P.x,P.y);
+      if(wave>=3 && e.iv<=0 && awake && _eDist2<_SKIP_DSQ){
+        if(e.shoot && (!e.range || _eDist2 <= e.range*e.range)){
           e.shootCd -= dt;
           if(e.shootCd<=0){
             e.shootCd = e.shoot.cd || rand(2.5,4.5);
@@ -2567,7 +2596,7 @@ function update(dt){
         if(e.cast){                        // generic dirt-caster ability (geyser / debris / sweep / summon)
           e.castCd -= dt;
           const cRng = e.cast.range || 420;      // cap casts that had no range so they can't fire from across the map
-          const inRange = dist2(e.x,e.y,P.x,P.y) <= cRng*cRng;
+          const inRange = _eDist2 <= cRng*cRng;
           if(e.castCd<=0 && inRange){
             const c=e.cast; e.castCd = c.cd||3.5;
             if(c.kind==='geyser'){ const a=Math.atan2(P.y-e.y,P.x-e.x), lines=c.lines||1; for(let l=0;l<lines;l++) geyserLine(e.x,e.y, a + (l-(lines-1)/2)*0.5, c.col, c.n||5); muzzleFlash(e.x,e.y,c.col||'#e0503f'); }
@@ -2579,7 +2608,7 @@ function update(dt){
         if(e.aoe){
           e.aoeCd -= dt;
           const aoeRng = e.aoe.range || 360;     // no more infinite-range slows/earthquakes
-          if(e.aoeCd<=0 && dist2(e.x,e.y,P.x,P.y) <= aoeRng*aoeRng){
+          if(e.aoeCd<=0 && _eDist2 <= aoeRng*aoeRng){
             e.aoeCd = e.aoe.cd||3.5;
             const z = Object.assign({}, e.aoe, { tele: Math.max(e.aoe.tele||0, 1.0) });   // forewarning: >=1s before it slows/hurts
             addZone(P.x+rand(-24,24), P.y+rand(-24,24), e.aoe.r, z);
